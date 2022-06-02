@@ -1,9 +1,26 @@
 {
   "outDir": "src/types",
-  "chainVersions": "kusamaVersions.json",
-  "typesBundle": "kusama",
+  "chainVersions": "subsocialVersions.json",
+  "typesBundle": "subsocial",
   "events": [
-    "balances.Transfer"
+    "posts.PostCreated",
+    "posts.PostDeleted",
+    "posts.PostUpdated",
+    "posts.PostShared",
+    "posts.PostMoved",
+
+    "reactions.PostReactionCreated",
+    "reactions.PostReactionUpdated",
+    "reactions.PostReactionDeleted",
+
+    "spaces.SpaceCreated",
+    "spaces.SpaceUpdated",
+
+    "spaceFollows.SpaceFollowed",
+    "spaceFollows.SpaceUnfollowed",
+
+    "profileFollows.AccountFollowed",
+    "profileFollows.AccountUnfollowed"
   ],
   "calls": []
 }

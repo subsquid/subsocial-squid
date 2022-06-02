@@ -1,13 +1,63 @@
-type Account @entity {
-  "Account address"
-  id: ID!
-  balance: BigInt!
-  historicalBalances: [HistoricalBalance!] @derivedFrom(field: "account")
+enum EventAction {
+  PostCreated
+  PostDeleted
+  PostUpdated
+  PostShared
+  PostMoved
+  PostReactionCreated
+  PostReactionUpdated
+  PostReactionDeleted
+  SpaceCreated
+  SpaceUpdated
+  SpaceFollowed
+  SpaceUnfollowed
+  AccountFollowed
+  AccountUnfollowed
 }
 
-type HistoricalBalance @entity {
-  id: ID!
-  account: Account!
-  balance: BigInt!
+type AccountFollowers @entity {
+  followerAccount: String!
+  followingAccount: String!
+}
+
+type SpaceFollowers @entity {
+  followerAccount: String!
+  followingSpaceId: BigInt!
+}
+
+type PostFollowers @entity {
+  followerAccount: String!
+  followingPostId: BigInt!
+}
+
+type CommentFollowers @entity {
+  followerAccount: String!
+  followingCommentId: BigInt!
+}
+
+type NewsFeed @entity {
+  account: String!
+  activity: Activities
+}
+
+type Notifications @entity {
+  account: String!
+  activity: Activities
+}
+
+type Activities @entity {
+  account: String!
+  blockNumber: BigInt!
+  eventIndex: Int!
+  notifications: [Notifications] @derivedFrom(field: "activity")
+  feeds: [NewsFeed] @derivedFrom(field: "activity")
+  event: EventAction!
+  followingId: String
+  spaceId: BigInt
+  postId: BigInt
+  commentId: BigInt
+  parentCommentId: BigInt
   date: DateTime!
+  aggregated: Boolean!
+  aggCount: BigInt!
 }

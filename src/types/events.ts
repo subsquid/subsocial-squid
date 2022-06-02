@@ -1,64 +1,380 @@
 import assert from 'assert'
 import {EventContext, Result, deprecateLatest} from './support'
-import * as v9130 from './v9130'
+import * as v15 from './v15'
 
-export class BalancesTransferEvent {
+export class PostsPostCreatedEvent {
   constructor(private ctx: EventContext) {
-    assert(this.ctx.event.name === 'balances.Transfer')
+    assert(this.ctx.event.name === 'posts.PostCreated')
   }
 
-  /**
-   *  Transfer succeeded (from, to, value, fees).
-   */
-  get isV1020(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '72e6f0d399a72f77551d560f52df25d757e0643d0192b3bc837cbd91b6f36b27'
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('posts.PostCreated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
   }
 
-  /**
-   *  Transfer succeeded (from, to, value, fees).
-   */
-  get asV1020(): [Uint8Array, Uint8Array, bigint, bigint] {
-    assert(this.isV1020)
-    return this.ctx._chain.decodeEvent(this.ctx.event)
-  }
-
-  /**
-   *  Transfer succeeded (from, to, value).
-   */
-  get isV1050(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === 'dad2bcdca357505fa3c7832085d0db53ce6f902bd9f5b52823ee8791d351872c'
-  }
-
-  /**
-   *  Transfer succeeded (from, to, value).
-   */
-  get asV1050(): [Uint8Array, Uint8Array, bigint] {
-    assert(this.isV1050)
-    return this.ctx._chain.decodeEvent(this.ctx.event)
-  }
-
-  /**
-   * Transfer succeeded.
-   */
-  get isV9130(): boolean {
-    return this.ctx._chain.getEventHash('balances.Transfer') === '0ffdf35c495114c2d42a8bf6c241483fd5334ca0198662e14480ad040f1e3a66'
-  }
-
-  /**
-   * Transfer succeeded.
-   */
-  get asV9130(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
-    assert(this.isV9130)
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
     return this.ctx._chain.decodeEvent(this.ctx.event)
   }
 
   get isLatest(): boolean {
     deprecateLatest()
-    return this.isV9130
+    return this.isV1
   }
 
-  get asLatest(): {from: v9130.AccountId32, to: v9130.AccountId32, amount: bigint} {
+  get asLatest(): [Uint8Array, bigint] {
     deprecateLatest()
-    return this.asV9130
+    return this.asV1
+  }
+}
+
+export class PostsPostDeletedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'posts.PostDeleted')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('posts.PostDeleted') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class PostsPostMovedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'posts.PostMoved')
+  }
+
+  get isV9(): boolean {
+    return this.ctx._chain.getEventHash('posts.PostMoved') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV9(): [Uint8Array, bigint] {
+    assert(this.isV9)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV9
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV9
+  }
+}
+
+export class PostsPostSharedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'posts.PostShared')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('posts.PostShared') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class PostsPostUpdatedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'posts.PostUpdated')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('posts.PostUpdated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class ProfileFollowsAccountFollowedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'profileFollows.AccountFollowed')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('profileFollows.AccountFollowed') === 'e54ae910805a8a9413af1a7f5885a5d0ba5f4e105175cd6b0ce2a8702ddf1861'
+  }
+
+  get asV1(): [Uint8Array, Uint8Array] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, Uint8Array] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class ProfileFollowsAccountUnfollowedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'profileFollows.AccountUnfollowed')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('profileFollows.AccountUnfollowed') === 'e54ae910805a8a9413af1a7f5885a5d0ba5f4e105175cd6b0ce2a8702ddf1861'
+  }
+
+  get asV1(): [Uint8Array, Uint8Array] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, Uint8Array] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class ReactionsPostReactionCreatedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'reactions.PostReactionCreated')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('reactions.PostReactionCreated') === '5ecf574fedb0dd818c5b40ec149d9c842d218107d35c4018d00cc169f56e1267'
+  }
+
+  get asV1(): [Uint8Array, bigint, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isV15(): boolean {
+    return this.ctx._chain.getEventHash('reactions.PostReactionCreated') === 'ca26d2ea071b219e270b1a6e49302db57fadc150e90c604899be4c3c166995ae'
+  }
+
+  get asV15(): [Uint8Array, bigint, bigint, v15.ReactionKind] {
+    assert(this.isV15)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV15
+  }
+
+  get asLatest(): [Uint8Array, bigint, bigint, v15.ReactionKind] {
+    deprecateLatest()
+    return this.asV15
+  }
+}
+
+export class ReactionsPostReactionDeletedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'reactions.PostReactionDeleted')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('reactions.PostReactionDeleted') === '5ecf574fedb0dd818c5b40ec149d9c842d218107d35c4018d00cc169f56e1267'
+  }
+
+  get asV1(): [Uint8Array, bigint, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isV15(): boolean {
+    return this.ctx._chain.getEventHash('reactions.PostReactionDeleted') === 'ca26d2ea071b219e270b1a6e49302db57fadc150e90c604899be4c3c166995ae'
+  }
+
+  get asV15(): [Uint8Array, bigint, bigint, v15.ReactionKind] {
+    assert(this.isV15)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV15
+  }
+
+  get asLatest(): [Uint8Array, bigint, bigint, v15.ReactionKind] {
+    deprecateLatest()
+    return this.asV15
+  }
+}
+
+export class ReactionsPostReactionUpdatedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'reactions.PostReactionUpdated')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('reactions.PostReactionUpdated') === '5ecf574fedb0dd818c5b40ec149d9c842d218107d35c4018d00cc169f56e1267'
+  }
+
+  get asV1(): [Uint8Array, bigint, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isV15(): boolean {
+    return this.ctx._chain.getEventHash('reactions.PostReactionUpdated') === 'ca26d2ea071b219e270b1a6e49302db57fadc150e90c604899be4c3c166995ae'
+  }
+
+  get asV15(): [Uint8Array, bigint, bigint, v15.ReactionKind] {
+    assert(this.isV15)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV15
+  }
+
+  get asLatest(): [Uint8Array, bigint, bigint, v15.ReactionKind] {
+    deprecateLatest()
+    return this.asV15
+  }
+}
+
+export class SpaceFollowsSpaceFollowedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'spaceFollows.SpaceFollowed')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('spaceFollows.SpaceFollowed') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class SpaceFollowsSpaceUnfollowedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'spaceFollows.SpaceUnfollowed')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('spaceFollows.SpaceUnfollowed') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class SpacesSpaceCreatedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'spaces.SpaceCreated')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('spaces.SpaceCreated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
+export class SpacesSpaceUpdatedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'spaces.SpaceUpdated')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('spaces.SpaceUpdated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  }
+
+  get asV1(): [Uint8Array, bigint] {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): [Uint8Array, bigint] {
+    deprecateLatest()
+    return this.asV1
   }
 }
