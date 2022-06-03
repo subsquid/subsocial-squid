@@ -1,32 +1,26 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
-import {Notifications} from "./notifications.model"
-import {NewsFeed} from "./newsFeed.model"
+import {Account} from "./account.model"
 import {EventAction} from "./_eventAction"
 
 @Entity_()
-export class Activities {
-  constructor(props?: Partial<Activities>) {
+export class Activity {
+  constructor(props?: Partial<Activity>) {
     Object.assign(this, props)
   }
 
   @PrimaryColumn_()
   id!: string
 
-  @Column_("text", {nullable: false})
-  account!: string
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: false})
+  account!: Account
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
   blockNumber!: bigint
 
   @Column_("int4", {nullable: false})
   eventIndex!: number
-
-  @OneToMany_(() => Notifications, e => e.activity)
-  notifications!: Notifications[]
-
-  @OneToMany_(() => NewsFeed, e => e.activity)
-  feeds!: NewsFeed[]
 
   @Column_("varchar", {length: 19, nullable: false})
   event!: EventAction

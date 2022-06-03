@@ -1,4 +1,5 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Account} from "./account.model"
 
 @Entity_()
 export class AccountFollowers {
@@ -9,9 +10,11 @@ export class AccountFollowers {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("text", {nullable: false})
-  followerAccount!: string
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: false})
+  followerAccount!: Account
 
-  @Column_("text", {nullable: false})
-  followingAccount!: string
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: false})
+  followingAccount!: Account
 }

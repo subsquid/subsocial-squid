@@ -15,42 +15,88 @@ enum EventAction {
   AccountUnfollowed
 }
 
-type AccountFollowers @entity {
-  followerAccount: String!
-  followingAccount: String!
+enum PostKind {
+  Comment
+  SharedPost
+  RegularPost
 }
 
-type SpaceFollowers @entity {
-  followerAccount: String!
-  followingSpaceId: BigInt!
+type Account @entity {
+  id: ID!
+  followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
+  feeds: [NewsFeed]! @derivedFrom(field: "account")
+  notifications: [Notification]! @derivedFrom(field: "account")
+  posts: [Post] @derivedFrom(field: "createdByAccount")
+  spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
+  spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
 }
 
-type PostFollowers @entity {
-  followerAccount: String!
-  followingPostId: BigInt!
+type Post @entity {
+  id: ID!
+  parentId: String
+  rootPostId: String
+  sharedPostId: String
+
+  createdByAccount: Account!
+  createdAtBlock: BigInt
+  createdAtTime: DateTime
+  createdOnDay: DateTime
+  updatedAtTime: DateTime
+  space: Space!
+  kind: PostKind
+  postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
+  commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")
+
+  repliesCount: Int
+  publicRepliesCount: Int
+  hiddenRepliesCount: Int
+  sharesCount: Int
+  upvotesCount: Int
+  downvotesCount: Int
+  score: Int
+
+  title: String
+  content: String
+  slug: String
+  summary: String
+  image: String
+  canonical: String
+  tagsOriginal: String
+
+  proposalIndex: Int
 }
 
-type CommentFollowers @entity {
-  followerAccount: String!
-  followingCommentId: BigInt!
+type Space @entity {
+  id: ID!
+  createdByAccount: Account!
+  ownerAccount: Account!
+
+  createdAtBlock: BigInt
+  createdAtTime: DateTime
+  createdOnDay: DateTime
+  spaceId: String!
+  updatedAtTime: DateTime
+
+  postsCount: Int
+  publicPostsCount: Int
+  hiddenPostsCount: Int
+  followersCount: Int
+  score: Int
+
+  content: String
+  name: String
+  image: String
+  summary: String
+  tagsOriginal: String
+
+  followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
 }
 
-type NewsFeed @entity {
-  account: String!
-  activity: Activities
-}
-
-type Notifications @entity {
-  account: String!
-  activity: Activities
-}
-
-type Activities @entity {
-  account: String!
+type Activity @entity {
+  id: ID!
+  account: Account!
   blockNumber: BigInt!
   eventIndex: Int!
-  notifications: [Notifications] @derivedFrom(field: "activity")
-  feeds: [NewsFeed] @derivedFrom(field: "activity")
   event: EventAction!
   followingId: String
   spaceId: BigInt
@@ -61,3 +107,34 @@ type Activities @entity {
   aggregated: Boolean!
   aggCount: BigInt!
 }
+
+type AccountFollowers @entity {
+  followerAccount: Account!
+  followingAccount: Account!
+}
+
+type SpaceFollowers @entity {
+  followerAccount: Account!
+  followingSpace: Space!
+}
+
+type PostFollowers @entity {
+  followerAccount: Account!
+  followingPost: Post!
+}
+
+type CommentFollowers @entity {
+  followerAccount: Account!
+  followingComment: Post!
+}
+
+type NewsFeed @entity {
+  account: Account!
+  activity: Activity!
+}
+
+type Notification @entity {
+  account: Account!
+  activity: Activity!
+}
+

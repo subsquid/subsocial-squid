@@ -1,5 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
-import {Activities} from "./activities.model"
+import {Account} from "./account.model"
+import {Activity} from "./activity.model"
 
 @Entity_()
 export class NewsFeed {
@@ -10,10 +11,11 @@ export class NewsFeed {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("text", {nullable: false})
-  account!: string
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: false})
+  account!: Account
 
   @Index_()
-  @ManyToOne_(() => Activities, {nullable: true})
-  activity!: Activities | undefined | null
+  @ManyToOne_(() => Activity, {nullable: false})
+  activity!: Activity
 }

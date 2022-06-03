@@ -1,10 +1,10 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import {Account} from "./account.model"
-import {Space} from "./space.model"
+import {Activity} from "./activity.model"
 
 @Entity_()
-export class SpaceFollowers {
-  constructor(props?: Partial<SpaceFollowers>) {
+export class Notification {
+  constructor(props?: Partial<Notification>) {
     Object.assign(this, props)
   }
 
@@ -13,9 +13,9 @@ export class SpaceFollowers {
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: false})
-  followerAccount!: Account
+  account!: Account
 
   @Index_()
-  @ManyToOne_(() => Space, {nullable: false})
-  followingSpace!: Space
+  @ManyToOne_(() => Activity, {nullable: false})
+  activity!: Activity
 }

@@ -1,5 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import * as marshal from "./marshal"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
+import {Account} from "./account.model"
+import {Post} from "./post.model"
 
 @Entity_()
 export class CommentFollowers {
@@ -10,9 +11,11 @@ export class CommentFollowers {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("text", {nullable: false})
-  followerAccount!: string
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: false})
+  followerAccount!: Account
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  followingCommentId!: bigint
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: false})
+  followingComment!: Post
 }
