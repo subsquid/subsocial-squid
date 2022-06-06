@@ -23,12 +23,22 @@ enum PostKind {
 
 type Account @entity {
   id: ID!
+
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
-  feeds: [NewsFeed]! @derivedFrom(field: "account")
-  notifications: [Notification]! @derivedFrom(field: "account")
+  followersCount: Int
+
+  followingAccounts: [AccountFollowers]! @derivedFrom(field: "followerAccount")
+  followingAccountsCount: Int
+
   posts: [Post] @derivedFrom(field: "createdByAccount")
+
   spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
   spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
+  spacesFollowed: [SpaceFollowers!] @derivedFrom(field: "followerAccount")
+  followingSpacesCount: Int
+
+  feeds: [NewsFeed]! @derivedFrom(field: "account")
+  notifications: [Notification]! @derivedFrom(field: "account")
 }
 
 type Post @entity {
@@ -137,4 +147,3 @@ type Notification @entity {
   account: Account!
   activity: Activity!
 }
-
