@@ -1,4 +1,5 @@
 import BN from 'bn.js';
+import { u8aToString } from '@polkadot/util';
 import { resolveSpace, resolveSpaceStruct } from './resolvers/resolveSpaceData';
 import { getDateWithoutTime, SpaceDataExtended } from './utils';
 import { Space } from '../model';
@@ -22,7 +23,7 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
 
   const [accountId, id] = event.asV1;
 
-  const spaceExtData = await ensureSpace(accountId.toString(), id, ctx, true);
+  const spaceExtData = await ensureSpace(accountId, id, ctx, true);
 
   if (
     !spaceExtData ||
@@ -41,7 +42,9 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
   )
     return;
 
-  space.updatedAtTime = spaceStruct.updatedAtTime;
+  space.updatedAtTime = spaceStruct.updatedAtTime
+    ? new Date(spaceStruct.updatedAtTime)
+    : null;
 
   await ctx.store.save<Space>(space);
 }
@@ -55,7 +58,7 @@ const createSpace = async (ctx: EventHandlerContext) => {
 
   const [accountId, id] = event.asV1;
 
-  const space = await ensureSpace(accountId.toString(), id, ctx);
+  const space = await ensureSpace(accountId, id, ctx);
 
   if (space && 'id' in space) {
     await ctx.store.save<Space>(space);
@@ -71,18 +74,21 @@ const createSpace = async (ctx: EventHandlerContext) => {
  * @param isExtendedData
  */
 export const ensureSpace = async (
-  accountId: string,
+  accountId: Uint8Array,
   id: bigint,
   ctx: EventHandlerContext,
   isExtendedData?: boolean
 ): Promise<Space | SpaceDataExtended | null> => {
   const spaceData = await resolveSpace(new BN(id.toString(), 10));
+
   if (!spaceData) return null;
 
   const { struct: spaceStruct, content: spaceContent } = spaceData;
 
   let space = await ctx.store.get(Space, id.toString());
-
+  // let space = await ctx.store.get(Space, { where: { id: id.toString() } });
+  console.log('space :: >>> ', space);
+  console.log('spaceStruct :: >>> ', spaceStruct);
   if (!space) {
     space = new Space();
     space.id = id.toString();
@@ -96,6 +102,8 @@ export const ensureSpace = async (
       new Date(spaceStruct.createdAtTime)
     );
   }
+
+  console.log('space 2 :: >>> ', space);
 
   space.ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
   space.content = spaceStruct.contentId;
@@ -119,6 +127,8 @@ export const ensureSpace = async (
       content: spaceContent,
       space
     };
+
+  console.log('=> space ', space);
 
   return space;
 };

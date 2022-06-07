@@ -15,9 +15,9 @@ export async function spaceFollowed(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const [_, id] = event.asV1;
+  const [followerId, id] = event.asV1;
 
-  await spaceFollowedOrUnfollowed(ctx.store, id);
+  await spaceFollowedOrUnfollowed(followerId.toString(), id.toString(), ctx);
 }
 
 export async function spaceUnfollowed(ctx: EventHandlerContext) {
@@ -27,15 +27,17 @@ export async function spaceUnfollowed(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const [_, id] = event.asV1;
+  const [followerId, id] = event.asV1;
 
-  await spaceFollowedOrUnfollowed(ctx.store, id);
+  await spaceFollowedOrUnfollowed(followerId.toString(), id.toString(), ctx);
 }
 
-const spaceFollowedOrUnfollowed = async (store: Store, spaceId: bigint) => {
-  const space = await store.get(Space, {
-    where: `space_id = '${spaceId.toString()}'`
-  });
+const spaceFollowedOrUnfollowed = async (
+  followerId: string,
+  spaceId: string,
+  ctx: EventHandlerContext
+) => {
+  const space = await ctx.store.get(Space, spaceId);
   if (!space) return;
 
   const spaceStruct = await resolveSpaceStruct(new BN(spaceId.toString(), 10));
@@ -43,5 +45,5 @@ const spaceFollowedOrUnfollowed = async (store: Store, spaceId: bigint) => {
 
   space.followersCount = spaceStruct.followersCount;
 
-  await store.save<Space>(space);
+  await ctx.store.save<Space>(space);
 };

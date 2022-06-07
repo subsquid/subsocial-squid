@@ -5,7 +5,9 @@ export async function ensureAccount(
   accountId: string,
   ctx: EventHandlerContext
 ) {
+  console.log('ensureAccount :: >>> ', typeof accountId);
   const account = await ctx.store.get(Account, accountId);
+  console.log('ensureAccount account :: >>> ', account);
 
   if (account) return account;
 

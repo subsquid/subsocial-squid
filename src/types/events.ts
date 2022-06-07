@@ -177,6 +177,31 @@ export class ProfileFollowsAccountUnfollowedEvent {
   }
 }
 
+export class ProfilesProfileCreatedEvent {
+  constructor(private ctx: EventContext) {
+    assert(this.ctx.event.name === 'profiles.ProfileCreated')
+  }
+
+  get isV1(): boolean {
+    return this.ctx._chain.getEventHash('profiles.ProfileCreated') === '21ea0c8f2488eafafdea1de92b54cd17d8b1caff525e37616abf0ff93f11531d'
+  }
+
+  get asV1(): Uint8Array {
+    assert(this.isV1)
+    return this.ctx._chain.decodeEvent(this.ctx.event)
+  }
+
+  get isLatest(): boolean {
+    deprecateLatest()
+    return this.isV1
+  }
+
+  get asLatest(): Uint8Array {
+    deprecateLatest()
+    return this.asV1
+  }
+}
+
 export class ReactionsPostReactionCreatedEvent {
   constructor(private ctx: EventContext) {
     assert(this.ctx.event.name === 'reactions.PostReactionCreated')

@@ -84,7 +84,6 @@ type Space @entity {
   createdAtBlock: BigInt
   createdAtTime: DateTime
   createdOnDay: DateTime
-  spaceId: String!
   updatedAtTime: DateTime
 
   postsCount: Int

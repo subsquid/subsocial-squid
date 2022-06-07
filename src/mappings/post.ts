@@ -43,6 +43,7 @@ export async function postUpdated(ctx: EventHandlerContext) {
   const [_, id] = event.asV1;
 
   const post = await ctx.store.get(Post, id.toString());
+  console.log('post :: > ', post);
   if (!post) return;
 
   const postData = await resolvePost(id as unknown as PostId);

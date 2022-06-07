@@ -29,9 +29,6 @@ export class Space {
   @Column_("timestamp with time zone", {nullable: true})
   createdOnDay!: Date | undefined | null
 
-  @Column_("text", {nullable: false})
-  spaceId!: string
-
   @Column_("timestamp with time zone", {nullable: true})
   updatedAtTime!: Date | undefined | null
 
