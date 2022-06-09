@@ -11,10 +11,14 @@ import {
 import { ensureAccount } from './account';
 
 export async function spaceCreated(ctx: EventHandlerContext) {
+  console.log(':::::::::::::::::::: spaceCreated ::::::::::::::::::::::::');
+
   await createSpace(ctx);
 }
 
 export async function spaceUpdated(ctx: EventHandlerContext) {
+  console.log(':::::::::::::::::::: spaceUpdated :::::::::::::::::::::::');
+
   const event = new SpacesSpaceUpdatedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
@@ -47,6 +51,7 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
     : null;
 
   await ctx.store.save<Space>(space);
+  console.log(`////////// Space ${id.toString()} has been updated //////////`);
 }
 
 const createSpace = async (ctx: EventHandlerContext) => {
@@ -62,6 +67,9 @@ const createSpace = async (ctx: EventHandlerContext) => {
 
   if (space && 'id' in space) {
     await ctx.store.save<Space>(space);
+    console.log(
+      `////////// Space ${id.toString()} has been created //////////`
+    );
   }
 };
 
@@ -86,26 +94,29 @@ export const ensureSpace = async (
   const { struct: spaceStruct, content: spaceContent } = spaceData;
 
   let space = await ctx.store.get(Space, id.toString());
-  // let space = await ctx.store.get(Space, { where: { id: id.toString() } });
-  console.log('space :: >>> ', space);
-  console.log('spaceStruct :: >>> ', spaceStruct);
+
   if (!space) {
     space = new Space();
     space.id = id.toString();
-    space.createdByAccount = await ensureAccount(
+
+    const createdByAccount = await ensureAccount(
       spaceStruct.createdByAccount,
-      ctx
+      ctx,
+      true
     );
+    if (!createdByAccount) return null;
+
+    space.createdByAccount = createdByAccount;
     space.createdAtBlock = BigInt(spaceStruct.createdAtBlock.toString());
     space.createdAtTime = new Date(spaceStruct.createdAtTime);
     space.createdOnDay = getDateWithoutTime(
       new Date(spaceStruct.createdAtTime)
     );
   }
+  const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx, true);
+  if (!ownerAccount) return null;
 
-  console.log('space 2 :: >>> ', space);
-
-  space.ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
+  space.ownerAccount = ownerAccount;
   space.content = spaceStruct.contentId;
 
   space.postsCount = spaceStruct.postsCount;
@@ -127,13 +138,11 @@ export const ensureSpace = async (
       content: spaceContent,
       space
     };
-
-  console.log('=> space ', space);
-
   return space;
 };
 
 export async function updateCountersInSpace(store: Store, space: Space) {
+  console.log('updateCountersInSpace');
   const spaceUpdated: Space = space;
   if (!space) return;
 

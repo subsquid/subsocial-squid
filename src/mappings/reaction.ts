@@ -72,7 +72,7 @@ export async function postReactionDeleted(ctx: EventHandlerContext) {
 }
 
 const upvoteOrDownvotePost = async (store: Store, id: bigint) => {
-  const post = await store.get(Post, { where: { postId: id.toString() } });
+  const post = await store.get(Post, id.toString());
   if (!post) return;
 
   const postStruct = await resolvePostStruct(new BN(id.toString(), 10));

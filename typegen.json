@@ -17,6 +17,7 @@
     "spaces.SpaceUpdated",
 
     "profiles.ProfileCreated",
+    "profiles.ProfileUpdated",
 
     "spaceFollows.SpaceFollowed",
     "spaceFollows.SpaceUnfollowed",

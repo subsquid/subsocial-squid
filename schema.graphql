@@ -23,6 +23,14 @@ enum PostKind {
 
 type Account @entity {
   id: ID!
+  reputation: Int
+  hasProfile: Boolean
+  name: String
+  avatar: String
+  about: String
+  createdAtBlock: BigInt
+  createdAtTime: DateTime
+  createdOnDay: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
   followersCount: Int
@@ -52,7 +60,7 @@ type Post @entity {
   createdAtTime: DateTime
   createdOnDay: DateTime
   updatedAtTime: DateTime
-  space: Space!
+  space: Space
   kind: PostKind
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
   commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")

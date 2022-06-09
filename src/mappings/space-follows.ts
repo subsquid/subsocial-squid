@@ -26,7 +26,6 @@ export async function spaceUnfollowed(ctx: EventHandlerContext) {
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
   }
-
   const [followerId, id] = event.asV1;
 
   await spaceFollowedOrUnfollowed(followerId.toString(), id.toString(), ctx);

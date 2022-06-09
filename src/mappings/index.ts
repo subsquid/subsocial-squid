@@ -8,5 +8,7 @@ export {
   spaceCreated,
   spaceUpdated,
   spaceFollowed,
-  spaceUnfollowed
+  spaceUnfollowed,
+  accountCreated,
+  accountUpdated
 } from './mappings';

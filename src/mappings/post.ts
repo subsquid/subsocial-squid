@@ -18,6 +18,7 @@ import { ensureAccount } from './account';
 import { updateCountersInSpace } from './space';
 
 export async function postCreated(ctx: EventHandlerContext) {
+  console.log('::::::::::::::::::::::: postCreated :::::::::::::::::::::::');
   const event = new PostsPostCreatedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
@@ -30,10 +31,15 @@ export async function postCreated(ctx: EventHandlerContext) {
 
   if (post) {
     await ctx.store.save<Post>(post);
+    console.log(
+      `////////// Post ${id.toString()} has been created //////////`
+    );
   }
 }
 
 export async function postUpdated(ctx: EventHandlerContext) {
+  console.log('::::::::::::::::::::::: postUpdated :::::::::::::::::::::::');
+
   const event = new PostsPostUpdatedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
@@ -55,7 +61,15 @@ export async function postUpdated(ctx: EventHandlerContext) {
 
   if (post.updatedAtTime === postStruct.updatedAtTime) return;
 
-  post.createdByAccount = await ensureAccount(postStruct.createdByAccount, ctx);
+  const createdByAccount = await ensureAccount(
+    postStruct.createdByAccount,
+    ctx,
+    true
+  );
+
+  if (!createdByAccount) return;
+
+  post.createdByAccount = createdByAccount;
 
   post.content = postStruct.contentId;
 
@@ -77,9 +91,14 @@ export async function postUpdated(ctx: EventHandlerContext) {
   }
 
   await ctx.store.save<Post>(post);
+  console.log(
+    `////////// Post ${id.toString()} has been created //////////`
+  );
 }
 
 export async function postShared(ctx: EventHandlerContext) {
+  console.log('::::::::::::::::::::::: postShared :::::::::::::::::::::::');
+
   const event = new PostsPostSharedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
@@ -97,6 +116,9 @@ export async function postShared(ctx: EventHandlerContext) {
   post.sharesCount = postStruct.sharesCount;
 
   await ctx.store.save<Post>(post);
+  console.log(
+    `////////// Post ${id.toString()} has been shared //////////`
+  );
 }
 
 const updateReplyCount = async (store: Store, postId: bigint) => {
@@ -121,14 +143,19 @@ export const insertPost = async (
   const { store }: { store: Store } = ctx;
 
   const postData = await resolvePost(new BN(id.toString(), 10));
-  if (!postData) return null;
 
-  const postStruct = postData.post.struct;
-  const postContent = postData.post.content;
+  if (
+    !postData ||
+    !postData.post ||
+    !postData.post.struct ||
+    !postData.post.content
+  )
+    return null;
 
-  if (!postStruct || !postContent) return null;
+  const { struct: postStruct, content: postContent } = postData.post;
+  const account = await ensureAccount(postStruct.createdByAccount, ctx, true);
 
-  const account = await ensureAccount(accountId, ctx);
+  if (!account) return null;
 
   let space = null;
   if (postStruct.spaceId && postStruct.spaceId !== '') {

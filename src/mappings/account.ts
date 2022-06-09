@@ -1,30 +1,93 @@
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Account } from '../model';
+import {
+  ProfilesProfileCreatedEvent,
+  ProfilesProfileUpdatedEvent
+} from '../types/events';
+import { getSubsocialSs58Codec } from './utils';
+import {
+  resolveAccount,
+  resolveAccountStruct
+} from './resolvers/resolveAccountData';
+
+export async function accountCreated(ctx: EventHandlerContext) {
+  console.log('::::::::::::::::::::::: accountCreated :::::::::::::::::::::::');
+  const event = new ProfilesProfileCreatedEvent(ctx);
+
+  if (ctx.event.extrinsic === undefined) {
+    throw new Error(`No extrinsic has been provided`);
+  }
+
+  const ss58Codec = getSubsocialSs58Codec();
+  const accountId = event.asV1;
+
+  const account: Account | null = await ensureAccount(
+    ss58Codec.encode(accountId),
+    ctx
+  );
+
+  if (account) {
+    await ctx.store.save<Account>(account);
+  }
+}
+
+export async function accountUpdated(ctx: EventHandlerContext) {
+  console.log('::::::::::::::::::::::: accountUpdated :::::::::::::::::::::::');
+  const event = new ProfilesProfileUpdatedEvent(ctx);
+
+  if (ctx.event.extrinsic === undefined) {
+    throw new Error(`No extrinsic has been provided`);
+  }
+
+  const ss58Codec = getSubsocialSs58Codec();
+  const accountId = event.asV1;
+
+  const account: Account | null = await ensureAccount(
+    ss58Codec.encode(accountId),
+    ctx
+  );
+
+  if (account) {
+    await ctx.store.save<Account>(account);
+  }
+}
 
 export async function ensureAccount(
   accountId: string,
-  ctx: EventHandlerContext
-) {
-  console.log('ensureAccount :: >>> ', typeof accountId);
-  const account = await ctx.store.get(Account, accountId);
-  console.log('ensureAccount account :: >>> ', account);
+  ctx: EventHandlerContext,
+  createIfNotExists: boolean = false
+): Promise<Account | null> {
+  const accountData = await resolveAccount(accountId);
 
-  if (account) return account;
+  if (!accountData || !accountData.struct || !accountData.content) return null;
 
-  const newAccount = new Account();
+  const { struct: accountStruct, content: accountContent } = accountData;
 
-  newAccount.id = accountId;
-  newAccount.followers = [];
-  newAccount.followersCount = 0;
-  newAccount.followingAccounts = [];
-  newAccount.followingAccountsCount = 0;
-  newAccount.posts = [];
-  newAccount.spacesCreated = [];
-  newAccount.spacesOwned = [];
-  newAccount.spacesFollowed = [];
-  newAccount.followingSpacesCount = 0;
-  newAccount.feeds = [];
-  newAccount.notifications = [];
+  let account = await ctx.store.get(Account, accountId);
 
-  return ctx.store.save<Account>(newAccount);
+  if (!account) {
+    account = new Account();
+    account.id = accountId;
+  }
+  account.reputation = accountStruct.reputation;
+  account.hasProfile = accountStruct.hasProfile;
+  account.name = accountContent.name;
+  account.avatar = accountContent.avatar;
+  account.about = accountContent.about;
+
+  // account.followers = [];
+  account.followersCount = 0;
+  // account.followingAccounts = [];
+  account.followingAccountsCount = 0;
+  // account.posts = [];
+  // account.spacesCreated = [];
+  // account.spacesOwned = [];
+  // account.spacesFollowed = [];
+  account.followingSpacesCount = 0;
+  // account.feeds = [];
+  // account.notifications = [];
+
+  if (createIfNotExists && account) return ctx.store.save<Account>(account);
+
+  return account;
 }
