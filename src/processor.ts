@@ -42,10 +42,13 @@ processor.addEventHandler('reactions.PostReactionCreated', postReactionCreated);
 processor.addEventHandler('reactions.PostReactionUpdated', postReactionUpdated);
 processor.addEventHandler('reactions.PostReactionDeleted', postReactionDeleted);
 
+processor.addEventHandler('profiles.ProfileCreated', accountCreated);
+processor.addEventHandler('profiles.ProfileUpdated', accountUpdated);
+
 processor.addEventHandler('spaceFollows.SpaceFollowed', spaceFollowed);
 processor.addEventHandler('spaceFollows.SpaceUnfollowed', spaceUnfollowed);
 
-processor.addEventHandler('profiles.ProfileCreated', accountCreated);
-processor.addEventHandler('profiles.ProfileUpdated', accountUpdated);
+// processor.addEventHandler('profileFollows.AccountFollowed', accountUpdated);
+// processor.addEventHandler('profileFollows.AccountUnfollowed', accountUpdated);
 
 processor.run();

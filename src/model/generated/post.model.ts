@@ -24,6 +24,9 @@ export class Post {
   @Column_("text", {nullable: true})
   sharedPostId!: string | undefined | null
 
+  @Column_("bool", {nullable: true})
+  isComment!: boolean | undefined | null
+
   @Index_()
   @ManyToOne_(() => Account, {nullable: false})
   createdByAccount!: Account

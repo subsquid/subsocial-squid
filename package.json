@@ -16,7 +16,6 @@
     "lint:prod": "eslint . --ext .ts --ignore-path .gitignore --max-warnings 0"
   },
   "dependencies": {
-    "@polkadot/util": "^9.4.1",
     "@subsocial/api": "^0.6.10",
     "@subsocial/types": "^0.6.10",
     "@subsocial/utils": "^0.6.10",

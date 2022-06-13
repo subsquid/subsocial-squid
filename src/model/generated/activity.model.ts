@@ -2,6 +2,8 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, M
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {EventAction} from "./_eventAction"
+import {Space} from "./space.model"
+import {Post} from "./post.model"
 
 @Entity_()
 export class Activity {
@@ -25,27 +27,32 @@ export class Activity {
   @Column_("varchar", {length: 19, nullable: false})
   event!: EventAction
 
-  @Column_("text", {nullable: true})
-  followingId!: string | undefined | null
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: true})
+  followingAccount!: Account | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  spaceId!: bigint | undefined | null
+  @Index_()
+  @ManyToOne_(() => Space, {nullable: true})
+  space!: Space | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  postId!: bigint | undefined | null
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: true})
+  post!: Post | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  commentId!: bigint | undefined | null
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: true})
+  commentPost!: Post | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  parentCommentId!: bigint | undefined | null
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: true})
+  commentParentPost!: Post | undefined | null
 
   @Column_("timestamp with time zone", {nullable: false})
   date!: Date
 
-  @Column_("bool", {nullable: false})
-  aggregated!: boolean
+  @Column_("bool", {nullable: true})
+  aggregated!: boolean | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-  aggCount!: bigint
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
+  aggCount!: bigint | undefined | null
 }

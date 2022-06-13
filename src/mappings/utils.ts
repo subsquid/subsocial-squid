@@ -33,9 +33,31 @@ export interface SpaceDataExtended {
   content: SpaceContent | undefined;
 }
 
+export enum EventAction {
+  PostCreated = 'PostCreated',
+  PostDeleted = 'PostDeleted',
+  PostUpdated = 'PostUpdated',
+  PostShared = 'PostShared',
+  PostMoved = 'PostMoved',
+  PostReactionCreated = 'PostReactionCreated',
+  PostReactionUpdated = 'PostReactionUpdated',
+  PostReactionDeleted = 'PostReactionDeleted',
+  SpaceCreated = 'SpaceCreated',
+  SpaceUpdated = 'SpaceUpdated',
+  SpaceFollowed = 'SpaceFollowed',
+  SpaceUnfollowed = 'SpaceUnfollowed',
+  AccountFollowed = 'AccountFollowed',
+  AccountUnfollowed = 'AccountUnfollowed'
+}
+
 export const getSubsocialSs58Codec = (): ss58.Codec => {
   if (!subsocialSs58CodecInst) subsocialSs58CodecInst = ss58.codec('subsocial');
   return subsocialSs58CodecInst;
+};
+
+export const addressSs58ToString = (address: Uint8Array) => {
+  const codecInst = getSubsocialSs58Codec();
+  return codecInst.encode(address);
 };
 
 export const formatTegs = (tags: string[]) => {

@@ -1,5 +1,5 @@
 import { resolvePostStruct, resolvePost } from './resolvers/resolvePostData';
-import { getDateWithoutTime } from './utils';
+import { addressSs58ToString, getDateWithoutTime } from './utils';
 import { PostId, SpaceId } from '@subsocial/types/substrate/interfaces';
 import { isEmptyArray } from '@subsocial/utils';
 import { Post, PostKind, Space } from '../model/generated';
@@ -16,6 +16,7 @@ import {
 } from '@subsocial/api/flat-subsocial/flatteners';
 import { ensureAccount } from './account';
 import { updateCountersInSpace } from './space';
+import { setActivity } from './activity';
 
 export async function postCreated(ctx: EventHandlerContext) {
   console.log('::::::::::::::::::::::: postCreated :::::::::::::::::::::::');
@@ -26,14 +27,18 @@ export async function postCreated(ctx: EventHandlerContext) {
   }
 
   const [accountId, id] = event.asV1;
+  const accountIdString = addressSs58ToString(accountId);
 
-  const post: Post | null = await insertPost(accountId.toString(), id, ctx);
+  const post: Post | null = await insertPost(accountIdString, id, ctx);
 
   if (post) {
     await ctx.store.save<Post>(post);
-    console.log(
-      `////////// Post ${id.toString()} has been created //////////`
-    );
+    console.log(`////////// Post ${id.toString()} has been created //////////`);
+    await setActivity({
+      account: accountIdString,
+      post,
+      ctx
+    });
   }
 }
 
@@ -46,7 +51,7 @@ export async function postUpdated(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const [_, id] = event.asV1;
+  const [accountId, id] = event.asV1;
 
   const post = await ctx.store.get(Post, id.toString());
   console.log('post :: > ', post);
@@ -91,9 +96,12 @@ export async function postUpdated(ctx: EventHandlerContext) {
   }
 
   await ctx.store.save<Post>(post);
-  console.log(
-    `////////// Post ${id.toString()} has been created //////////`
-  );
+  console.log(`////////// Post ${id.toString()} has been created //////////`);
+  await setActivity({
+    account: addressSs58ToString(accountId),
+    post,
+    ctx
+  });
 }
 
 export async function postShared(ctx: EventHandlerContext) {
@@ -105,7 +113,7 @@ export async function postShared(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const [_, id] = event.asV1;
+  const [accountId, id] = event.asV1;
 
   const post = await ctx.store.get(Post, id.toString());
   if (!post) return;
@@ -116,9 +124,12 @@ export async function postShared(ctx: EventHandlerContext) {
   post.sharesCount = postStruct.sharesCount;
 
   await ctx.store.save<Post>(post);
-  console.log(
-    `////////// Post ${id.toString()} has been shared //////////`
-  );
+  console.log(`////////// Post ${id.toString()} has been shared //////////`);
+  await setActivity({
+    account: addressSs58ToString(accountId),
+    post,
+    ctx
+  });
 }
 
 const updateReplyCount = async (store: Store, postId: bigint) => {

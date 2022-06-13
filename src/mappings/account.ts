@@ -4,11 +4,12 @@ import {
   ProfilesProfileCreatedEvent,
   ProfilesProfileUpdatedEvent
 } from '../types/events';
-import { getSubsocialSs58Codec } from './utils';
+import { addressSs58ToString } from './utils';
 import {
   resolveAccount,
   resolveAccountStruct
 } from './resolvers/resolveAccountData';
+import { setActivity } from './activity';
 
 export async function accountCreated(ctx: EventHandlerContext) {
   console.log('::::::::::::::::::::::: accountCreated :::::::::::::::::::::::');
@@ -18,13 +19,10 @@ export async function accountCreated(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const ss58Codec = getSubsocialSs58Codec();
   const accountId = event.asV1;
+  const accountIdString = addressSs58ToString(accountId);
 
-  const account: Account | null = await ensureAccount(
-    ss58Codec.encode(accountId),
-    ctx
-  );
+  const account: Account | null = await ensureAccount(accountIdString, ctx);
 
   if (account) {
     await ctx.store.save<Account>(account);
@@ -39,23 +37,24 @@ export async function accountUpdated(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const ss58Codec = getSubsocialSs58Codec();
   const accountId = event.asV1;
+  const accountIdString = addressSs58ToString(accountId);
 
-  const account: Account | null = await ensureAccount(
-    ss58Codec.encode(accountId),
-    ctx
-  );
+  const account: Account | null = await ensureAccount(accountIdString, ctx);
 
   if (account) {
     await ctx.store.save<Account>(account);
+    await setActivity({
+      account,
+      ctx
+    });
   }
 }
 
 export async function ensureAccount(
   accountId: string,
   ctx: EventHandlerContext,
-  createIfNotExists: boolean = false
+  createIfNotExists = false
 ): Promise<Account | null> {
   const accountData = await resolveAccount(accountId);
 
@@ -75,17 +74,9 @@ export async function ensureAccount(
   account.avatar = accountContent.avatar;
   account.about = accountContent.about;
 
-  // account.followers = [];
   account.followersCount = 0;
-  // account.followingAccounts = [];
   account.followingAccountsCount = 0;
-  // account.posts = [];
-  // account.spacesCreated = [];
-  // account.spacesOwned = [];
-  // account.spacesFollowed = [];
   account.followingSpacesCount = 0;
-  // account.feeds = [];
-  // account.notifications = [];
 
   if (createIfNotExists && account) return ctx.store.save<Account>(account);
 

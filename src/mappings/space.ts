@@ -1,7 +1,10 @@
 import BN from 'bn.js';
-import { u8aToString } from '@polkadot/util';
 import { resolveSpace, resolveSpaceStruct } from './resolvers/resolveSpaceData';
-import { getDateWithoutTime, SpaceDataExtended } from './utils';
+import {
+  getDateWithoutTime,
+  addressSs58ToString,
+  SpaceDataExtended
+} from './utils';
 import { Space } from '../model';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
@@ -9,11 +12,32 @@ import {
   SpacesSpaceUpdatedEvent
 } from '../types/events';
 import { ensureAccount } from './account';
+import { setActivity } from './activity';
 
 export async function spaceCreated(ctx: EventHandlerContext) {
   console.log(':::::::::::::::::::: spaceCreated ::::::::::::::::::::::::');
 
-  await createSpace(ctx);
+  const event = new SpacesSpaceCreatedEvent(ctx);
+
+  if (ctx.event.extrinsic === undefined) {
+    throw new Error(`No extrinsic has been provided`);
+  }
+
+  const [accountId, id] = event.asV1;
+
+  const space = await ensureSpace(id.toString(), ctx);
+
+  if (space && 'id' in space) {
+    await ctx.store.save<Space>(space);
+    console.log(
+      `////////// Space ${id.toString()} has been created //////////`
+    );
+    await setActivity({
+      account: addressSs58ToString(accountId),
+      space,
+      ctx
+    });
+  }
 }
 
 export async function spaceUpdated(ctx: EventHandlerContext) {
@@ -27,7 +51,7 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
 
   const [accountId, id] = event.asV1;
 
-  const spaceExtData = await ensureSpace(accountId, id, ctx, true);
+  const spaceExtData = await ensureSpace(id.toString(), ctx, true);
 
   if (
     !spaceExtData ||
@@ -52,48 +76,32 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
 
   await ctx.store.save<Space>(space);
   console.log(`////////// Space ${id.toString()} has been updated //////////`);
+  await setActivity({
+    account: addressSs58ToString(accountId),
+    space,
+    ctx
+  });
 }
-
-const createSpace = async (ctx: EventHandlerContext) => {
-  const event = new SpacesSpaceCreatedEvent(ctx);
-
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
-
-  const [accountId, id] = event.asV1;
-
-  const space = await ensureSpace(accountId, id, ctx);
-
-  if (space && 'id' in space) {
-    await ctx.store.save<Space>(space);
-    console.log(
-      `////////// Space ${id.toString()} has been created //////////`
-    );
-  }
-};
 
 /**
  * Provides Space data. Merges data from Squid DB and Subsocial API. If Space entity is not existing in Squid DB, new
  * Space instance will be created.
- * @param accountId
  * @param id
  * @param ctx
  * @param isExtendedData
  */
 export const ensureSpace = async (
-  accountId: Uint8Array,
-  id: bigint,
+  id: string,
   ctx: EventHandlerContext,
   isExtendedData?: boolean
 ): Promise<Space | SpaceDataExtended | null> => {
-  const spaceData = await resolveSpace(new BN(id.toString(), 10));
+  const spaceData = await resolveSpace(new BN(id, 10));
 
   if (!spaceData) return null;
 
   const { struct: spaceStruct, content: spaceContent } = spaceData;
 
-  let space = await ctx.store.get(Space, id.toString());
+  let space = await ctx.store.get(Space, id);
 
   if (!space) {
     space = new Space();
@@ -141,8 +149,10 @@ export const ensureSpace = async (
   return space;
 };
 
-export async function updateCountersInSpace(store: Store, space: Space) {
-  console.log('updateCountersInSpace');
+export async function updateCountersInSpace(
+  store: Store,
+  space: Space
+): Promise<void> {
   const spaceUpdated: Space = space;
   if (!space) return;
 

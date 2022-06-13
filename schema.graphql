@@ -54,6 +54,7 @@ type Post @entity {
   parentId: String
   rootPostId: String
   sharedPostId: String
+  isComment: Boolean
 
   createdByAccount: Account!
   createdAtBlock: BigInt
@@ -115,14 +116,14 @@ type Activity @entity {
   blockNumber: BigInt!
   eventIndex: Int!
   event: EventAction!
-  followingId: String
-  spaceId: BigInt
-  postId: BigInt
-  commentId: BigInt
-  parentCommentId: BigInt
+  followingAccount: Account
+  space: Space
+  post: Post
+  commentPost: Post
+  commentParentPost: Post
   date: DateTime!
-  aggregated: Boolean!
-  aggCount: BigInt!
+  aggregated: Boolean
+  aggCount: BigInt
 }
 
 type AccountFollowers @entity {

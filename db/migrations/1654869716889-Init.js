@@ -1,5 +1,5 @@
-module.exports = class Initial1654756833083 {
-  name = 'Initial1654756833083'
+module.exports = class Init1654869716889 {
+  name = 'Init1654869716889'
 
   async up(db) {
     await db.query(`CREATE TABLE "account_followers" ("id" character varying NOT NULL, "follower_account_id" character varying NOT NULL, "following_account_id" character varying NOT NULL, CONSTRAINT "PK_dade5b6e74b543ca2ea018b5a5a" PRIMARY KEY ("id"))`)
@@ -20,8 +20,13 @@ module.exports = class Initial1654756833083 {
     await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "parent_id" text, "root_post_id" text, "shared_post_id" text, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "kind" character varying(11), "replies_count" integer, "public_replies_count" integer, "hidden_replies_count" integer, "shares_count" integer, "upvotes_count" integer, "downvotes_count" integer, "score" integer, "title" text, "content" text, "slug" text, "summary" text, "image" text, "canonical" text, "tags_original" text, "proposal_index" integer, "created_by_account_id" character varying NOT NULL, "space_id" character varying, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_9506f1c2a4fd7133f1d6732c46" ON "post" ("created_by_account_id") `)
     await db.query(`CREATE INDEX "IDX_4873b2ec27a93cd3f2518cb181" ON "post" ("space_id") `)
-    await db.query(`CREATE TABLE "activity" ("id" character varying NOT NULL, "block_number" numeric NOT NULL, "event_index" integer NOT NULL, "event" character varying(19) NOT NULL, "following_id" text, "space_id" numeric, "post_id" numeric, "comment_id" numeric, "parent_comment_id" numeric, "date" TIMESTAMP WITH TIME ZONE NOT NULL, "aggregated" boolean NOT NULL, "agg_count" numeric NOT NULL, "account_id" character varying NOT NULL, CONSTRAINT "PK_24625a1d6b1b089c8ae206fe467" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "activity" ("id" character varying NOT NULL, "block_number" numeric NOT NULL, "event_index" integer NOT NULL, "event" character varying(19) NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL, "aggregated" boolean, "agg_count" numeric, "account_id" character varying NOT NULL, "following_account_id" character varying, "space_id" character varying, "post_id" character varying, "comment_post_id" character varying, "comment_parent_post_id" character varying, CONSTRAINT "PK_24625a1d6b1b089c8ae206fe467" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_96c7c848eec1feba0bc66b4519" ON "activity" ("account_id") `)
+    await db.query(`CREATE INDEX "IDX_2309bdad81af5f2780c902b358" ON "activity" ("following_account_id") `)
+    await db.query(`CREATE INDEX "IDX_3fc93c9bf3004b3005fcba6fae" ON "activity" ("space_id") `)
+    await db.query(`CREATE INDEX "IDX_624114671c34d2515ec04c2c88" ON "activity" ("post_id") `)
+    await db.query(`CREATE INDEX "IDX_7fe1f4dbb4d7aec40700a13c3a" ON "activity" ("comment_post_id") `)
+    await db.query(`CREATE INDEX "IDX_d89b1b0a9a8c507722eb2a7865" ON "activity" ("comment_parent_post_id") `)
     await db.query(`CREATE TABLE "news_feed" ("id" character varying NOT NULL, "account_id" character varying NOT NULL, "activity_id" character varying NOT NULL, CONSTRAINT "PK_9325de5b82b32b083a96e63d8d8" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_58688a6d8f474152cf47ab8283" ON "news_feed" ("account_id") `)
     await db.query(`CREATE INDEX "IDX_f2e2e6333cfd2b5248d7e12fb8" ON "news_feed" ("activity_id") `)
@@ -42,6 +47,11 @@ module.exports = class Initial1654756833083 {
     await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_9506f1c2a4fd7133f1d6732c46e" FOREIGN KEY ("created_by_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_4873b2ec27a93cd3f2518cb1813" FOREIGN KEY ("space_id") REFERENCES "space"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_96c7c848eec1feba0bc66b45190" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_2309bdad81af5f2780c902b358f" FOREIGN KEY ("following_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_3fc93c9bf3004b3005fcba6fae6" FOREIGN KEY ("space_id") REFERENCES "space"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_624114671c34d2515ec04c2c88c" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_7fe1f4dbb4d7aec40700a13c3a7" FOREIGN KEY ("comment_post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_d89b1b0a9a8c507722eb2a7865e" FOREIGN KEY ("comment_parent_post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "news_feed" ADD CONSTRAINT "FK_58688a6d8f474152cf47ab8283a" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "news_feed" ADD CONSTRAINT "FK_f2e2e6333cfd2b5248d7e12fb8b" FOREIGN KEY ("activity_id") REFERENCES "activity"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "notification" ADD CONSTRAINT "FK_6bfa96ab97f1a09d73091294efc" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -69,6 +79,11 @@ module.exports = class Initial1654756833083 {
     await db.query(`DROP INDEX "public"."IDX_4873b2ec27a93cd3f2518cb181"`)
     await db.query(`DROP TABLE "activity"`)
     await db.query(`DROP INDEX "public"."IDX_96c7c848eec1feba0bc66b4519"`)
+    await db.query(`DROP INDEX "public"."IDX_2309bdad81af5f2780c902b358"`)
+    await db.query(`DROP INDEX "public"."IDX_3fc93c9bf3004b3005fcba6fae"`)
+    await db.query(`DROP INDEX "public"."IDX_624114671c34d2515ec04c2c88"`)
+    await db.query(`DROP INDEX "public"."IDX_7fe1f4dbb4d7aec40700a13c3a"`)
+    await db.query(`DROP INDEX "public"."IDX_d89b1b0a9a8c507722eb2a7865"`)
     await db.query(`DROP TABLE "news_feed"`)
     await db.query(`DROP INDEX "public"."IDX_58688a6d8f474152cf47ab8283"`)
     await db.query(`DROP INDEX "public"."IDX_f2e2e6333cfd2b5248d7e12fb8"`)
@@ -89,6 +104,11 @@ module.exports = class Initial1654756833083 {
     await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_9506f1c2a4fd7133f1d6732c46e"`)
     await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_4873b2ec27a93cd3f2518cb1813"`)
     await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_96c7c848eec1feba0bc66b45190"`)
+    await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_2309bdad81af5f2780c902b358f"`)
+    await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_3fc93c9bf3004b3005fcba6fae6"`)
+    await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_624114671c34d2515ec04c2c88c"`)
+    await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_7fe1f4dbb4d7aec40700a13c3a7"`)
+    await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_d89b1b0a9a8c507722eb2a7865e"`)
     await db.query(`ALTER TABLE "news_feed" DROP CONSTRAINT "FK_58688a6d8f474152cf47ab8283a"`)
     await db.query(`ALTER TABLE "news_feed" DROP CONSTRAINT "FK_f2e2e6333cfd2b5248d7e12fb8b"`)
     await db.query(`ALTER TABLE "notification" DROP CONSTRAINT "FK_6bfa96ab97f1a09d73091294efc"`)
