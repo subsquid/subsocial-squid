@@ -3,8 +3,8 @@ import { resolveSpace, resolveSpaceStruct } from './resolvers/resolveSpaceData';
 import {
   getDateWithoutTime,
   addressSs58ToString,
-  SpaceDataExtended
-} from './utils';
+  SpaceDataExtended, printEventLog
+} from "./utils";
 import { Space } from '../model';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
@@ -15,9 +15,9 @@ import { ensureAccount } from './account';
 import { setActivity } from './activity';
 
 export async function spaceCreated(ctx: EventHandlerContext) {
-  console.log(':::::::::::::::::::: spaceCreated ::::::::::::::::::::::::');
 
   const event = new SpacesSpaceCreatedEvent(ctx);
+  printEventLog(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
@@ -29,9 +29,6 @@ export async function spaceCreated(ctx: EventHandlerContext) {
 
   if (space && 'id' in space) {
     await ctx.store.save<Space>(space);
-    console.log(
-      `////////// Space ${id.toString()} has been created //////////`
-    );
     await setActivity({
       account: addressSs58ToString(accountId),
       space,
@@ -41,9 +38,9 @@ export async function spaceCreated(ctx: EventHandlerContext) {
 }
 
 export async function spaceUpdated(ctx: EventHandlerContext) {
-  console.log(':::::::::::::::::::: spaceUpdated :::::::::::::::::::::::');
 
   const event = new SpacesSpaceUpdatedEvent(ctx);
+  printEventLog(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
@@ -75,7 +72,6 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
     : null;
 
   await ctx.store.save<Space>(space);
-  console.log(`////////// Space ${id.toString()} has been updated //////////`);
   await setActivity({
     account: addressSs58ToString(accountId),
     space,

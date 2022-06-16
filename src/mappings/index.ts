@@ -2,6 +2,7 @@ export {
   postCreated,
   postUpdated,
   postShared,
+  postMoved,
   postReactionCreated,
   postReactionUpdated,
   postReactionDeleted,
@@ -10,5 +11,7 @@ export {
   spaceFollowed,
   spaceUnfollowed,
   accountCreated,
-  accountUpdated
+  accountUpdated,
+  accountFollowed,
+  accountUnfollowed
 } from './mappings';

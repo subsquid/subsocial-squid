@@ -1,14 +1,6 @@
-import BN from 'bn.js';
-import { SpaceId } from '@subsocial/types/substrate/interfaces';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import { Account, Space, Post, Activity } from '../model';
-import {
-  SpaceFollowsSpaceFollowedEvent,
-  SpaceFollowsSpaceUnfollowedEvent
-} from '../types/events';
-import { resolveSpaceStruct } from './resolvers/resolveSpaceData';
 import { EventAction, addressSs58ToString } from './utils';
-import { addNotification, deleteNotifications } from './notification';
 import { ensureAccount } from './account';
 import { ensureSpace } from './space';
 
@@ -28,15 +20,12 @@ export const setActivity = async ({
   comment?: Post;
   commentParent?: Post;
   followingAccount?: Account | string;
-}): Promise<void> => {
+}): Promise<Activity | null> => {
   const { method, blockNumber, indexInBlock } = ctx.event;
-  console.log(
-    `>>> method [${method}] >>> blockNumber [${blockNumber}] >>> indexInBlock [${indexInBlock}]`
-  );
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) return;
+  if (!accountInst) return null;
 
   const activity = new Activity();
   activity.id = `${blockNumber}-${indexInBlock}`;
@@ -59,7 +48,7 @@ export const setActivity = async ({
       followingAccount instanceof Account
         ? followingAccount
         : await ensureAccount(followingAccount, ctx);
-    if (!followingAccountInst) return;
+    if (!followingAccountInst) return null;
     activity.followingAccount = followingAccountInst;
   }
   /**
@@ -67,9 +56,11 @@ export const setActivity = async ({
    */
   if (method === EventAction.PostCreated && post) {
     activity.post = post;
+    activity.space = post.space;
     // TODO Add Activity/Notification for following creator account to created post as owner
   }
   if (method === EventAction.PostCreated && !post && comment && commentParent) {
+    activity.space = comment.space;
     activity.commentPost = comment;
     activity.commentParentPost = commentParent;
     // TODO Add Activity/Notification for following creator account to created post as owner
@@ -91,19 +82,19 @@ export const setActivity = async ({
     const spaceInst =
       space instanceof Space ? space : await ensureSpace(space, ctx);
 
-    if (!spaceInst || !('id' in spaceInst)) return;
+    if (!spaceInst || !('id' in spaceInst)) return null;
     activity.space = spaceInst;
 
     // /**
     //  * Set notification for Space owner
     //  */
     // if (method === EventAction.SpaceFollowed) {
-    //   await addNotification(spaceInst.ownerAccount, activity, ctx);
+    //   await addNotificationForAccount(spaceInst.ownerAccount, activity, ctx);
     // }
     // if (method === EventAction.SpaceUnfollowed) {
     //   await deleteNotifications(spaceInst.ownerAccount, activity, ctx);
     // }
   }
 
-  await ctx.store.save<Activity>(activity);
+  return ctx.store.save<Activity>(activity);
 };

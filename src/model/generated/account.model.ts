@@ -6,6 +6,7 @@ import {Space} from "./space.model"
 import {SpaceFollowers} from "./spaceFollowers.model"
 import {NewsFeed} from "./newsFeed.model"
 import {Notification} from "./notification.model"
+import {Activity} from "./activity.model"
 
 @Entity_()
 export class Account {
@@ -72,4 +73,7 @@ export class Account {
 
   @OneToMany_(() => Notification, e => e.account)
   notifications!: Notification[]
+
+  @OneToMany_(() => Activity, e => e.account)
+  activities!: Activity[]
 }

@@ -1,13 +1,18 @@
 import { resolvePostStruct, resolvePost } from './resolvers/resolvePostData';
-import { addressSs58ToString, getDateWithoutTime } from './utils';
+import {
+  addressSs58ToString,
+  getDateWithoutTime,
+  printEventLog
+} from './utils';
 import { PostId, SpaceId } from '@subsocial/types/substrate/interfaces';
 import { isEmptyArray } from '@subsocial/utils';
-import { Post, PostKind, Space } from '../model/generated';
+import { Post, PostKind, Space, Account } from '../model/generated';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
   PostsPostCreatedEvent,
   PostsPostSharedEvent,
-  PostsPostUpdatedEvent
+  PostsPostUpdatedEvent,
+  PostsPostMovedEvent
 } from '../types/events';
 import BN from 'bn.js';
 import {
@@ -15,37 +20,59 @@ import {
   asSharedPostStruct
 } from '@subsocial/api/flat-subsocial/flatteners';
 import { ensureAccount } from './account';
-import { updateCountersInSpace } from './space';
+import { updateCountersInSpace, ensureSpace } from './space';
 import { setActivity } from './activity';
+import { postFollowed } from './post-comment-follows';
+import {
+  addPostToFeeds,
+  deleteSpacePostsFromFeedForAccount
+} from './news-feed';
+import {
+  addNotificationForAccount,
+  addNotificationForAccountFollowers
+} from './notification';
 
-export async function postCreated(ctx: EventHandlerContext) {
-  console.log('::::::::::::::::::::::: postCreated :::::::::::::::::::::::');
+export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostCreatedEvent(ctx);
+  printEventLog(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const [accountId, id] = event.asV1;
-  const accountIdString = addressSs58ToString(accountId);
+  const [accountId, postId] = event.asV1;
 
-  const post: Post | null = await insertPost(accountIdString, id, ctx);
+  const account = await ensureAccount(
+    addressSs58ToString(accountId),
+    ctx,
+    true
+  );
 
-  if (post) {
-    await ctx.store.save<Post>(post);
-    console.log(`////////// Post ${id.toString()} has been created //////////`);
-    await setActivity({
-      account: accountIdString,
-      post,
-      ctx
-    });
-  }
+  if (!account) return;
+
+  const post: Post | null = await ensurePost(account, postId, ctx);
+  if (!post) return;
+
+  await ctx.store.save<Post>(post);
+
+  /**
+   * Currently each post/comment has initial follower as it's creator.
+   */
+  await postFollowed(post, ctx);
+
+  const activity = await setActivity({
+    account,
+    post,
+    ctx
+  });
+
+  if (!activity) return;
+  await addPostToFeeds(post, activity, ctx);
 }
 
-export async function postUpdated(ctx: EventHandlerContext) {
-  console.log('::::::::::::::::::::::: postUpdated :::::::::::::::::::::::');
-
+export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostUpdatedEvent(ctx);
+  printEventLog(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
@@ -54,7 +81,6 @@ export async function postUpdated(ctx: EventHandlerContext) {
   const [accountId, id] = event.asV1;
 
   const post = await ctx.store.get(Post, id.toString());
-  console.log('post :: > ', post);
   if (!post) return;
 
   const postData = await resolvePost(id as unknown as PostId);
@@ -96,7 +122,6 @@ export async function postUpdated(ctx: EventHandlerContext) {
   }
 
   await ctx.store.save<Post>(post);
-  console.log(`////////// Post ${id.toString()} has been created //////////`);
   await setActivity({
     account: addressSs58ToString(accountId),
     post,
@@ -104,8 +129,46 @@ export async function postUpdated(ctx: EventHandlerContext) {
   });
 }
 
-export async function postShared(ctx: EventHandlerContext) {
-  console.log('::::::::::::::::::::::: postShared :::::::::::::::::::::::');
+export async function postMoved(ctx: EventHandlerContext): Promise<void> {
+  // TODO Post can be moved from space to space. It must be tracked.
+  const event = new PostsPostMovedEvent(ctx);
+  printEventLog(ctx);
+
+  const [accountId, postId] = event.asV9;
+
+  const account = await ensureAccount(
+    addressSs58ToString(accountId),
+    ctx,
+    true
+  );
+
+  if (!account) return;
+
+  const post = await ctx.store.get(Post, postId.toString());
+  if (!post) return;
+  const oldSpaceInst = post.space;
+  const postStruct = await resolvePostStruct(postId as unknown as PostId);
+  if (!postStruct || !postStruct.spaceId) return;
+
+  const spaceInst = await ensureSpace(postStruct.spaceId, ctx);
+  if (!spaceInst || !('id' in spaceInst)) return;
+  post.space = spaceInst;
+
+  const postSaved = await ctx.store.save<Post>(post);
+
+  const activity = await setActivity({
+    post: postSaved,
+    account,
+    ctx
+  });
+
+  if (!activity) return;
+  await addPostToFeeds(postSaved, activity, ctx);
+  await deleteSpacePostsFromFeedForAccount(account, oldSpaceInst, ctx);
+}
+
+export async function postShared(ctx: EventHandlerContext): Promise<void> {
+  printEventLog(ctx);
 
   const event = new PostsPostSharedEvent(ctx);
 
@@ -114,6 +177,13 @@ export async function postShared(ctx: EventHandlerContext) {
   }
 
   const [accountId, id] = event.asV1;
+  const account = await ensureAccount(
+    addressSs58ToString(accountId),
+    ctx,
+    true
+  );
+
+  if (!account) return;
 
   const post = await ctx.store.get(Post, id.toString());
   if (!post) return;
@@ -124,12 +194,35 @@ export async function postShared(ctx: EventHandlerContext) {
   post.sharesCount = postStruct.sharesCount;
 
   await ctx.store.save<Post>(post);
-  console.log(`////////// Post ${id.toString()} has been shared //////////`);
-  await setActivity({
-    account: addressSs58ToString(accountId),
+  const activity = await setActivity({
+    account,
     post,
     ctx
   });
+
+  if (!activity) return;
+
+  if (!post.isComment || (post.isComment && !post.parentId)) {
+    /**
+     * Notifications should not be added fo creator followers if post is reply
+     */
+    await addNotificationForAccountFollowers(account, activity, ctx);
+    await addNotificationForAccount(account, activity, ctx);
+  } else if (post.isComment && post.parentId && post.rootPostId) {
+    const rootPostInst = await ctx.store.get(Post, post.rootPostId);
+    const parentCommentInst = await ctx.store.get(Post, post.parentId);
+    if (!rootPostInst || !parentCommentInst) return;
+    await addNotificationForAccount(
+      rootPostInst.createdByAccount,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(
+      parentCommentInst.createdByAccount,
+      activity,
+      ctx
+    );
+  }
 }
 
 const updateReplyCount = async (store: Store, postId: bigint) => {
@@ -146,12 +239,15 @@ const updateReplyCount = async (store: Store, postId: bigint) => {
   await store.save<Post>(post);
 };
 
-export const insertPost = async (
-  accountId: string,
+export const ensurePost = async (
+  account: Account | string,
   id: bigint,
   ctx: EventHandlerContext
 ): Promise<Post | null> => {
   const { store }: { store: Store } = ctx;
+  const accountInst =
+    account instanceof Account ? account : await ensureAccount(account, ctx);
+  if (!accountInst) return null;
 
   const postData = await resolvePost(new BN(id.toString(), 10));
 
@@ -164,9 +260,6 @@ export const insertPost = async (
     return null;
 
   const { struct: postStruct, content: postContent } = postData.post;
-  const account = await ensureAccount(postStruct.createdByAccount, ctx, true);
-
-  if (!account) return null;
 
   let space = null;
   if (postStruct.spaceId && postStruct.spaceId !== '') {
@@ -178,7 +271,8 @@ export const insertPost = async (
   const post = new Post();
 
   post.id = id.toString();
-  post.createdByAccount = account;
+  post.isComment = postStruct.isComment;
+  post.createdByAccount = accountInst;
   post.createdAtBlock = BigInt(postStruct.createdAtBlock.toString());
   post.createdAtTime = new Date(postStruct.createdAtTime);
   post.createdOnDay = getDateWithoutTime(new Date(postStruct.createdAtTime));

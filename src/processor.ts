@@ -5,6 +5,7 @@ import {
   postCreated,
   postUpdated,
   postShared,
+  postMoved,
   postReactionCreated,
   postReactionUpdated,
   postReactionDeleted,
@@ -13,7 +14,9 @@ import {
   spaceFollowed,
   spaceUnfollowed,
   accountCreated,
-  accountUpdated
+  accountUpdated,
+  accountFollowed,
+  accountUnfollowed
 } from './mappings';
 
 const processor = new SubstrateProcessor('subsocial-processor');
@@ -29,11 +32,12 @@ processor.setDataSource({
   chain: envConfig.chainNode
 });
 
-// processor.setBlockRange({ from: 0, to: 0 });
+processor.setBlockRange({ from: 677319 }); //1091772
 
 processor.addEventHandler('posts.PostCreated', postCreated);
 processor.addEventHandler('posts.PostUpdated', postUpdated);
 processor.addEventHandler('posts.PostShared', postShared);
+processor.addEventHandler('posts.PostMoved', postMoved);
 
 processor.addEventHandler('spaces.SpaceCreated', spaceCreated);
 processor.addEventHandler('spaces.SpaceUpdated', spaceUpdated);
@@ -48,7 +52,10 @@ processor.addEventHandler('profiles.ProfileUpdated', accountUpdated);
 processor.addEventHandler('spaceFollows.SpaceFollowed', spaceFollowed);
 processor.addEventHandler('spaceFollows.SpaceUnfollowed', spaceUnfollowed);
 
-// processor.addEventHandler('profileFollows.AccountFollowed', accountUpdated);
-// processor.addEventHandler('profileFollows.AccountUnfollowed', accountUpdated);
+processor.addEventHandler('profileFollows.AccountFollowed', accountFollowed);
+processor.addEventHandler(
+  'profileFollows.AccountUnfollowed',
+  accountUnfollowed
+);
 
 processor.run();

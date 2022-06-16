@@ -24,8 +24,8 @@ export class Post {
   @Column_("text", {nullable: true})
   sharedPostId!: string | undefined | null
 
-  @Column_("bool", {nullable: true})
-  isComment!: boolean | undefined | null
+  @Column_("bool", {nullable: false})
+  isComment!: boolean
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: false})
@@ -44,8 +44,8 @@ export class Post {
   updatedAtTime!: Date | undefined | null
 
   @Index_()
-  @ManyToOne_(() => Space, {nullable: true})
-  space!: Space | undefined | null
+  @ManyToOne_(() => Space, {nullable: false})
+  space!: Space
 
   @Column_("varchar", {length: 11, nullable: true})
   kind!: PostKind | undefined | null
@@ -55,6 +55,9 @@ export class Post {
 
   @OneToMany_(() => CommentFollowers, e => e.followingComment)
   commentFollowers!: CommentFollowers[]
+
+  @Column_("int4", {nullable: true})
+  followersCount!: number | undefined | null
 
   @Column_("int4", {nullable: true})
   repliesCount!: number | undefined | null

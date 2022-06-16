@@ -13,6 +13,8 @@ enum EventAction {
   SpaceUnfollowed
   AccountFollowed
   AccountUnfollowed
+  ProfileCreated
+  ProfileUpdated
 }
 
 enum PostKind {
@@ -47,6 +49,7 @@ type Account @entity {
 
   feeds: [NewsFeed]! @derivedFrom(field: "account")
   notifications: [Notification]! @derivedFrom(field: "account")
+  activities: [Activity]! @derivedFrom(field: "account")
 }
 
 type Post @entity {
@@ -54,17 +57,19 @@ type Post @entity {
   parentId: String
   rootPostId: String
   sharedPostId: String
-  isComment: Boolean
+  isComment: Boolean!
 
   createdByAccount: Account!
   createdAtBlock: BigInt
   createdAtTime: DateTime
   createdOnDay: DateTime
   updatedAtTime: DateTime
-  space: Space
+  space: Space!
   kind: PostKind
+
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
   commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")
+  followersCount: Int
 
   repliesCount: Int
   publicRepliesCount: Int
@@ -98,7 +103,6 @@ type Space @entity {
   postsCount: Int
   publicPostsCount: Int
   hiddenPostsCount: Int
-  followersCount: Int
   score: Int
 
   content: String
@@ -107,6 +111,7 @@ type Space @entity {
   summary: String
   tagsOriginal: String
 
+  followersCount: Int
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
 }
 

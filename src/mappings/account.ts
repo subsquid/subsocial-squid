@@ -4,20 +4,19 @@ import {
   ProfilesProfileCreatedEvent,
   ProfilesProfileUpdatedEvent
 } from '../types/events';
-import { addressSs58ToString } from './utils';
 import {
-  resolveAccount,
-  resolveAccountStruct
-} from './resolvers/resolveAccountData';
+  addressSs58ToString,
+  validateEventHandlerInputs,
+  printEventLog
+} from './utils';
+import { resolveAccount } from './resolvers/resolveAccountData';
 import { setActivity } from './activity';
 
 export async function accountCreated(ctx: EventHandlerContext) {
-  console.log('::::::::::::::::::::::: accountCreated :::::::::::::::::::::::');
+  printEventLog(ctx);
   const event = new ProfilesProfileCreatedEvent(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
+  validateEventHandlerInputs(ctx);
 
   const accountId = event.asV1;
   const accountIdString = addressSs58ToString(accountId);
@@ -26,16 +25,18 @@ export async function accountCreated(ctx: EventHandlerContext) {
 
   if (account) {
     await ctx.store.save<Account>(account);
+    await setActivity({
+      account,
+      ctx
+    });
   }
 }
 
 export async function accountUpdated(ctx: EventHandlerContext) {
-  console.log('::::::::::::::::::::::: accountUpdated :::::::::::::::::::::::');
+  printEventLog(ctx);
   const event = new ProfilesProfileUpdatedEvent(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
+  validateEventHandlerInputs(ctx);
 
   const accountId = event.asV1;
   const accountIdString = addressSs58ToString(accountId);

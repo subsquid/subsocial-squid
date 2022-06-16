@@ -5,7 +5,7 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 // import { PostId } from "@subsocial/types/substrate/interfaces"
 // import { Network, TreasuryProposal } from "../generated/graphql-server/src/modules/treasury-proposal/treasury-proposal.model"
 import { Space, Post } from '../model';
-import { Store } from '@subsquid/substrate-processor';
+import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import { SpaceStruct, SpaceContent } from '@subsocial/types/dto';
 
 dayjs.extend(localizedFormat);
@@ -47,8 +47,51 @@ export enum EventAction {
   SpaceFollowed = 'SpaceFollowed',
   SpaceUnfollowed = 'SpaceUnfollowed',
   AccountFollowed = 'AccountFollowed',
-  AccountUnfollowed = 'AccountUnfollowed'
+  AccountUnfollowed = 'AccountUnfollowed',
+  ProfileCreated = 'ProfileCreated',
+  ProfileUpdated = 'ProfileUpdated'
 }
+
+export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
+  if (ctx.event.extrinsic === undefined) {
+    throw new Error(`No extrinsic has been provided`);
+  }
+};
+
+export const getNotificationEntityId = (
+  accountId: string,
+  activityId: string
+): string => {
+  return `${accountId}-${activityId}`;
+};
+
+export const getAccountFollowersEntityId = (
+  followerId: string,
+  followingId: string
+): string => {
+  return `${followerId}-${followingId}`;
+};
+
+export const getNewsFeedEntityId = (
+  accountId: string,
+  activityId: string
+): string => {
+  return `${accountId}-${activityId}`;
+};
+
+export const getSpaceFollowersEntityId = (
+  followerId: string,
+  spaceId: string
+): string => {
+  return `${followerId}-${spaceId}`;
+};
+
+export const getPostFollowersEntityId = (
+  followerId: string,
+  postId: string
+): string => {
+  return `${followerId}-${postId}`;
+};
 
 export const getSubsocialSs58Codec = (): ss58.Codec => {
   if (!subsocialSs58CodecInst) subsocialSs58CodecInst = ss58.codec('subsocial');
@@ -87,3 +130,10 @@ export const stringDateToTimestamp = (date: string | undefined) =>
 
 export const getDateWithoutTime = (date: Date | undefined): Date | undefined =>
   date ? new Date(dayjs(date).format('YYYY-MM-DD')) : undefined;
+
+export const printEventLog = (ctx: EventHandlerContext) => {
+  const { method, blockNumber, indexInBlock } = ctx.event;
+  console.log(
+    `>>> method ::: ${method} ::: >>> blockNumber :::  ${blockNumber} ::: >>> indexInBlock [ ${indexInBlock} ]`
+  );
+};

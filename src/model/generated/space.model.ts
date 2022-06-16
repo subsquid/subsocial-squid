@@ -42,9 +42,6 @@ export class Space {
   hiddenPostsCount!: number | undefined | null
 
   @Column_("int4", {nullable: true})
-  followersCount!: number | undefined | null
-
-  @Column_("int4", {nullable: true})
   score!: number | undefined | null
 
   @Column_("text", {nullable: true})
@@ -61,6 +58,9 @@ export class Space {
 
   @Column_("text", {nullable: true})
   tagsOriginal!: string | undefined | null
+
+  @Column_("int4", {nullable: true})
+  followersCount!: number | undefined | null
 
   @OneToMany_(() => SpaceFollowers, e => e.followingSpace)
   followers!: SpaceFollowers[]

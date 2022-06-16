@@ -1,16 +1,26 @@
 import { SpaceId } from '@subsocial/types/substrate/interfaces';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
-import { Space, SpaceFollowers } from '../model';
+import { Account, Space, SpaceFollowers } from '../model';
 import {
   SpaceFollowsSpaceFollowedEvent,
   SpaceFollowsSpaceUnfollowedEvent
 } from '../types/events';
-import { EventAction, addressSs58ToString } from './utils';
+import {
+  EventAction,
+  addressSs58ToString,
+  getSpaceFollowersEntityId,
+  printEventLog
+} from './utils';
 import { ensureAccount } from './account';
 import { setActivity } from './activity';
+import { deleteSpacePostsFromFeedForAccount } from './news-feed';
+import {
+  addNotificationForAccount,
+  deleteAllNotificationsAboutSpace
+} from './notification';
 
-export async function spaceFollowed(ctx: EventHandlerContext) {
-  console.log(':::::::::::::::::::: spaceFollowed :::::::::::::::::::::::');
+export async function spaceFollowed(ctx: EventHandlerContext): Promise<void> {
+  printEventLog(ctx);
   const event = new SpaceFollowsSpaceFollowedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
@@ -18,23 +28,11 @@ export async function spaceFollowed(ctx: EventHandlerContext) {
   }
 
   const [followerId, id] = event.asV1;
-  const accountIdString = addressSs58ToString(followerId);
-
-  const space = await processSpaceFollowingUnfollowing(
-    addressSs58ToString(followerId),
-    id.toString(),
-    ctx
-  );
-  if (!space) return;
-  await setActivity({
-    account: accountIdString,
-    ctx,
-    space
-  });
+  await handleEvent(addressSs58ToString(followerId), id.toString(), ctx);
 }
 
 export async function spaceUnfollowed(ctx: EventHandlerContext) {
-  console.log(':::::::::::::::::::: spaceUnfollowed :::::::::::::::::::::::');
+  printEventLog(ctx);
 
   const event = new SpaceFollowsSpaceUnfollowedEvent(ctx);
 
@@ -42,32 +40,56 @@ export async function spaceUnfollowed(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
   const [followerId, id] = event.asV1;
-  const accountIdString = addressSs58ToString(followerId);
 
-  const space = await processSpaceFollowingUnfollowing(
-    accountIdString,
-    id.toString(),
-    ctx
-  );
-  if (!space) return;
-  await setActivity({
-    account: accountIdString,
-    ctx,
-    space
-  });
+  await handleEvent(addressSs58ToString(followerId), id.toString(), ctx);
 }
 
-const processSpaceFollowingUnfollowing = async (
+async function handleEvent(
   followerId: string,
   spaceId: string,
   ctx: EventHandlerContext
-): Promise<Space | null> => {
+) {
   const { method } = ctx.event;
-  console.log('---method - ', method);
+  const followerAccount = await ensureAccount(followerId, ctx, true);
 
-  const spaceFollowers = await ctx.store.get(SpaceFollowers, {
-    where: { followerAccount: followerId, followingSpace: spaceId }
+  if (!followerAccount) return;
+
+  const space = await processSpaceFollowingUnfollowingRelations(
+    followerAccount,
+    spaceId,
+    ctx
+  );
+  if (!space) return;
+  const activity = await setActivity({
+    account: followerAccount,
+    ctx,
+    space
   });
+  if (!activity) return;
+
+  if (method === EventAction.SpaceFollowed) {
+    await addNotificationForAccount(space.ownerAccount, activity, ctx);
+  } else if (method === EventAction.SpaceUnfollowed) {
+    await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
+    await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
+  }
+}
+
+async function processSpaceFollowingUnfollowingRelations(
+  follower: Account | string,
+  spaceId: string,
+  ctx: EventHandlerContext
+): Promise<Space | null> {
+  const followerAccountInst =
+    follower instanceof Account ? follower : await ensureAccount(follower, ctx);
+  if (!followerAccountInst) return null;
+
+  const { method } = ctx.event;
+
+  const spaceFollowers = await ctx.store.get(
+    SpaceFollowers,
+    getSpaceFollowersEntityId(followerAccountInst.id, spaceId)
+  );
 
   const space = await ctx.store.get(Space, spaceId);
   if (!space) return null;
@@ -79,26 +101,21 @@ const processSpaceFollowingUnfollowing = async (
 
     const newSpaceFollowersEnt = new SpaceFollowers();
 
-    const followerAccount = await ensureAccount(followerId, ctx, true);
-    if (!followerAccount) return null;
-
-    newSpaceFollowersEnt.id = `${followerAccount.id}-${space.id}`;
-    newSpaceFollowersEnt.followerAccount = followerAccount;
+    newSpaceFollowersEnt.id = getSpaceFollowersEntityId(
+      followerAccountInst.id,
+      spaceId
+    );
+    newSpaceFollowersEnt.followerAccount = followerAccountInst;
     newSpaceFollowersEnt.followingSpace = space;
 
     await ctx.store.save<SpaceFollowers>(newSpaceFollowersEnt);
-    console.log(1);
   } else if (method === EventAction.SpaceUnfollowed) {
     if (!spaceFollowers) return null;
     currentSpaceFollowersCount -= 1;
     await ctx.store.remove<SpaceFollowers>(spaceFollowers);
-    console.log(2);
   }
-
-  // const spaceStruct = await resolveSpaceStruct(new BN(spaceId.toString(), 10));
-  // if (!spaceStruct) return;
 
   space.followersCount = currentSpaceFollowersCount;
 
   return ctx.store.save<Space>(space);
-};
+}
