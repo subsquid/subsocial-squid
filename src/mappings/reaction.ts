@@ -8,8 +8,11 @@ import {
   ReactionsPostReactionUpdatedEvent
 } from '../types/events';
 import { resolvePostStruct } from './resolvers/resolvePostData';
+import { setActivity } from './activity';
+import { addNotificationForAccount } from './notification';
 
 interface ReactionEvent {
+  accId: Uint8Array;
   id: bigint;
 }
 
@@ -17,62 +20,83 @@ function getPostReactionCreatedEvent(ctx: EventHandlerContext): ReactionEvent {
   const event = new ReactionsPostReactionCreatedEvent(ctx);
   if (event.isV1) {
     const [accId, id] = event.asV1;
-    return { id };
+    return { accId, id };
   } else {
     const [accId, id] = event.asV15;
-    return { id };
+    return { accId, id };
   }
 }
 function getPostReactionUpdatedEvent(ctx: EventHandlerContext): ReactionEvent {
   const event = new ReactionsPostReactionUpdatedEvent(ctx);
   if (event.isV1) {
     const [accId, id] = event.asV1;
-    return { id };
+    return { accId, id };
   } else {
     const [accId, id] = event.asV15;
-    return { id };
+    return { accId, id };
   }
 }
 function getPostReactionDeletedEvent(ctx: EventHandlerContext): ReactionEvent {
   const event = new ReactionsPostReactionDeletedEvent(ctx);
   if (event.isV1) {
     const [accId, id] = event.asV1;
-    return { id };
+    return { accId, id };
   } else {
     const [accId, id] = event.asV15;
-    return { id };
+    return { accId, id };
   }
 }
 
-export async function postReactionCreated(ctx: EventHandlerContext) {
+export async function postReactionCreated(
+  ctx: EventHandlerContext
+): Promise<void> {
   const { id } = getPostReactionCreatedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
   }
-  await upvoteOrDownvotePost(ctx.store, id);
+  console.log(
+    '===== postReactionCreated ctx.event.extrinsic ',
+    ctx.event.extrinsic.args.forEach((argItem) => console.log(argItem)),
+    ctx.event.params.forEach((argItem) => console.log(argItem))
+  );
+  await upvoteOrDownvotePost(id, ctx);
 }
 
-export async function postReactionUpdated(ctx: EventHandlerContext) {
+export async function postReactionUpdated(
+  ctx: EventHandlerContext
+): Promise<void> {
   const { id } = getPostReactionUpdatedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
   }
-  await upvoteOrDownvotePost(ctx.store, id);
+  console.log(
+    '===== postReactionUpdated ctx.event.extrinsic ',
+    ctx.event.extrinsic.args.forEach((argItem) => console.log(argItem)),
+    ctx.event.params.forEach((argItem) => console.log(argItem))
+  );
+  await upvoteOrDownvotePost(id, ctx);
 }
 
-export async function postReactionDeleted(ctx: EventHandlerContext) {
+export async function postReactionDeleted(
+  ctx: EventHandlerContext
+): Promise<void> {
   const { id } = getPostReactionDeletedEvent(ctx);
 
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
   }
-  await upvoteOrDownvotePost(ctx.store, id);
+  console.log(
+    '===== postReactionDeleted ctx.event.extrinsic ',
+    ctx.event.extrinsic.args.forEach((argItem) => console.log(argItem)),
+    ctx.event.params.forEach((argItem) => console.log(argItem))
+  );
+  await upvoteOrDownvotePost(id, ctx);
 }
 
-const upvoteOrDownvotePost = async (store: Store, id: bigint) => {
-  const post = await store.get(Post, id.toString());
+async function upvoteOrDownvotePost(id: bigint, ctx: EventHandlerContext) {
+  const post = await ctx.store.get(Post, id.toString());
   if (!post) return;
 
   const postStruct = await resolvePostStruct(new BN(id.toString(), 10));
@@ -82,5 +106,14 @@ const upvoteOrDownvotePost = async (store: Store, id: bigint) => {
   post.downvotesCount = postStruct.downvotesCount;
   post.score = postStruct.score;
 
-  await store.save<Post>(post);
-};
+  const savedPost = await ctx.store.save<Post>(post);
+
+  const activity = await setActivity({
+    account: savedPost.createdByAccount,
+    post: savedPost,
+    ctx
+  });
+
+  if (!activity) return;
+  await addNotificationForAccount(savedPost.createdByAccount, activity, ctx);
+}

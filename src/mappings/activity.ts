@@ -80,7 +80,9 @@ export const setActivity = async ({
     space
   ) {
     const spaceInst =
-      space instanceof Space ? space : await ensureSpace(space, ctx);
+      space instanceof Space
+        ? space
+        : await ensureSpace({ space, ctx, createIfNotExists: true });
 
     if (!spaceInst || !('id' in spaceInst)) return null;
     activity.space = spaceInst;

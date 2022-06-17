@@ -24,6 +24,5 @@
 
     "profileFollows.AccountFollowed",
     "profileFollows.AccountUnfollowed"
-  ],
-  "calls": []
+  ]
 }

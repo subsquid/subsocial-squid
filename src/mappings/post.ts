@@ -150,7 +150,11 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   const postStruct = await resolvePostStruct(postId as unknown as PostId);
   if (!postStruct || !postStruct.spaceId) return;
 
-  const spaceInst = await ensureSpace(postStruct.spaceId, ctx);
+  const spaceInst = await ensureSpace({
+    space: postStruct.spaceId,
+    createIfNotExists: true,
+    ctx
+  });
   if (!spaceInst || !('id' in spaceInst)) return;
   post.space = spaceInst;
 
