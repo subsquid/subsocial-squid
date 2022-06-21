@@ -7,6 +7,7 @@ import {SpaceFollowers} from "./spaceFollowers.model"
 import {NewsFeed} from "./newsFeed.model"
 import {Notification} from "./notification.model"
 import {Activity} from "./activity.model"
+import {Reaction} from "./reaction.model"
 
 @Entity_()
 export class Account {
@@ -76,4 +77,7 @@ export class Account {
 
   @OneToMany_(() => Activity, e => e.account)
   activities!: Activity[]
+
+  @OneToMany_(() => Reaction, e => e.account)
+  reactions!: Reaction[]
 }

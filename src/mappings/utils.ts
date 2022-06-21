@@ -52,6 +52,16 @@ export enum EventAction {
   ProfileUpdated = 'ProfileUpdated'
 }
 
+export enum ReactionKind {
+  Upvote = 'Upvote',
+  Downvote = 'Downvote'
+}
+
+export enum Status {
+  Active = 'Active',
+  Deleted = 'Deleted'
+}
+
 export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);

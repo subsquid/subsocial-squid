@@ -32,7 +32,7 @@ subsocialVersions.json:
 
 explore:
 	@npx squid-substrate-metadata-explorer \
-		--chain wss://rpc.subsocial.network \
+		--chain wss://arch.subsocial.network \
 		--archive https://subsocial.indexer.gc.subsquid.io/v4/graphql \
 		--out subsocialVersions.json
 

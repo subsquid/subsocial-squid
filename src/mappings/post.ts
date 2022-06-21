@@ -50,13 +50,17 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
 
   if (!account) return;
 
-  const post: Post | null = await ensurePost(account, postId, ctx);
+  const post: Post | null = await ensurePost({
+    account,
+    postId: postId.toString(),
+    ctx
+  });
   if (!post) return;
 
   await ctx.store.save<Post>(post);
 
   /**
-   * Currently each post/comment has initial follower as it's creator.
+   * Currently each post/comment/comment reply has initial follower as it's creator.
    */
   await postFollowed(post, ctx);
 
@@ -202,17 +206,18 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
     account,
     post,
     ctx
-  });
+  }); // TODO refactor for work with comments
 
   if (!activity) return;
 
+
   if (!post.isComment || (post.isComment && !post.parentId)) {
-    /**
-     * Notifications should not be added fo creator followers if post is reply
-     */
     await addNotificationForAccountFollowers(account, activity, ctx);
     await addNotificationForAccount(account, activity, ctx);
   } else if (post.isComment && post.parentId && post.rootPostId) {
+    /**
+     * Notifications should not be added for creator followers if post is reply
+     */
     const rootPostInst = await ctx.store.get(Post, post.rootPostId);
     const parentCommentInst = await ctx.store.get(Post, post.parentId);
     if (!rootPostInst || !parentCommentInst) return;
@@ -243,17 +248,28 @@ const updateReplyCount = async (store: Store, postId: bigint) => {
   await store.save<Post>(post);
 };
 
-export const ensurePost = async (
-  account: Account | string,
-  id: bigint,
-  ctx: EventHandlerContext
-): Promise<Post | null> => {
+export const ensurePost = async ({
+  account,
+  postId,
+  ctx,
+  createIfNotExists
+}: {
+  account: Account | string;
+  postId: string;
+  ctx: EventHandlerContext;
+  createIfNotExists?: boolean;
+}): Promise<Post | null> => {
   const { store }: { store: Store } = ctx;
+
+  const existingPost = await store.get(Post, postId);
+
+  if (existingPost) return existingPost;
+
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
   if (!accountInst) return null;
 
-  const postData = await resolvePost(new BN(id.toString(), 10));
+  const postData = await resolvePost(new BN(postId.toString(), 10));
 
   if (
     !postData ||
@@ -267,14 +283,18 @@ export const ensurePost = async (
 
   let space = null;
   if (postStruct.spaceId && postStruct.spaceId !== '') {
-    space = await store.get(Space, postStruct.spaceId.toString());
+    space = await ensureSpace({
+      space: postStruct.spaceId.toString(),
+      createIfNotExists: true,
+      ctx
+    });
   }
 
-  if (!space) return null;
+  if (!space || !('id' in space)) return null;
 
   const post = new Post();
 
-  post.id = id.toString();
+  post.id = postId.toString();
   post.isComment = postStruct.isComment;
   post.createdByAccount = accountInst;
   post.createdAtBlock = BigInt(postStruct.createdAtBlock.toString());
@@ -285,9 +305,10 @@ export const ensurePost = async (
   post.hiddenRepliesCount = postStruct.hiddenRepliesCount;
   post.publicRepliesCount = post.repliesCount - post.hiddenRepliesCount;
   post.sharesCount = postStruct.sharesCount;
-  post.upvotesCount = postStruct.upvotesCount;
-  post.downvotesCount = postStruct.downvotesCount;
-  post.score = postStruct.score;
+  post.upvotesCount = 0;
+  post.downvotesCount = 0;
+  post.reactionsCount = 0;
+  // post.score = postStruct.score;
   post.updatedAtTime = postStruct.updatedAtTime
     ? new Date(postStruct.updatedAtTime)
     : null;
@@ -334,6 +355,8 @@ export const ensurePost = async (
       post.proposalIndex = meta[0].proposalIndex;
     }
   }
+
+  if (createIfNotExists) return ctx.store.save(Post, post);
 
   return post;
 };

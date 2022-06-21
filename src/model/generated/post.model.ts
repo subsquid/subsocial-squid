@@ -5,6 +5,7 @@ import {Space} from "./space.model"
 import {PostKind} from "./_postKind"
 import {PostFollowers} from "./postFollowers.model"
 import {CommentFollowers} from "./commentFollowers.model"
+import {Reaction} from "./reaction.model"
 
 @Entity_()
 export class Post {
@@ -78,7 +79,10 @@ export class Post {
   downvotesCount!: number | undefined | null
 
   @Column_("int4", {nullable: true})
-  score!: number | undefined | null
+  reactionsCount!: number | undefined | null
+
+  @OneToMany_(() => Reaction, e => e.post)
+  reactions!: Reaction[]
 
   @Column_("text", {nullable: true})
   title!: string | undefined | null

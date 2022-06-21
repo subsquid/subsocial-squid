@@ -59,9 +59,9 @@ export async function ensureAccount(
 ): Promise<Account | null> {
   const accountData = await resolveAccount(accountId);
 
-  if (!accountData || !accountData.struct || !accountData.content) return null;
+  if (!accountData || !accountData.struct) return null;
 
-  const { struct: accountStruct, content: accountContent } = accountData;
+  const { struct: accountStruct, content: accountContent = null } = accountData;
 
   let account = await ctx.store.get(Account, accountId);
 
@@ -71,9 +71,9 @@ export async function ensureAccount(
   }
   account.reputation = accountStruct.reputation;
   account.hasProfile = accountStruct.hasProfile;
-  account.name = accountContent.name;
-  account.avatar = accountContent.avatar;
-  account.about = accountContent.about;
+  account.name = accountContent ? accountContent.name : '';
+  account.avatar = accountContent ? accountContent.avatar : '';
+  account.about = accountContent ? accountContent.about : '';
 
   account.followersCount = 0;
   account.followingAccountsCount = 0;

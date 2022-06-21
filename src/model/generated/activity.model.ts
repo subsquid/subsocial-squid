@@ -4,6 +4,7 @@ import {Account} from "./account.model"
 import {EventAction} from "./_eventAction"
 import {Space} from "./space.model"
 import {Post} from "./post.model"
+import {Reaction} from "./reaction.model"
 
 @Entity_()
 export class Activity {
@@ -38,6 +39,10 @@ export class Activity {
   @Index_()
   @ManyToOne_(() => Post, {nullable: true})
   post!: Post | undefined | null
+
+  @Index_()
+  @ManyToOne_(() => Reaction, {nullable: true})
+  reaction!: Reaction | undefined | null
 
   @Index_()
   @ManyToOne_(() => Post, {nullable: true})

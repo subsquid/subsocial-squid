@@ -22,6 +22,15 @@ enum PostKind {
   SharedPost
   RegularPost
 }
+enum ReactionKind {
+  Upvote
+  Downvote
+}
+
+enum Status {
+  Active
+  Deleted
+}
 
 type Account @entity {
   id: ID!
@@ -50,6 +59,7 @@ type Account @entity {
   feeds: [NewsFeed]! @derivedFrom(field: "account")
   notifications: [Notification]! @derivedFrom(field: "account")
   activities: [Activity]! @derivedFrom(field: "account")
+  reactions: [Reaction]! @derivedFrom(field: "account")
 }
 
 type Post @entity {
@@ -77,7 +87,9 @@ type Post @entity {
   sharesCount: Int
   upvotesCount: Int
   downvotesCount: Int
-  score: Int
+  reactionsCount: Int
+  reactions: [Reaction] @derivedFrom(field: "post")
+  #  score: Int
 
   title: String
   content: String
@@ -88,6 +100,18 @@ type Post @entity {
   tagsOriginal: String
 
   proposalIndex: Int
+}
+
+type Reaction @entity {
+  id: ID!
+  post: Post!
+  account: Account!
+  kind: ReactionKind!
+  status: Status! @index
+  createdAtBlock: BigInt!
+  createdAtTime: DateTime!
+  updatedAtBlock: BigInt
+  updatedAtTime: DateTime
 }
 
 type Space @entity {
@@ -124,6 +148,7 @@ type Activity @entity {
   followingAccount: Account
   space: Space
   post: Post
+  reaction: Reaction
   commentPost: Post
   commentParentPost: Post
   date: DateTime!

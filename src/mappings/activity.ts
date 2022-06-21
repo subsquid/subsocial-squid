@@ -1,24 +1,27 @@
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
-import { Account, Space, Post, Activity } from '../model';
-import { EventAction, addressSs58ToString } from './utils';
+import { Account, Space, Post, Activity, Reaction } from '../model';
+import { EventAction } from './utils';
 import { ensureAccount } from './account';
 import { ensureSpace } from './space';
+import { ensurePost } from './post';
 
 export const setActivity = async ({
   account,
   ctx,
   space,
   post,
-  comment,
-  commentParent,
+  reaction,
+  // comment,
+  // commentParent,
   followingAccount
 }: {
   account: Account | string;
   ctx: EventHandlerContext;
   space?: Space | string;
   post?: Post;
-  comment?: Post;
-  commentParent?: Post;
+  reaction?: Reaction;
+  // comment?: Post;
+  // commentParent?: Post;
   followingAccount?: Account | string;
 }): Promise<Activity | null> => {
   const { method, blockNumber, indexInBlock } = ctx.event;
@@ -34,6 +37,26 @@ export const setActivity = async ({
   activity.eventIndex = indexInBlock;
   activity.event = EventAction[method as keyof typeof EventAction];
   activity.date = new Date();
+
+  let comment: boolean | Post = false;
+  let commentParent = null;
+
+  // TODO check do we need to save Post or just ID
+  if (post && post.isComment && post.rootPostId && !post.parentId) {
+    comment = post;
+    commentParent = await ensurePost({
+      account: post.createdByAccount,
+      postId: post.rootPostId,
+      ctx
+    });
+  } else if (post && post.isComment && post.rootPostId && post.parentId) {
+    comment = post;
+    commentParent = await ensurePost({
+      account: post.createdByAccount,
+      postId: post.parentId,
+      ctx
+    });
+  }
 
   /**
    * AccountFollowed
@@ -86,17 +109,55 @@ export const setActivity = async ({
 
     if (!spaceInst || !('id' in spaceInst)) return null;
     activity.space = spaceInst;
+  }
 
-    // /**
-    //  * Set notification for Space owner
-    //  */
-    // if (method === EventAction.SpaceFollowed) {
-    //   await addNotificationForAccount(spaceInst.ownerAccount, activity, ctx);
-    // }
-    // if (method === EventAction.SpaceUnfollowed) {
-    //   await deleteNotifications(spaceInst.ownerAccount, activity, ctx);
-    // }
+  /**
+   * PostReactionCreated
+   * PostReactionUpdated
+   * PostReactionDeleted
+   */
+  if (
+    (method === EventAction.PostReactionCreated ||
+      method === EventAction.PostReactionUpdated) &&
+    post &&
+    reaction
+  ) {
+    activity.reaction = reaction;
+    activity.post = post;
+    activity.space = post.space;
+  }
+  if (
+    (method === EventAction.PostReactionCreated ||
+      method === EventAction.PostReactionUpdated) &&
+    reaction &&
+    !post &&
+    comment &&
+    commentParent
+  ) {
+    activity.reaction = reaction;
+    activity.space = comment.space;
+    activity.commentPost = comment;
+    activity.commentParentPost = commentParent;
+  }
+
+  if (method === EventAction.PostReactionDeleted && post) {
+    activity.post = post;
+    activity.space = post.space;
+  }
+
+  if (
+    method === EventAction.PostReactionDeleted &&
+    reaction &&
+    !post &&
+    comment &&
+    commentParent
+  ) {
+    activity.space = comment.space;
+    activity.commentPost = comment;
+    activity.commentParentPost = commentParent;
   }
 
   return ctx.store.save<Activity>(activity);
+
+  // TODO review activities handling
 };
