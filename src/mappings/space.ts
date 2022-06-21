@@ -3,9 +3,9 @@ import { resolveSpace, resolveSpaceStruct } from './resolvers/resolveSpaceData';
 import {
   getDateWithoutTime,
   addressSs58ToString,
-  SpaceDataExtended,
   printEventLog
 } from './utils';
+import { SpaceDataExtended } from '../common/types';
 import { Account, Space } from '../model';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
@@ -14,6 +14,10 @@ import {
 } from '../types/events';
 import { ensureAccount } from './account';
 import { setActivity } from './activity';
+import {
+  EntityProvideFailWarning,
+  MissingSubsocialApiEntity
+} from '../common/errors';
 
 export async function spaceCreated(ctx: EventHandlerContext) {
   const event = new SpacesSpaceCreatedEvent(ctx);
@@ -23,14 +27,16 @@ export async function spaceCreated(ctx: EventHandlerContext) {
 
   const space = await ensureSpace({ space: id.toString(), ctx });
 
-  if (space && 'id' in space) {
-    await ctx.store.save<Space>(space);
-    await setActivity({
-      account: addressSs58ToString(accountId),
-      space,
-      ctx
-    });
+  if (!space || !('id' in space)) {
+    new EntityProvideFailWarning(Space, id.toString(), ctx);
+    return;
   }
+  await ctx.store.save<Space>(space);
+  await setActivity({
+    account: addressSs58ToString(accountId),
+    space,
+    ctx
+  });
 }
 
 export async function spaceUpdated(ctx: EventHandlerContext) {
@@ -53,8 +59,10 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
     !spaceExtData ||
     !('struct' in spaceExtData) ||
     !('content' in spaceExtData)
-  )
+  ) {
+    new EntityProvideFailWarning(Space, spaceId.toString(), ctx);
     return;
+  }
 
   const { space, struct: spaceStruct } = spaceExtData;
 
@@ -100,10 +108,14 @@ export const ensureSpace = async ({
 }): Promise<Space | SpaceDataExtended | null> => {
   let spaceInst =
     space instanceof Space ? space : await ctx.store.get(Space, space);
+
   const spaceId = space instanceof Space ? space.id : space;
 
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
-  if (!spaceDataSSApi) return null;
+  if (!spaceDataSSApi) {
+    new MissingSubsocialApiEntity('SpaceData', ctx);
+    return null;
+  }
 
   const { struct: spaceStruct, content: spaceContent } = spaceDataSSApi;
 
@@ -116,7 +128,10 @@ export const ensureSpace = async ({
       ctx,
       true
     );
-    if (!createdByAccount) return null;
+    if (!createdByAccount) {
+      new EntityProvideFailWarning(Account, spaceStruct.createdByAccount, ctx);
+      return null;
+    }
 
     spaceInst.createdByAccount = createdByAccount;
     spaceInst.createdAtBlock = BigInt(spaceStruct.createdAtBlock.toString());
@@ -126,7 +141,10 @@ export const ensureSpace = async ({
     );
   }
   const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx, true);
-  if (!ownerAccount) return null;
+  if (!ownerAccount) {
+    new EntityProvideFailWarning(Account, spaceStruct.ownerId, ctx);
+    return null;
+  }
 
   spaceInst.ownerAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;
@@ -145,7 +163,7 @@ export const ensureSpace = async ({
     spaceInst.tagsOriginal = spaceContent.tags?.join(',');
   }
 
-  if (createIfNotExists) spaceInst = await ctx.store.save<Space>(spaceInst);
+  if (createIfNotExists) await ctx.store.save<Space>(spaceInst);
 
   if (isExtendedData)
     return {
@@ -158,7 +176,7 @@ export const ensureSpace = async ({
 
 // TODO counters must be refactored
 export async function updateCountersInSpace(
-  store: Store,
+  ctx: EventHandlerContext,
   space: Space
 ): Promise<void> {
   const spaceChanged: Space = space;
@@ -167,12 +185,15 @@ export async function updateCountersInSpace(
   const spaceStruct = await resolveSpaceStruct(
     new BN(spaceChanged.id.toString(), 10)
   );
-  if (!spaceStruct) return;
+  if (!spaceStruct) {
+    new MissingSubsocialApiEntity('SpaceStruct', ctx);
+    return;
+  }
 
   spaceChanged.postsCount = spaceStruct.postsCount;
   spaceChanged.hiddenPostsCount = spaceStruct.hiddenPostsCount;
   spaceChanged.publicPostsCount =
     spaceChanged.postsCount - spaceChanged.hiddenPostsCount;
 
-  await store.save<Space>(spaceChanged);
+  await ctx.store.save<Space>(spaceChanged);
 }

@@ -16,8 +16,6 @@ const processPostFollowingUnfollowing = async (
   follower: Account,
   ctx: EventHandlerContext
 ): Promise<void> => {
-  if (!post) return;
-
   const postFollowersEntityId = getPostFollowersEntityId(follower.id, post.id);
 
   if (post.isComment) {

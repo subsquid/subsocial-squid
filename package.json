@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "watch": "yarn chokidar \"src/mappings/**/*\" -c 'yarn build'",
+    "watch": "yarn chokidar \"src/mappings/**/*\" \"src/common/**/*\" \"src/processor.ts\" -c 'yarn build'",
     "init": "node db/init.js",
     "db:migrate": "npx sqd db migrate",
     "db:reset": ". ./scripts/reset-db.sh",

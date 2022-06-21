@@ -1,9 +1,11 @@
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import { Account, Space, Post, Activity, Reaction } from '../model';
-import { EventAction } from './utils';
+import { EventAction } from '../common/types';
 import { ensureAccount } from './account';
 import { ensureSpace } from './space';
 import { ensurePost } from './post';
+import { EntityProvideFailWarning } from '../common/errors';
+import { getActivityEntityId } from './utils';
 
 export const setActivity = async ({
   account,
@@ -28,10 +30,20 @@ export const setActivity = async ({
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) return null;
+  if (!accountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return null;
+  }
 
   const activity = new Activity();
-  activity.id = `${blockNumber}-${indexInBlock}`;
+  activity.id = getActivityEntityId(
+    blockNumber.toString(),
+    indexInBlock.toString()
+  );
   activity.account = accountInst;
   activity.blockNumber = BigInt(blockNumber.toString());
   activity.eventIndex = indexInBlock;

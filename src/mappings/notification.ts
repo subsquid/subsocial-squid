@@ -9,6 +9,7 @@ import {
 } from '../model';
 import { ensureAccount } from './account';
 import { getNotificationEntityId } from './utils';
+import { EntityProvideFailWarning } from '../common/errors';
 
 export const addNotificationForAccount = async (
   account: Account | string,
@@ -17,7 +18,14 @@ export const addNotificationForAccount = async (
 ): Promise<Notification | null> => {
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) return null;
+  if (!accountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return null;
+  }
 
   const notification = new Notification();
 
@@ -35,7 +43,14 @@ export const addNotificationForAccountFollowers = async (
 ): Promise<void> => {
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) return;
+  if (!accountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return;
+  }
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: accountInst },
@@ -75,7 +90,14 @@ export const deleteAllNotificationsAboutSpace = async (
 ): Promise<void> => {
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) return;
+  if (!accountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return;
+  }
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
@@ -104,7 +126,14 @@ export const deleteAllNotificationsAboutAccount = async (
       ? followingAccount
       : await ensureAccount(followingAccount, ctx);
 
-  if (!accountInst || !followingAccountInst) return;
+  if (!accountInst || !followingAccountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return;
+  }
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [

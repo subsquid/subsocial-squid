@@ -5,11 +5,11 @@ import {
   ProfileFollowsAccountUnfollowedEvent
 } from '../types/events';
 import {
-  EventAction,
   addressSs58ToString,
   getAccountFollowersEntityId,
   printEventLog
 } from './utils';
+import { EventAction } from '../common/types';
 import { ensureAccount } from './account';
 import { setActivity } from './activity';
 import { deleteAccountPostsFromFeedForAccount } from './news-feed';

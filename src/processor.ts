@@ -32,7 +32,7 @@ processor.setDataSource({
   chain: envConfig.chainNode
 });
 
-processor.setBlockRange({ from: 677319 }); //1091772
+// processor.setBlockRange({ from: 677319 }); //1091772
 
 processor.addEventHandler('posts.PostCreated', postCreated);
 processor.addEventHandler('posts.PostUpdated', postUpdated);

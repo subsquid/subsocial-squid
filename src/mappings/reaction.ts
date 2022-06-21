@@ -1,5 +1,6 @@
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Account, Post, Reaction, ReactionKind } from '../model';
+import { Account, Post, Reaction, Activity } from '../model';
+import { ReactionKind, Status } from '../common/types';
 import {
   ReactionsPostReactionCreatedEvent,
   ReactionsPostReactionDeletedEvent,
@@ -9,8 +10,13 @@ import { ReactionKind as ReactionKindV15 } from '../types/v15';
 import { setActivity } from './activity';
 import { addNotificationForAccount } from './notification';
 import { ensureAccount } from './account';
-import { addressSs58ToString, printEventLog, Status } from './utils';
+import { addressSs58ToString, printEventLog } from './utils';
 import { ensurePost } from './post';
+import {
+  CommonCriticalError,
+  EntityProvideFailWarning,
+  UnknownVersionError
+} from '../common/errors';
 
 type ReactionEvent = {
   accountId: string;
@@ -41,7 +47,10 @@ async function getReactionKindFromSquidDb(
   ctx: EventHandlerContext
 ): Promise<ReactionKindV15 | null> {
   const reaction = await ctx.store.get(Reaction, reactionId);
-  if (!reaction) return null;
+  if (!reaction) {
+    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    return null;
+  }
   return reaction.kind as unknown as ReactionKindV15;
 }
 
@@ -53,7 +62,12 @@ function getPostReactionCreatedEvent(
   if (event.isV1) {
     const [accountId, postId, reactionId] = event.asV1;
     const reactionKind = getReactionKindFromExtrinsic(ctx);
-    if (!reactionKind) return null;
+    if (!reactionKind) {
+      new CommonCriticalError(
+        'reactionKind can not be extracted from extrinsic'
+      );
+      return null;
+    }
     return {
       accountId: addressSs58ToString(accountId),
       postId: postId.toString(),
@@ -62,13 +76,17 @@ function getPostReactionCreatedEvent(
     };
   }
 
-  const [accountId, postId, reactionId, reactionKind] = event.asV15;
-  return {
-    accountId: addressSs58ToString(accountId),
-    postId: postId.toString(),
-    reactionId: reactionId.toString(),
-    reactionKind
-  };
+  if (event.isV15) {
+    const [accountId, postId, reactionId, reactionKind] = event.asV15;
+    return {
+      accountId: addressSs58ToString(accountId),
+      postId: postId.toString(),
+      reactionId: reactionId.toString(),
+      reactionKind
+    };
+  }
+
+  throw new UnknownVersionError(event.constructor.name);
 }
 function getPostReactionUpdatedEvent(
   ctx: EventHandlerContext
@@ -78,7 +96,12 @@ function getPostReactionUpdatedEvent(
   if (event.isV1) {
     const [accountId, postId, reactionId] = event.asV1;
     const reactionKind = getReactionKindFromExtrinsic(ctx);
-    if (!reactionKind) return null;
+    if (!reactionKind) {
+      new CommonCriticalError(
+        'reactionKind can not be extracted from extrinsic'
+      );
+      return null;
+    }
     return {
       accountId: addressSs58ToString(accountId),
       postId: postId.toString(),
@@ -86,13 +109,16 @@ function getPostReactionUpdatedEvent(
       reactionKind
     };
   }
-  const [accountId, postId, reactionId, reactionKind] = event.asV15;
-  return {
-    accountId: addressSs58ToString(accountId),
-    postId: postId.toString(),
-    reactionId: reactionId.toString(),
-    reactionKind
-  };
+  if (event.isV15) {
+    const [accountId, postId, reactionId, reactionKind] = event.asV15;
+    return {
+      accountId: addressSs58ToString(accountId),
+      postId: postId.toString(),
+      reactionId: reactionId.toString(),
+      reactionKind
+    };
+  }
+  throw new UnknownVersionError(event.constructor.name);
 }
 async function getPostReactionDeletedEvent(
   ctx: EventHandlerContext
@@ -104,7 +130,12 @@ async function getPostReactionDeletedEvent(
       reactionId.toString(),
       ctx
     );
-    if (!reactionKind) return null;
+    if (!reactionKind) {
+      new CommonCriticalError(
+        'reactionKind can not be extracted from DB entity'
+      );
+      return null;
+    }
     return {
       accountId: addressSs58ToString(accountId),
       postId: postId.toString(),
@@ -112,13 +143,16 @@ async function getPostReactionDeletedEvent(
       reactionKind
     };
   }
-  const [accountId, postId, reactionId, reactionKind] = event.asV15;
-  return {
-    accountId: addressSs58ToString(accountId),
-    postId: postId.toString(),
-    reactionId: reactionId.toString(),
-    reactionKind
-  };
+  if (event.isV15) {
+    const [accountId, postId, reactionId, reactionKind] = event.asV15;
+    return {
+      accountId: addressSs58ToString(accountId),
+      postId: postId.toString(),
+      reactionId: reactionId.toString(),
+      reactionKind
+    };
+  }
+  throw new UnknownVersionError(event.constructor.name);
 }
 
 export async function postReactionCreated(
@@ -138,7 +172,10 @@ export async function postReactionCreated(
     ctx
   });
 
-  if (!reaction) return;
+  if (!reaction) {
+    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    return;
+  }
 
   await ctx.store.save(Reaction, reaction);
 
@@ -161,7 +198,10 @@ export async function postReactionCreated(
     ctx
   });
 
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
   await addNotificationForAccount(
     reaction.post.createdByAccount,
     activity,
@@ -179,7 +219,10 @@ export async function postReactionUpdated(
   const { accountId, postId, reactionId, reactionKind } = event;
 
   const account = await ensureAccount(accountId, ctx, true);
-  if (!account) return;
+  if (!account) {
+    new EntityProvideFailWarning(Account, accountId, ctx);
+    return;
+  }
 
   const reaction = await ensureReaction({
     account,
@@ -189,7 +232,10 @@ export async function postReactionUpdated(
     ctx
   });
 
-  if (!reaction) return;
+  if (!reaction) {
+    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    return;
+  }
 
   reaction.kind = reactionKind as unknown as ReactionKind;
   reaction.updatedAtTime = new Date();
@@ -216,7 +262,10 @@ export async function postReactionUpdated(
     ctx
   });
 
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
   await addNotificationForAccount(
     reaction.post.createdByAccount,
     activity,
@@ -234,7 +283,10 @@ export async function postReactionDeleted(
   const { accountId, postId, reactionId, reactionKind } = event;
 
   const accountInst = await ensureAccount(accountId, ctx, true);
-  if (!accountInst) return;
+  if (!accountInst) {
+    new EntityProvideFailWarning(Account, accountId, ctx);
+    return;
+  }
 
   const reaction = await ensureReaction({
     account: accountInst,
@@ -244,7 +296,10 @@ export async function postReactionDeleted(
     ctx
   });
 
-  if (!reaction) return;
+  if (!reaction) {
+    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    return;
+  }
 
   const { kind: deletedReactionKind, post: deletedReactionPost } = reaction;
 
@@ -268,7 +323,10 @@ export async function postReactionDeleted(
     ctx
   });
 
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
   await addNotificationForAccount(
     deletedReactionPost.createdByAccount,
     activity,
@@ -301,17 +359,27 @@ async function ensureReaction({
     account instanceof Account
       ? account
       : await ensureAccount(account, ctx, true);
-  if (!accountInst) return null;
+  if (!accountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return null;
+  }
 
   const postInst = await ensurePost({
     account,
     postId,
     ctx,
     createIfNotExists: true,
-    relations: ['post', 'post.createdByAccount', 'post.space']
+    relations: ['createdByAccount', 'space']
   });
 
-  if (!postInst) return null;
+  if (!postInst) {
+    new EntityProvideFailWarning(Post, postId, ctx);
+    return null;
+  }
 
   const newReaction: Reaction = new Reaction();
   newReaction.id = reactionId;

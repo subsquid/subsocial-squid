@@ -4,9 +4,9 @@ import {
   getDateWithoutTime,
   printEventLog
 } from './utils';
-import { PostId, SpaceId } from '@subsocial/types/substrate/interfaces';
+import { PostId } from '@subsocial/types/substrate/interfaces';
 import { isEmptyArray } from '@subsocial/utils';
-import { Post, PostKind, Space, Account } from '../model/generated';
+import { Post, PostKind, Space, Account, Activity } from '../model';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
   PostsPostCreatedEvent,
@@ -31,6 +31,10 @@ import {
   addNotificationForAccount,
   addNotificationForAccountFollowers
 } from './notification';
+import {
+  EntityProvideFailWarning,
+  MissingSubsocialApiEntity
+} from '../common/errors';
 
 export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostCreatedEvent(ctx);
@@ -51,7 +55,10 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
     postId: postId.toString(),
     ctx
   });
-  if (!post) return;
+  if (!post) {
+    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    return;
+  }
 
   await ctx.store.save<Post>(post);
 
@@ -66,7 +73,10 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
     ctx
   });
 
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
   await addPostToFeeds(post, activity, ctx);
 }
 
@@ -82,10 +92,16 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const [accountId, id] = event.asV1;
 
   const post = await ctx.store.get(Post, id.toString());
-  if (!post) return;
+  if (!post) {
+    new EntityProvideFailWarning(Post, id.toString(), ctx);
+    return;
+  }
 
   const postData = await resolvePost(id as unknown as PostId);
-  if (!postData) return;
+  if (!postData) {
+    new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
+    return;
+  }
 
   const postStruct = postData.post.struct;
 
@@ -99,7 +115,10 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
     true
   );
 
-  if (!createdByAccount) return;
+  if (!createdByAccount) {
+    new EntityProvideFailWarning(Account, postStruct.createdByAccount, ctx);
+    return;
+  }
 
   post.createdByAccount = createdByAccount;
 
@@ -111,7 +130,11 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
 
   if (postStruct.spaceId) {
     const space = await ctx.store.get(Space, postStruct.spaceId.toString());
-    if (space) await updateCountersInSpace(ctx.store, space);
+    if (space) {
+      await updateCountersInSpace(ctx, space);
+    } else {
+      new EntityProvideFailWarning(Space, postStruct.spaceId.toString(), ctx);
+    }
   }
 
   if (postContent) {
@@ -144,24 +167,36 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
     true
   );
 
-  if (!account) return;
+  if (!account) {
+    new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
+    return;
+  }
 
   const post = await ctx.store.get(Post, {
     where: { id: postId.toString() },
     relations: ['space']
   });
-  if (!post) return;
+  if (!post) {
+    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    return;
+  }
   const oldSpaceInst = post.space;
 
   const postStruct = await resolvePostStruct(postId as unknown as PostId);
-  if (!postStruct || !postStruct.spaceId) return;
+  if (!postStruct || !postStruct.spaceId) {
+    new MissingSubsocialApiEntity('PostStruct', ctx);
+    return;
+  }
 
   const spaceInst = await ensureSpace({
     space: postStruct.spaceId,
     createIfNotExists: true,
     ctx
   });
-  if (!spaceInst || !('id' in spaceInst)) return;
+  if (!spaceInst || !('id' in spaceInst)) {
+    new EntityProvideFailWarning(Space, postStruct.spaceId, ctx);
+    return;
+  }
   post.space = spaceInst;
 
   await ctx.store.save<Post>(post);
@@ -172,7 +207,10 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
     ctx
   });
 
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
   await addPostToFeeds(post, activity, ctx);
   await deleteSpacePostsFromFeedForAccount(account, oldSpaceInst, ctx);
 }
@@ -190,13 +228,22 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
     true
   );
 
-  if (!account) return;
+  if (!account) {
+    new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
+    return;
+  }
 
   const post = await ctx.store.get(Post, id.toString());
-  if (!post) return;
+  if (!post) {
+    new EntityProvideFailWarning(Post, id.toString(), ctx);
+    return;
+  }
 
   const postStruct = await resolvePostStruct(id as unknown as PostId);
-  if (!postStruct) return;
+  if (!postStruct) {
+    new MissingSubsocialApiEntity('PostStruct', ctx);
+    return;
+  }
 
   post.sharesCount = postStruct.sharesCount;
 
@@ -207,7 +254,10 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
     ctx
   });
 
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
 
   if (!post.isComment || (post.isComment && !post.parentId)) {
     await addNotificationForAccountFollowers(account, activity, ctx);
@@ -218,7 +268,14 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
      */
     const rootPostInst = await ctx.store.get(Post, post.rootPostId);
     const parentCommentInst = await ctx.store.get(Post, post.parentId);
-    if (!rootPostInst || !parentCommentInst) return;
+    if (!rootPostInst) {
+      new EntityProvideFailWarning(Post, post.rootPostId, ctx);
+      return;
+    }
+    if (!parentCommentInst) {
+      new EntityProvideFailWarning(Post, post.parentId, ctx);
+      return;
+    }
     await addNotificationForAccount(
       rootPostInst.createdByAccount,
       activity,
@@ -233,18 +290,24 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
 }
 
 // TODO refactoring is required
-const updateReplyCount = async (store: Store, postId: bigint) => {
-  const post = await store.get(Post, postId.toString());
-  if (!post) return;
+const updateReplyCount = async (ctx: EventHandlerContext, postId: bigint) => {
+  const post = await ctx.store.get(Post, postId.toString());
+  if (!post) {
+    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    return;
+  }
 
   const postStruct = await resolvePostStruct(new BN(postId.toString(), 10));
-  if (!postStruct) return;
+  if (!postStruct) {
+    new MissingSubsocialApiEntity('PostStruct', ctx);
+    return;
+  }
 
   post.repliesCount = postStruct.repliesCount;
   post.hiddenRepliesCount = postStruct.hiddenRepliesCount;
   post.publicRepliesCount = post.repliesCount - post.hiddenRepliesCount;
 
-  await store.save<Post>(post);
+  await ctx.store.save<Post>(post);
 };
 
 export const ensurePost = async ({
@@ -270,7 +333,14 @@ export const ensurePost = async ({
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) return null;
+  if (!accountInst) {
+    new EntityProvideFailWarning(
+      Account,
+      typeof account === 'string' ? account : account.id,
+      ctx
+    );
+    return null;
+  }
 
   const postData = await resolvePost(new BN(postId.toString(), 10));
 
@@ -279,8 +349,10 @@ export const ensurePost = async ({
     !postData.post ||
     !postData.post.struct ||
     !postData.post.content
-  )
+  ) {
+    new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
     return null;
+  }
 
   const { struct: postStruct, content: postContent } = postData.post;
 
@@ -293,7 +365,14 @@ export const ensurePost = async ({
     });
   }
 
-  if (!space || !('id' in space)) return null;
+  if (!space || !('id' in space)) {
+    new EntityProvideFailWarning(
+      Space,
+      postStruct.spaceId ? postStruct.spaceId.toString() : 'unknown',
+      ctx
+    );
+    return null;
+  }
 
   const post = new Post();
 
@@ -311,12 +390,11 @@ export const ensurePost = async ({
   post.upvotesCount = 0;
   post.downvotesCount = 0;
   post.reactionsCount = 0;
-  // post.score = postStruct.score;
   post.updatedAtTime = postStruct.updatedAtTime
     ? new Date(postStruct.updatedAtTime)
     : null;
   post.space = space;
-  await updateCountersInSpace(store, space);
+  await updateCountersInSpace(ctx, space);
 
   if (postStruct.isComment) {
     post.kind = PostKind.Comment;
@@ -336,9 +414,9 @@ export const ensurePost = async ({
       post.parentId = parentId?.toString();
 
       if (rootPostId && rootPostId !== null && store)
-        await updateReplyCount(store, BigInt(rootPostId.toString()));
+        await updateReplyCount(ctx, BigInt(rootPostId.toString()));
       if (parentId && parentId !== null && store)
-        await updateReplyCount(store, BigInt(parentId.toString()));
+        await updateReplyCount(ctx, BigInt(parentId.toString()));
       break;
 
     case PostKind.SharedPost:

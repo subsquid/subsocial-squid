@@ -6,16 +6,16 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 // import { Network, TreasuryProposal } from "../generated/graphql-server/src/modules/treasury-proposal/treasury-proposal.model"
 import { Space, Post } from '../model';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
-import { SpaceStruct, SpaceContent } from '@subsocial/types/dto';
 
 dayjs.extend(localizedFormat);
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
-export type ObjectType = Space | Post | undefined;
-
 export type RelationFieldType = 'posts' | 'spaces';
-
+export type ObjectType = Space | Post | undefined;
+export type TagInEntityTagType = GetOrCreateTagType & {
+  entityWithRelations: ObjectType;
+};
 export type GetOrCreateTagType = {
   store: Store;
   tags: string[];
@@ -23,49 +23,17 @@ export type GetOrCreateTagType = {
   relationField: RelationFieldType;
 };
 
-export type TagInEntityTagType = GetOrCreateTagType & {
-  entityWithRelations: ObjectType;
-};
-
-export interface SpaceDataExtended {
-  space: Space;
-  struct: SpaceStruct;
-  content: SpaceContent | undefined;
-}
-
-export enum EventAction {
-  PostCreated = 'PostCreated',
-  PostDeleted = 'PostDeleted',
-  PostUpdated = 'PostUpdated',
-  PostShared = 'PostShared',
-  PostMoved = 'PostMoved',
-  PostReactionCreated = 'PostReactionCreated',
-  PostReactionUpdated = 'PostReactionUpdated',
-  PostReactionDeleted = 'PostReactionDeleted',
-  SpaceCreated = 'SpaceCreated',
-  SpaceUpdated = 'SpaceUpdated',
-  SpaceFollowed = 'SpaceFollowed',
-  SpaceUnfollowed = 'SpaceUnfollowed',
-  AccountFollowed = 'AccountFollowed',
-  AccountUnfollowed = 'AccountUnfollowed',
-  ProfileCreated = 'ProfileCreated',
-  ProfileUpdated = 'ProfileUpdated'
-}
-
-export enum ReactionKind {
-  Upvote = 'Upvote',
-  Downvote = 'Downvote'
-}
-
-export enum Status {
-  Active = 'Active',
-  Deleted = 'Deleted'
-}
-
 export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
   if (ctx.event.extrinsic === undefined) {
     throw new Error(`No extrinsic has been provided`);
   }
+};
+
+export const getActivityEntityId = (
+  blockNumber: string,
+  indexInBlock: string
+): string => {
+  return `${blockNumber}-${indexInBlock}`;
 };
 
 export const getNotificationEntityId = (

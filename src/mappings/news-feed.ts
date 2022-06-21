@@ -8,8 +8,8 @@ import {
   AccountFollowers,
   SpaceFollowers
 } from '../model';
-import { getNewsFeedEntityId, EventAction } from './utils';
-
+import { getNewsFeedEntityId } from './utils';
+import { EventAction } from '../common/types';
 /**
  * Add Post to NewsFeed for all Account's and Space's followers.
  *

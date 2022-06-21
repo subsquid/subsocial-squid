@@ -11,6 +11,7 @@ import {
 } from './utils';
 import { resolveAccount } from './resolvers/resolveAccountData';
 import { setActivity } from './activity';
+import { MissingSubsocialApiEntity } from '../common/errors';
 
 export async function accountCreated(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
@@ -57,7 +58,10 @@ export async function ensureAccount(
 ): Promise<Account | null> {
   const accountData = await resolveAccount(accountId);
 
-  if (!accountData || !accountData.struct) return null;
+  if (!accountData || !accountData.struct) {
+    new MissingSubsocialApiEntity('ProfileData', ctx);
+    return null;
+  }
 
   const { struct: accountStruct, content: accountContent = null } = accountData;
 

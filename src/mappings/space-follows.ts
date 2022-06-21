@@ -1,11 +1,10 @@
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { Account, Space, SpaceFollowers } from '../model';
+import { Account, Activity, Space, SpaceFollowers } from '../model';
 import {
   SpaceFollowsSpaceFollowedEvent,
   SpaceFollowsSpaceUnfollowedEvent
 } from '../types/events';
 import {
-  EventAction,
   addressSs58ToString,
   getSpaceFollowersEntityId,
   printEventLog
@@ -17,6 +16,8 @@ import {
   addNotificationForAccount,
   deleteAllNotificationsAboutSpace
 } from './notification';
+import { EntityProvideFailWarning } from '../common/errors';
+import { EventAction } from '../common/types';
 
 export async function spaceFollowed(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
@@ -51,13 +52,19 @@ async function handleEvent(
   const { method } = ctx.event;
   const followerAccount = await ensureAccount(followerId, ctx, true);
 
-  if (!followerAccount) return;
+  if (!followerAccount) {
+    new EntityProvideFailWarning(Account, followerId, ctx);
+    return;
+  }
 
   const space = await ctx.store.get(Space, {
     where: { id: spaceId },
     relations: ['ownerAccount']
   });
-  if (!space) return;
+  if (!space) {
+    new EntityProvideFailWarning(Space, spaceId, ctx);
+    return;
+  }
 
   await processSpaceFollowingUnfollowingRelations(followerAccount, space, ctx);
 
@@ -66,7 +73,10 @@ async function handleEvent(
     ctx,
     space
   });
-  if (!activity) return;
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx);
+    return;
+  }
 
   if (method === EventAction.SpaceFollowed) {
     await addNotificationForAccount(space.ownerAccount, activity, ctx);

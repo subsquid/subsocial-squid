@@ -17,3 +17,4 @@ export const indexerEndpointUrl =
   process.env.INDEXER_ENDPOINT_URL || 'http://localhost:4002/v1/graphql';
 export const offchainUrl =
   process.env.OFFCHAIN_URL || 'https://app.subsocial.network/network/offchain';
+export const warningLogsTrace = process.env.WARNING_LOGS_TRACE || 'false';
