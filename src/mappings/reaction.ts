@@ -130,7 +130,7 @@ export async function postReactionCreated(
 
   const { accountId, postId, reactionId, reactionKind } = event;
 
-  const newReaction = await ensureReaction({
+  const reaction = await ensureReaction({
     account: accountId,
     postId,
     reactionId,
@@ -138,33 +138,32 @@ export async function postReactionCreated(
     ctx
   });
 
-  if (!newReaction) return;
+  if (!reaction) return;
 
-  const savedReaction = await ctx.store.save(Reaction, newReaction);
+  await ctx.store.save(Reaction, reaction);
 
-  if (!savedReaction) return;
+  const { post } = reaction;
 
-  const { post } = savedReaction;
-
-  if (savedReaction.kind === ReactionKind.Upvote) {
+  if (reaction.kind === ReactionKind.Upvote) {
     post.upvotesCount = !post.upvotesCount ? 1 : post.upvotesCount + 1;
-  } else if (savedReaction.kind === ReactionKind.Downvote) {
+  } else if (reaction.kind === ReactionKind.Downvote) {
     post.downvotesCount = !post.downvotesCount ? 1 : post.downvotesCount + 1;
   }
   post.reactionsCount = !post.reactionsCount ? 1 : post.reactionsCount + 1;
 
-  const savedPost = await ctx.store.save(Post, post);
+  await ctx.store.save(Post, post);
 
+  // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
     account: accountId,
-    reaction: savedReaction,
-    post: savedPost,
+    reaction,
+    post,
     ctx
   });
 
   if (!activity) return;
   await addNotificationForAccount(
-    savedReaction.post.createdByAccount,
+    reaction.post.createdByAccount,
     activity,
     ctx
   );
@@ -179,8 +178,11 @@ export async function postReactionUpdated(
 
   const { accountId, postId, reactionId, reactionKind } = event;
 
+  const account = await ensureAccount(accountId, ctx, true);
+  if (!account) return;
+
   const reaction = await ensureReaction({
-    account: accountId,
+    account,
     postId,
     reactionId,
     reactionKind,
@@ -192,32 +194,31 @@ export async function postReactionUpdated(
   reaction.kind = reactionKind as unknown as ReactionKind;
   reaction.updatedAtTime = new Date();
   reaction.updatedAtBlock = BigInt(ctx.event.blockNumber.toString());
-  const savedReaction = await ctx.store.save(Reaction, reaction);
+  await ctx.store.save(Reaction, reaction);
 
-  if (!savedReaction) return;
+  const { post } = reaction;
 
-  const { post } = savedReaction;
-
-  if (savedReaction.kind === ReactionKind.Upvote) {
+  if (reaction.kind === ReactionKind.Upvote) {
     post.upvotesCount = !post.upvotesCount ? 1 : post.upvotesCount + 1;
     post.downvotesCount = !post.downvotesCount ? 0 : post.downvotesCount - 1;
-  } else if (savedReaction.kind === ReactionKind.Downvote) {
+  } else if (reaction.kind === ReactionKind.Downvote) {
     post.downvotesCount = !post.downvotesCount ? 1 : post.downvotesCount + 1;
     post.upvotesCount = !post.upvotesCount ? 0 : post.upvotesCount - 1;
   }
 
-  const savedPost = await ctx.store.save(Post, post);
+  await ctx.store.save(Post, post);
 
+  // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
-    account: accountId,
-    reaction: savedReaction,
-    post: savedPost,
+    account,
+    reaction,
+    post,
     ctx
   });
 
   if (!activity) return;
   await addNotificationForAccount(
-    savedReaction.post.createdByAccount,
+    reaction.post.createdByAccount,
     activity,
     ctx
   );
@@ -259,6 +260,7 @@ export async function postReactionDeleted(
 
   await ctx.store.save(Post, deletedReactionPost);
 
+  // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
     account: accountInst,
     post: deletedReactionPost,
@@ -289,6 +291,12 @@ async function ensureReaction({
   ctx: EventHandlerContext;
   createIfNotExists?: boolean;
 }): Promise<Reaction | null> {
+  const existingReaction = await ctx.store.get(Reaction, {
+    where: { id: reactionId },
+    relations: ['post', 'post.createdByAccount', 'post.space']
+  });
+  if (existingReaction) return existingReaction;
+
   const accountInst =
     account instanceof Account
       ? account
@@ -299,17 +307,11 @@ async function ensureReaction({
     account,
     postId,
     ctx,
-    createIfNotExists: true
-  });
-
-  if (!postInst) return null;
-
-  const existingReaction = await ctx.store.get(Reaction, {
-    where: { id: reactionId },
+    createIfNotExists: true,
     relations: ['post', 'post.createdByAccount', 'post.space']
   });
 
-  if (existingReaction) return existingReaction;
+  if (!postInst) return null;
 
   const newReaction: Reaction = new Reaction();
   newReaction.id = reactionId;

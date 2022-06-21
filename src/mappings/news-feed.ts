@@ -1,6 +1,4 @@
-import uniq from 'lodash.uniq';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { JoinOptions, FindConditions } from 'typeorm';
 import {
   Account,
   Activity,
@@ -10,12 +8,7 @@ import {
   AccountFollowers,
   SpaceFollowers
 } from '../model';
-import { ensureAccount } from './account';
-import {
-  getNewsFeedEntityId,
-  getSpaceFollowersEntityId,
-  EventAction
-} from './utils';
+import { getNewsFeedEntityId, EventAction } from './utils';
 
 /**
  * Add Post to NewsFeed for all Account's and Space's followers.

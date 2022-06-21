@@ -36,10 +36,6 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostCreatedEvent(ctx);
   printEventLog(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
-
   const [accountId, postId] = event.asV1;
 
   const account = await ensureAccount(
@@ -74,6 +70,7 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   await addPostToFeeds(post, activity, ctx);
 }
 
+// TODO refactor/review "postUpdated" implementation
 export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostUpdatedEvent(ctx);
   printEventLog(ctx);
@@ -134,11 +131,12 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
 }
 
 export async function postMoved(ctx: EventHandlerContext): Promise<void> {
-  // TODO Post can be moved from space to space. It must be tracked.
   const event = new PostsPostMovedEvent(ctx);
   printEventLog(ctx);
 
   const [accountId, postId] = event.asV9;
+
+  // TODO update postsCount for old and new spaces
 
   const account = await ensureAccount(
     addressSs58ToString(accountId),
@@ -148,9 +146,13 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   if (!account) return;
 
-  const post = await ctx.store.get(Post, postId.toString());
+  const post = await ctx.store.get(Post, {
+    where: { id: postId.toString() },
+    relations: ['space']
+  });
   if (!post) return;
   const oldSpaceInst = post.space;
+
   const postStruct = await resolvePostStruct(postId as unknown as PostId);
   if (!postStruct || !postStruct.spaceId) return;
 
@@ -162,27 +164,24 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   if (!spaceInst || !('id' in spaceInst)) return;
   post.space = spaceInst;
 
-  const postSaved = await ctx.store.save<Post>(post);
+  await ctx.store.save<Post>(post);
 
   const activity = await setActivity({
-    post: postSaved,
+    post,
     account,
     ctx
   });
 
   if (!activity) return;
-  await addPostToFeeds(postSaved, activity, ctx);
+  await addPostToFeeds(post, activity, ctx);
   await deleteSpacePostsFromFeedForAccount(account, oldSpaceInst, ctx);
 }
 
+// TODO add update of counters
 export async function postShared(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
 
   const event = new PostsPostSharedEvent(ctx);
-
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
 
   const [accountId, id] = event.asV1;
   const account = await ensureAccount(
@@ -206,10 +205,9 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
     account,
     post,
     ctx
-  }); // TODO refactor for work with comments
+  });
 
   if (!activity) return;
-
 
   if (!post.isComment || (post.isComment && !post.parentId)) {
     await addNotificationForAccountFollowers(account, activity, ctx);
@@ -234,6 +232,7 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
   }
 }
 
+// TODO refactoring is required
 const updateReplyCount = async (store: Store, postId: bigint) => {
   const post = await store.get(Post, postId.toString());
   if (!post) return;
@@ -252,16 +251,20 @@ export const ensurePost = async ({
   account,
   postId,
   ctx,
-  createIfNotExists
+  createIfNotExists,
+  relations
 }: {
   account: Account | string;
   postId: string;
   ctx: EventHandlerContext;
   createIfNotExists?: boolean;
+  relations?: string[];
 }): Promise<Post | null> => {
   const { store }: { store: Store } = ctx;
 
-  const existingPost = await store.get(Post, postId);
+  let existingPost = await store.get(Post, postId);
+  if (relations)
+    existingPost = await store.get(Post, { where: { id: postId }, relations });
 
   if (existingPost) return existingPost;
 
@@ -301,10 +304,10 @@ export const ensurePost = async ({
   post.createdAtTime = new Date(postStruct.createdAtTime);
   post.createdOnDay = getDateWithoutTime(new Date(postStruct.createdAtTime));
   post.content = postStruct.contentId;
-  post.repliesCount = postStruct.repliesCount;
-  post.hiddenRepliesCount = postStruct.hiddenRepliesCount;
-  post.publicRepliesCount = post.repliesCount - post.hiddenRepliesCount;
-  post.sharesCount = postStruct.sharesCount;
+  post.repliesCount = postStruct.repliesCount; // TODO review is required
+  post.hiddenRepliesCount = postStruct.hiddenRepliesCount; // TODO review is required
+  post.publicRepliesCount = post.repliesCount - post.hiddenRepliesCount; // TODO review is required
+  post.sharesCount = postStruct.sharesCount; // TODO review is required
   post.upvotesCount = 0;
   post.downvotesCount = 0;
   post.reactionsCount = 0;
@@ -323,7 +326,9 @@ export const ensurePost = async ({
     post.kind = PostKind.SharedPost;
   }
 
-  switch (post.kind) {
+  switch (
+    post.kind // TODO review is required
+  ) {
     case PostKind.Comment:
       const { rootPostId, parentId } = asCommentStruct(postStruct);
 

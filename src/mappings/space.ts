@@ -19,10 +19,6 @@ export async function spaceCreated(ctx: EventHandlerContext) {
   const event = new SpacesSpaceCreatedEvent(ctx);
   printEventLog(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
-
   const [accountId, id] = event.asV1;
 
   const space = await ensureSpace({ space: id.toString(), ctx });
@@ -45,10 +41,10 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
     throw new Error(`No extrinsic has been provided`);
   }
 
-  const [accountId, id] = event.asV1;
+  const [accountId, spaceId] = event.asV1;
 
   const spaceExtData = await ensureSpace({
-    space: id.toString(),
+    space: spaceId.toString(),
     ctx,
     isExtendedData: true
   });
@@ -90,6 +86,7 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
  * @param isExtendedData
  * @param createIfNotExists
  */
+// TODO refactor "ensureSpace" implementation
 export const ensureSpace = async ({
   space,
   ctx,
@@ -134,11 +131,11 @@ export const ensureSpace = async ({
   spaceInst.ownerAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;
 
-  spaceInst.postsCount = spaceStruct.postsCount;
-  spaceInst.hiddenPostsCount = spaceStruct.hiddenPostsCount;
+  spaceInst.postsCount = spaceStruct.postsCount; // TODO Refactoring is required
+  spaceInst.hiddenPostsCount = spaceStruct.hiddenPostsCount; // TODO Refactoring is required
   spaceInst.publicPostsCount =
-    spaceInst.postsCount - spaceInst.hiddenPostsCount;
-  spaceInst.followersCount = spaceStruct.followersCount;
+    spaceInst.postsCount - spaceInst.hiddenPostsCount; // TODO Refactoring is required
+  spaceInst.followersCount = spaceStruct.followersCount; // TODO Refactoring is required
   // spaceInst.score = spaceStruct.score;
 
   if (spaceContent) {
@@ -159,6 +156,7 @@ export const ensureSpace = async ({
   return spaceInst;
 };
 
+// TODO counters must be refactored
 export async function updateCountersInSpace(
   store: Store,
   space: Space
