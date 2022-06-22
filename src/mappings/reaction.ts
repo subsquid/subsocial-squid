@@ -368,11 +368,15 @@ async function ensureReaction({
     return null;
   }
 
-  const postInst = await ensurePost({
-    account,
-    postId,
-    ctx,
-    createIfNotExists: true,
+  // const postInst = await ensurePost({
+  //   account,
+  //   postId,
+  //   ctx,
+  //   relations: ['createdByAccount', 'space']
+  // });
+
+  const postInst = await ctx.store.get(Post, {
+    where: { id: postId },
     relations: ['createdByAccount', 'space']
   });
 

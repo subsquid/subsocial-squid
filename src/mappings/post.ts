@@ -5,6 +5,7 @@ import {
   printEventLog
 } from './utils';
 import { PostId } from '@subsocial/types/substrate/interfaces';
+import { AnySubsocialData, CommentStruct } from '@subsocial/types/dto';
 import { isEmptyArray } from '@subsocial/utils';
 import { Post, PostKind, Space, Account, Activity } from '../model';
 import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
@@ -357,12 +358,24 @@ export const ensurePost = async ({
   const { struct: postStruct, content: postContent } = postData.post;
 
   let space = null;
-  if (postStruct.spaceId && postStruct.spaceId !== '') {
+
+  if (!postStruct.isComment && postStruct.spaceId) {
     space = await ensureSpace({
-      space: postStruct.spaceId.toString(),
+      space: postStruct.spaceId,
       createIfNotExists: true,
       ctx
     });
+  } else if (postStruct.isComment) {
+    const { rootPostId } = postStruct as CommentStruct;
+    const rootSpacePost = await ctx.store.get(Post, {
+      where: { id: rootPostId },
+      relations: ['space']
+    });
+    if (!rootSpacePost) {
+      new EntityProvideFailWarning(Post, rootPostId, ctx);
+      return null;
+    }
+    space = rootSpacePost.space;
   }
 
   if (!space || !('id' in space)) {
