@@ -5,10 +5,9 @@ import {
   printEventLog
 } from './utils';
 import { PostId } from '@subsocial/types/substrate/interfaces';
-import { AnySubsocialData, CommentStruct } from '@subsocial/types/dto';
+import { CommentStruct } from '@subsocial/types/dto';
 import { isEmptyArray } from '@subsocial/utils';
 import { Post, PostKind, Space, Account, Activity } from '../model';
-import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
   PostsPostCreatedEvent,
   PostsPostSharedEvent,
@@ -36,12 +35,13 @@ import {
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../common/errors';
+import { EventHandlerContext } from '../common/contexts';
 
 export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostCreatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, postId] = event.asV1;
+  const [accountId, postId] = event.asV18;
 
   const account = await ensureAccount(
     addressSs58ToString(accountId),
@@ -324,11 +324,12 @@ export const ensurePost = async ({
   createIfNotExists?: boolean;
   relations?: string[];
 }): Promise<Post | null> => {
-  const { store }: { store: Store } = ctx;
-
-  let existingPost = await store.get(Post, postId);
+  let existingPost = await ctx.store.get(Post, postId);
   if (relations)
-    existingPost = await store.get(Post, { where: { id: postId }, relations });
+    existingPost = await ctx.store.get(Post, {
+      where: { id: postId },
+      relations
+    });
 
   if (existingPost) return existingPost;
 
@@ -426,9 +427,9 @@ export const ensurePost = async ({
       post.rootPostId = rootPostId.toString();
       post.parentId = parentId?.toString();
 
-      if (rootPostId && rootPostId !== null && store)
+      if (rootPostId && rootPostId !== null && ctx.store)
         await updateReplyCount(ctx, BigInt(rootPostId.toString()));
-      if (parentId && parentId !== null && store)
+      if (parentId && parentId !== null && ctx.store)
         await updateReplyCount(ctx, BigInt(parentId.toString()));
       break;
 

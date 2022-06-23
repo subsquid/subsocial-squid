@@ -1,28 +1,28 @@
 {
   "outDir": "src/types",
-  "chainVersions": "subsocialVersions.json",
+  "specVersions": "subsocialVersions.json",
   "typesBundle": "subsocial",
   "events": [
-    "posts.PostCreated",
-    "posts.PostDeleted",
-    "posts.PostUpdated",
-    "posts.PostShared",
-    "posts.PostMoved",
+    "Posts.PostCreated",
+    "Posts.PostDeleted",
+    "Posts.PostUpdated",
+    "Posts.PostShared",
+    "Posts.PostMoved",
 
-    "reactions.PostReactionCreated",
-    "reactions.PostReactionUpdated",
-    "reactions.PostReactionDeleted",
+    "Reactions.PostReactionCreated",
+    "Reactions.PostReactionUpdated",
+    "Reactions.PostReactionDeleted",
 
-    "spaces.SpaceCreated",
-    "spaces.SpaceUpdated",
+    "Spaces.SpaceCreated",
+    "Spaces.SpaceUpdated",
 
-    "profiles.ProfileCreated",
-    "profiles.ProfileUpdated",
+    "Profiles.ProfileCreated",
+    "Profiles.ProfileUpdated",
 
-    "spaceFollows.SpaceFollowed",
-    "spaceFollows.SpaceUnfollowed",
+    "SpaceFollows.SpaceFollowed",
+    "SpaceFollows.SpaceUnfollowed",
 
-    "profileFollows.AccountFollowed",
-    "profileFollows.AccountUnfollowed"
+    "ProfileFollows.AccountFollowed",
+    "ProfileFollows.AccountUnfollowed"
   ]
 }

@@ -6,12 +6,12 @@ import {
   ReactionsPostReactionDeletedEvent,
   ReactionsPostReactionUpdatedEvent
 } from '../types/events';
-import { ReactionKind as ReactionKindV15 } from '../types/v15';
+import { ReactionKind as ReactionKindV15 } from '../types/v18';
 import { setActivity } from './activity';
 import { addNotificationForAccount } from './notification';
 import { ensureAccount } from './account';
 import { addressSs58ToString, printEventLog } from './utils';
-import { ensurePost } from './post';
+
 import {
   CommonCriticalError,
   EntityProvideFailWarning,

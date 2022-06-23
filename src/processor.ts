@@ -1,4 +1,5 @@
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
+import { Store, TypeormDatabase } from '@subsquid/typeorm-store';
 import * as envConfig from './env';
 // import { lookupArchive } from '@subsquid/archive-registry';
 import {
@@ -19,7 +20,9 @@ import {
   accountUnfollowed
 } from './mappings';
 
-const processor = new SubstrateProcessor('subsocial-processor');
+const database = new TypeormDatabase('subsocial-processor');
+
+const processor = new SubstrateProcessor(database);
 
 processor.setBatchSize(envConfig.batchSize);
 
@@ -34,27 +37,27 @@ processor.setDataSource({
 
 // processor.setBlockRange({ from: 677319 }); //1091772
 
-processor.addEventHandler('posts.PostCreated', postCreated);
-processor.addEventHandler('posts.PostUpdated', postUpdated);
-processor.addEventHandler('posts.PostShared', postShared);
-processor.addEventHandler('posts.PostMoved', postMoved);
+processor.addEventHandler('Posts.PostCreated', postCreated);
+processor.addEventHandler('Posts.PostUpdated', postUpdated);
+processor.addEventHandler('Posts.PostShared', postShared);
+processor.addEventHandler('Posts.PostMoved', postMoved);
 
-processor.addEventHandler('spaces.SpaceCreated', spaceCreated);
-processor.addEventHandler('spaces.SpaceUpdated', spaceUpdated);
+processor.addEventHandler('Spaces.SpaceCreated', spaceCreated);
+processor.addEventHandler('Spaces.SpaceUpdated', spaceUpdated);
 
-processor.addEventHandler('reactions.PostReactionCreated', postReactionCreated);
-processor.addEventHandler('reactions.PostReactionUpdated', postReactionUpdated);
-processor.addEventHandler('reactions.PostReactionDeleted', postReactionDeleted);
+processor.addEventHandler('Reactions.PostReactionCreated', postReactionCreated);
+processor.addEventHandler('Reactions.PostReactionUpdated', postReactionUpdated);
+processor.addEventHandler('Reactions.PostReactionDeleted', postReactionDeleted);
 
-processor.addEventHandler('profiles.ProfileCreated', accountCreated);
-processor.addEventHandler('profiles.ProfileUpdated', accountUpdated);
+processor.addEventHandler('Profiles.ProfileCreated', accountCreated);
+processor.addEventHandler('Profiles.ProfileUpdated', accountUpdated);
 
-processor.addEventHandler('spaceFollows.SpaceFollowed', spaceFollowed);
-processor.addEventHandler('spaceFollows.SpaceUnfollowed', spaceUnfollowed);
+processor.addEventHandler('SpaceFollows.SpaceFollowed', spaceFollowed);
+processor.addEventHandler('SpaceFollows.SpaceUnfollowed', spaceUnfollowed);
 
-processor.addEventHandler('profileFollows.AccountFollowed', accountFollowed);
+processor.addEventHandler('ProfileFollows.AccountFollowed', accountFollowed);
 processor.addEventHandler(
-  'profileFollows.AccountUnfollowed',
+  'ProfileFollows.AccountUnfollowed',
   accountUnfollowed
 );
 
