@@ -1,4 +1,3 @@
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Account, Post, Reaction, Activity } from '../model';
 import { ReactionKind, Status } from '../common/types';
 import {
@@ -6,12 +5,14 @@ import {
   ReactionsPostReactionDeletedEvent,
   ReactionsPostReactionUpdatedEvent
 } from '../types/events';
-import { ReactionKind as ReactionKindV15 } from '../types/v18';
+import { ReactionsCreatePostReactionCall } from '../types/calls';
+
+import { ReactionKind as ReactionKindV15 } from '../types/v15';
 import { setActivity } from './activity';
 import { addNotificationForAccount } from './notification';
 import { ensureAccount } from './account';
 import { addressSs58ToString, printEventLog } from './utils';
-
+import { EventHandlerContext, CallContext } from '../common/contexts';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
@@ -25,21 +26,16 @@ type ReactionEvent = {
   reactionKind: ReactionKindV15;
 };
 
-function getReactionKindFromExtrinsic(
+function getReactionKindFromCall(
   ctx: EventHandlerContext
 ): ReactionKindV15 | null {
-  if (!ctx.event.extrinsic) return null;
+  const call = new ReactionsCreatePostReactionCall(
+    ctx.event.call as unknown as CallContext
+  );
 
-  const { extrinsic: { args = [] } = {} } = ctx.event;
+  const { kind }: { kind: ReactionKindV15 } = call.asV1;
 
-  let newReactionKind: ReactionKindV15 | null = null;
-
-  args.forEach((argItem) => {
-    if (argItem.name === 'kind' && !newReactionKind)
-      newReactionKind = argItem.value as ReactionKindV15;
-  });
-
-  return newReactionKind;
+  return kind;
 }
 
 async function getReactionKindFromSquidDb(
@@ -61,7 +57,7 @@ function getPostReactionCreatedEvent(
 
   if (event.isV1) {
     const [accountId, postId, reactionId] = event.asV1;
-    const reactionKind = getReactionKindFromExtrinsic(ctx);
+    const reactionKind = getReactionKindFromCall(ctx);
     if (!reactionKind) {
       new CommonCriticalError(
         'reactionKind can not be extracted from extrinsic'
@@ -95,7 +91,7 @@ function getPostReactionUpdatedEvent(
 
   if (event.isV1) {
     const [accountId, postId, reactionId] = event.asV1;
-    const reactionKind = getReactionKindFromExtrinsic(ctx);
+    const reactionKind = getReactionKindFromCall(ctx);
     if (!reactionKind) {
       new CommonCriticalError(
         'reactionKind can not be extracted from extrinsic'
@@ -177,7 +173,7 @@ export async function postReactionCreated(
     return;
   }
 
-  await ctx.store.save(Reaction, reaction);
+  await ctx.store.save<Reaction>(reaction);
 
   const { post } = reaction;
 
@@ -188,7 +184,7 @@ export async function postReactionCreated(
   }
   post.reactionsCount = !post.reactionsCount ? 1 : post.reactionsCount + 1;
 
-  await ctx.store.save(Post, post);
+  await ctx.store.save<Post>(post);
 
   // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
@@ -239,8 +235,8 @@ export async function postReactionUpdated(
 
   reaction.kind = reactionKind as unknown as ReactionKind;
   reaction.updatedAtTime = new Date();
-  reaction.updatedAtBlock = BigInt(ctx.event.blockNumber.toString());
-  await ctx.store.save(Reaction, reaction);
+  reaction.updatedAtBlock = BigInt(ctx.block.height.toString());
+  await ctx.store.save<Reaction>(reaction);
 
   const { post } = reaction;
 
@@ -252,7 +248,7 @@ export async function postReactionUpdated(
     post.upvotesCount = !post.upvotesCount ? 0 : post.upvotesCount - 1;
   }
 
-  await ctx.store.save(Post, post);
+  await ctx.store.save<Post>(post);
 
   // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
@@ -304,7 +300,7 @@ export async function postReactionDeleted(
   const { kind: deletedReactionKind, post: deletedReactionPost } = reaction;
 
   reaction.status = Status.Deleted;
-  await ctx.store.save(Reaction, reaction); // TODO set activity status
+  await ctx.store.save<Reaction>(reaction);
 
   if (deletedReactionKind === ReactionKind.Upvote) {
     deletedReactionPost.upvotesCount! -= 1;
@@ -313,7 +309,7 @@ export async function postReactionDeleted(
   }
   deletedReactionPost.reactionsCount! -= 1;
 
-  await ctx.store.save(Post, deletedReactionPost);
+  await ctx.store.save<Post>(deletedReactionPost);
 
   // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
@@ -368,13 +364,6 @@ async function ensureReaction({
     return null;
   }
 
-  // const postInst = await ensurePost({
-  //   account,
-  //   postId,
-  //   ctx,
-  //   relations: ['createdByAccount', 'space']
-  // });
-
   const postInst = await ctx.store.get(Post, {
     where: { id: postId },
     relations: ['createdByAccount', 'space']
@@ -391,9 +380,9 @@ async function ensureReaction({
   newReaction.account = accountInst;
   newReaction.post = postInst;
   newReaction.kind = reactionKind as unknown as ReactionKind;
-  newReaction.createdAtBlock = BigInt(ctx.event.blockNumber.toString());
+  newReaction.createdAtBlock = BigInt(ctx.block.height.toString());
   newReaction.createdAtTime = new Date();
 
-  if (createIfNotExists) return ctx.store.save(Reaction, newReaction);
+  if (createIfNotExists) await ctx.store.save<Reaction>(newReaction);
   return newReaction;
 }

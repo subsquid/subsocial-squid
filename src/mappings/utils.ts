@@ -1,13 +1,14 @@
 import dayjs from 'dayjs';
-import * as ss58 from '@subsquid/ss58';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+dayjs.extend(localizedFormat);
+
+import * as ss58 from '@subsquid/ss58';
 // import { MetaItem } from "@subsocial/types"
 // import { PostId } from "@subsocial/types/substrate/interfaces"
 // import { Network, TreasuryProposal } from "../generated/graphql-server/src/modules/treasury-proposal/treasury-proposal.model"
 import { Space, Post } from '../model';
-import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
-
-dayjs.extend(localizedFormat);
+import { Store } from '@subsquid/typeorm-store';
+import { EventHandlerContext } from '../common/contexts';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -104,14 +105,15 @@ export const formatDate = (date: string) =>
   dayjs(Number(date)).format('YYYY-MM-DD hh:mm:ss');
 
 export const stringDateToTimestamp = (date: string | undefined) =>
-  date && date != '' && new Date(Number(date)).getTime();
+  date && date !== '' && new Date(Number(date)).getTime();
 
 export const getDateWithoutTime = (date: Date | undefined): Date | undefined =>
   date ? new Date(dayjs(date).format('YYYY-MM-DD')) : undefined;
 
 export const printEventLog = (ctx: EventHandlerContext) => {
-  const { method, blockNumber, indexInBlock } = ctx.event;
+  const { name, indexInBlock } = ctx.event;
+  const { height } = ctx.block;
   console.log(
-    `>>> method ::: ${method} ::: >>> blockNumber :::  ${blockNumber} ::: >>> indexInBlock [ ${indexInBlock} ]`
+    `>>> method ::: ${name} ::: >>> blockNumber :::  ${height} ::: >>> indexInBlock [ ${indexInBlock} ]`
   );
 };

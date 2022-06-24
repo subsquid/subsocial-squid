@@ -20,7 +20,8 @@ import {
   accountUnfollowed
 } from './mappings';
 
-const database = new TypeormDatabase('subsocial-processor');
+// const database = new TypeormDatabase('subsocial-processor');
+const database = new TypeormDatabase({ stateSchema: 'subsocial-processor' });
 
 const processor = new SubstrateProcessor(database);
 

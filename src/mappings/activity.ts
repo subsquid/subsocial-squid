@@ -1,4 +1,3 @@
-import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import { Account, Space, Post, Activity, Reaction } from '../model';
 import { EventAction } from '../common/types';
 import { ensureAccount } from './account';
@@ -6,6 +5,7 @@ import { ensureSpace } from './space';
 import { ensurePost } from './post';
 import { EntityProvideFailWarning } from '../common/errors';
 import { getActivityEntityId } from './utils';
+import { EventHandlerContext } from '../common/contexts';
 
 export const setActivity = async ({
   account,
@@ -26,7 +26,11 @@ export const setActivity = async ({
   // commentParent?: Post;
   followingAccount?: Account | string;
 }): Promise<Activity | null> => {
-  const { method, blockNumber, indexInBlock } = ctx.event;
+  const { indexInBlock, name: method } = ctx.event;
+  const { height: blockNumber } = ctx.block;
+
+  console.log('ctx.event - ', ctx.event);
+  console.log('ctx.block - ', ctx.block);
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
@@ -169,7 +173,8 @@ export const setActivity = async ({
     activity.commentParentPost = commentParent;
   }
 
-  return ctx.store.save<Activity>(activity);
+  await ctx.store.save<Activity>(activity);
 
+  return activity;
   // TODO review activities handling
 };

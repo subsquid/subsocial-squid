@@ -1,4 +1,3 @@
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Account, Activity, Space, SpaceFollowers } from '../model';
 import {
   SpaceFollowsSpaceFollowedEvent,
@@ -18,6 +17,7 @@ import {
 } from './notification';
 import { EntityProvideFailWarning } from '../common/errors';
 import { EventAction } from '../common/types';
+import { EventHandlerContext } from '../common/contexts';
 
 export async function spaceFollowed(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
@@ -49,7 +49,7 @@ async function handleEvent(
   spaceId: string,
   ctx: EventHandlerContext
 ): Promise<void> {
-  const { method } = ctx.event;
+  const { name: eventName } = ctx.event;
   const followerAccount = await ensureAccount(followerId, ctx, true);
 
   if (!followerAccount) {
@@ -78,9 +78,9 @@ async function handleEvent(
     return;
   }
 
-  if (method === EventAction.SpaceFollowed) {
+  if (eventName === EventAction.SpaceFollowed) {
     await addNotificationForAccount(space.ownerAccount, activity, ctx);
-  } else if (method === EventAction.SpaceUnfollowed) {
+  } else if (eventName === EventAction.SpaceUnfollowed) {
     await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
     await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
   }
@@ -96,7 +96,7 @@ async function processSpaceFollowingUnfollowingRelations(
     follower instanceof Account ? follower : await ensureAccount(follower, ctx);
   if (!followerAccountInst) return;
 
-  const { method } = ctx.event;
+  const { name: eventName } = ctx.event;
   const paceFollowersEntityId = getSpaceFollowersEntityId(
     followerAccountInst.id,
     space.id
@@ -109,7 +109,7 @@ async function processSpaceFollowingUnfollowingRelations(
 
   let currentSpaceFollowersCount = space.followersCount || 0;
 
-  if (method === EventAction.SpaceFollowed) {
+  if (eventName === EventAction.SpaceFollowed) {
     if (spaceFollowers) return;
     currentSpaceFollowersCount += 1;
 
@@ -120,7 +120,7 @@ async function processSpaceFollowingUnfollowingRelations(
     newSpaceFollowersEnt.followingSpace = space;
 
     await ctx.store.save<SpaceFollowers>(newSpaceFollowersEnt);
-  } else if (method === EventAction.SpaceUnfollowed) {
+  } else if (eventName === EventAction.SpaceUnfollowed) {
     if (!spaceFollowers) return;
     currentSpaceFollowersCount -= 1;
     await ctx.store.remove<SpaceFollowers>(spaceFollowers);

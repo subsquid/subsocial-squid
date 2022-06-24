@@ -7,7 +7,6 @@ import {
 } from './utils';
 import { SpaceDataExtended } from '../common/types';
 import { Account, Space } from '../model';
-import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import {
   SpacesSpaceCreatedEvent,
   SpacesSpaceUpdatedEvent
@@ -18,6 +17,8 @@ import {
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../common/errors';
+import { EventHandlerContext } from '../common/contexts';
+
 
 export async function spaceCreated(ctx: EventHandlerContext) {
   const event = new SpacesSpaceCreatedEvent(ctx);

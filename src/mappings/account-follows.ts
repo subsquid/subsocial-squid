@@ -1,4 +1,3 @@
-import { EventHandlerContext, Store } from '@subsquid/substrate-processor';
 import { Account, AccountFollowers, Activity } from '../model';
 import {
   ProfileFollowsAccountFollowedEvent,
@@ -17,6 +16,7 @@ import {
   addNotificationForAccount,
   deleteAllNotificationsAboutAccount
 } from './notification';
+import { EventHandlerContext } from '../common/contexts';
 
 export async function accountFollowed(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
@@ -79,7 +79,7 @@ const processAccountFollowingUnfollowingRelations = async (
   activity: Activity,
   ctx: EventHandlerContext
 ): Promise<void> => {
-  const { method } = ctx.event;
+  const { name } = ctx.event; // TODO check if name === method
 
   const AccountFollowersEntityId = getAccountFollowersEntityId(
     followerAccount.id,
@@ -95,7 +95,7 @@ const processAccountFollowingUnfollowingRelations = async (
   let currentFollowingCountOfFollowerAcc =
     followerAccount.followingAccountsCount || 0;
 
-  if (method === EventAction.AccountFollowed) {
+  if (name === EventAction.AccountFollowed) {
     if (accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc += 1;
     currentFollowingCountOfFollowerAcc += 1;
@@ -108,7 +108,7 @@ const processAccountFollowingUnfollowingRelations = async (
 
     await ctx.store.save<AccountFollowers>(newAccountFollowersEnt);
     await addNotificationForAccount(followingAccount, activity, ctx);
-  } else if (method === EventAction.AccountUnfollowed) {
+  } else if (name === EventAction.AccountUnfollowed) {
     if (!accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc -= 1;
     currentFollowingCountOfFollowerAcc -= 1;

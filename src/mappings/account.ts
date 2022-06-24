@@ -1,4 +1,3 @@
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import { Account } from '../model';
 import {
   ProfilesProfileCreatedEvent,
@@ -12,6 +11,7 @@ import {
 import { resolveAccount } from './resolvers/resolveAccountData';
 import { setActivity } from './activity';
 import { MissingSubsocialApiEntity } from '../common/errors';
+import { EventHandlerContext } from '../common/contexts';
 
 export async function accountCreated(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
@@ -24,7 +24,7 @@ export async function accountCreated(ctx: EventHandlerContext): Promise<void> {
   const account: Account | null = await ensureAccount(accountIdString, ctx);
 
   if (account) {
-    await ctx.store.save(Account, account);
+    await ctx.store.save<Account>(account);
     await setActivity({
       account,
       ctx
@@ -43,7 +43,7 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
   const account: Account | null = await ensureAccount(accountIdString, ctx);
 
   if (account) {
-    await ctx.store.save(Account, account);
+    await ctx.store.save<Account>(account);
     await setActivity({
       account,
       ctx
@@ -83,7 +83,7 @@ export async function ensureAccount(
     account.about = accountContent.about;
   }
 
-  if (createIfNotExists && account) return ctx.store.save<Account>(account);
+  if (createIfNotExists && account) await ctx.store.save<Account>(account);
 
   return account;
 }

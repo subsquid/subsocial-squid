@@ -1,6 +1,6 @@
 {
   "outDir": "src/types",
-  "specVersions": "subsocialVersions.json",
+  "specVersions": "subsocialVersions.jsonl",
   "typesBundle": "subsocial",
   "events": [
     "Posts.PostCreated",
@@ -24,5 +24,6 @@
 
     "ProfileFollows.AccountFollowed",
     "ProfileFollows.AccountUnfollowed"
-  ]
+  ],
+  "calls": ["Reactions.create_post_reaction"]
 }

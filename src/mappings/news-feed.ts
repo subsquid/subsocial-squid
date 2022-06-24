@@ -1,4 +1,3 @@
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import {
   Account,
   Activity,
@@ -10,6 +9,8 @@ import {
 } from '../model';
 import { getNewsFeedEntityId } from './utils';
 import { EventAction } from '../common/types';
+import { EventHandlerContext } from '../common/contexts';
+
 /**
  * Add Post to NewsFeed for all Account's and Space's followers.
  *

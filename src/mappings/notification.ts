@@ -1,4 +1,3 @@
-import { EventHandlerContext } from '@subsquid/substrate-processor';
 import {
   Account,
   Activity,
@@ -10,6 +9,7 @@ import {
 import { ensureAccount } from './account';
 import { getNotificationEntityId } from './utils';
 import { EntityProvideFailWarning } from '../common/errors';
+import { EventHandlerContext } from '../common/contexts';
 
 export const addNotificationForAccount = async (
   account: Account | string,
@@ -33,7 +33,8 @@ export const addNotificationForAccount = async (
   notification.account = accountInst;
   notification.activity = activity;
 
-  return ctx.store.save<Notification>(notification);
+  await ctx.store.save<Notification>(notification);
+  return notification;
 };
 
 export const addNotificationForAccountFollowers = async (

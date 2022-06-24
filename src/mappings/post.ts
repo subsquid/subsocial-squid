@@ -41,7 +41,7 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostCreatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, postId] = event.asV18;
+  const [accountId, postId] = event.asV1;
 
   const account = await ensureAccount(
     addressSs58ToString(accountId),
@@ -453,7 +453,7 @@ export const ensurePost = async ({
     }
   }
 
-  if (createIfNotExists) return ctx.store.save(Post, post);
+  if (createIfNotExists) await ctx.store.save<Post>(post);
 
   return post;
 };

@@ -1,4 +1,4 @@
-import { EventHandlerContext } from '@subsquid/substrate-processor';
+import { EventHandlerContext } from '../common/contexts';
 import { Post, Account, PostFollowers, CommentFollowers } from '../model';
 import { getPostFollowersEntityId, printEventLog } from './utils';
 

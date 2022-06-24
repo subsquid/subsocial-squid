@@ -1,8 +1,10 @@
 set -e
-npx sqd codegen
+npx squid-typeorm-codegen
 npm run build
 rm -rf db/migrations/*.js
-npx sqd db drop
-npx sqd db create
-npx sqd db create-migration Init
-npx sqd db migrate
+npx docker-compose down
+sleep 5
+npx docker-compose up -d
+sleep 5
+npx squid-typeorm-migration generate
+npx squid-typeorm-migration apply
