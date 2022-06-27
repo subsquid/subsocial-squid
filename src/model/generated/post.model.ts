@@ -16,14 +16,17 @@ export class Post {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("text", {nullable: true})
-  parentId!: string | undefined | null
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: true})
+  parentPost!: Post | undefined | null
 
-  @Column_("text", {nullable: true})
-  rootPostId!: string | undefined | null
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: true})
+  rootPost!: Post | undefined | null
 
-  @Column_("text", {nullable: true})
-  sharedPostId!: string | undefined | null
+  @Index_()
+  @ManyToOne_(() => Post, {nullable: true})
+  sharedPost!: Post | undefined | null
 
   @Column_("bool", {nullable: false})
   isComment!: boolean

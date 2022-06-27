@@ -1,5 +1,5 @@
-module.exports = class Data1656050090114 {
-  name = 'Data1656050090114'
+module.exports = class Data1656328915341 {
+  name = 'Data1656328915341'
 
   async up(db) {
     await db.query(`CREATE TABLE "account_followers" ("id" character varying NOT NULL, "follower_account_id" character varying NOT NULL, "following_account_id" character varying NOT NULL, CONSTRAINT "PK_dade5b6e74b543ca2ea018b5a5a" PRIMARY KEY ("id"))`)
@@ -21,7 +21,10 @@ module.exports = class Data1656050090114 {
     await db.query(`CREATE INDEX "IDX_4af0a7b3bc874c64e408aaa985" ON "reaction" ("post_id") `)
     await db.query(`CREATE INDEX "IDX_1fa27851b2897fc8a71a007283" ON "reaction" ("account_id") `)
     await db.query(`CREATE INDEX "IDX_caa8bfe29eb6373fc4a58c1af2" ON "reaction" ("status") `)
-    await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "parent_id" text, "root_post_id" text, "shared_post_id" text, "is_comment" boolean NOT NULL, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "kind" character varying(11), "followers_count" integer, "replies_count" integer, "public_replies_count" integer, "hidden_replies_count" integer, "shares_count" integer, "upvotes_count" integer, "downvotes_count" integer, "reactions_count" integer, "title" text, "content" text, "slug" text, "summary" text, "image" text, "canonical" text, "tags_original" text, "proposal_index" integer, "created_by_account_id" character varying NOT NULL, "space_id" character varying NOT NULL, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "is_comment" boolean NOT NULL, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "kind" character varying(11), "followers_count" integer, "replies_count" integer, "public_replies_count" integer, "hidden_replies_count" integer, "shares_count" integer, "upvotes_count" integer, "downvotes_count" integer, "reactions_count" integer, "title" text, "content" text, "slug" text, "summary" text, "image" text, "canonical" text, "tags_original" text, "proposal_index" integer, "parent_post_id" character varying, "root_post_id" character varying, "shared_post_id" character varying, "created_by_account_id" character varying NOT NULL, "space_id" character varying NOT NULL, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE INDEX "IDX_0d4e62dcf3e5e150431136f114" ON "post" ("parent_post_id") `)
+    await db.query(`CREATE INDEX "IDX_ea813cdf5e4158eb4eb24cd049" ON "post" ("root_post_id") `)
+    await db.query(`CREATE INDEX "IDX_52122bf2cf235b80e8227a9c64" ON "post" ("shared_post_id") `)
     await db.query(`CREATE INDEX "IDX_9506f1c2a4fd7133f1d6732c46" ON "post" ("created_by_account_id") `)
     await db.query(`CREATE INDEX "IDX_4873b2ec27a93cd3f2518cb181" ON "post" ("space_id") `)
     await db.query(`CREATE TABLE "activity" ("id" character varying NOT NULL, "block_number" numeric NOT NULL, "event_index" integer NOT NULL, "event" character varying(19) NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL, "aggregated" boolean, "agg_count" numeric, "account_id" character varying NOT NULL, "following_account_id" character varying, "space_id" character varying, "post_id" character varying, "reaction_id" character varying, "comment_post_id" character varying, "comment_parent_post_id" character varying, CONSTRAINT "PK_24625a1d6b1b089c8ae206fe467" PRIMARY KEY ("id"))`)
@@ -38,7 +41,7 @@ module.exports = class Data1656050090114 {
     await db.query(`CREATE TABLE "notification" ("id" character varying NOT NULL, "account_id" character varying NOT NULL, "activity_id" character varying NOT NULL, CONSTRAINT "PK_705b6c7cdf9b2c2ff7ac7872cb7" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_6bfa96ab97f1a09d73091294ef" ON "notification" ("account_id") `)
     await db.query(`CREATE INDEX "IDX_894ef2df998c9dbbdd45e39d88" ON "notification" ("activity_id") `)
-    await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "reputation" integer, "has_profile" boolean, "name" text, "avatar" text, "about" text, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "followers_count" integer, "following_accounts_count" integer, "following_spaces_count" integer, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "reputation" integer, "has_profile" boolean, "name" text, "avatar" text, "about" text, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "followers_count" integer, "following_accounts_count" integer, "following_spaces_count" integer, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
     await db.query(`ALTER TABLE "account_followers" ADD CONSTRAINT "FK_7bb4dcd7984d41c97348ceb69a2" FOREIGN KEY ("follower_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "account_followers" ADD CONSTRAINT "FK_9130c3e03dd8405027b2855e180" FOREIGN KEY ("following_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "space_followers" ADD CONSTRAINT "FK_b99731dad3b444d673552a12e2e" FOREIGN KEY ("follower_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -51,6 +54,9 @@ module.exports = class Data1656050090114 {
     await db.query(`ALTER TABLE "comment_followers" ADD CONSTRAINT "FK_786ac17a6b890ba9a835ffab18f" FOREIGN KEY ("following_comment_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "reaction" ADD CONSTRAINT "FK_4af0a7b3bc874c64e408aaa9853" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "reaction" ADD CONSTRAINT "FK_1fa27851b2897fc8a71a0072834" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_0d4e62dcf3e5e150431136f1149" FOREIGN KEY ("parent_post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_ea813cdf5e4158eb4eb24cd0495" FOREIGN KEY ("root_post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+    await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_52122bf2cf235b80e8227a9c645" FOREIGN KEY ("shared_post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_9506f1c2a4fd7133f1d6732c46e" FOREIGN KEY ("created_by_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_4873b2ec27a93cd3f2518cb1813" FOREIGN KEY ("space_id") REFERENCES "space"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "activity" ADD CONSTRAINT "FK_96c7c848eec1feba0bc66b45190" FOREIGN KEY ("account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -87,6 +93,9 @@ module.exports = class Data1656050090114 {
     await db.query(`DROP INDEX "public"."IDX_1fa27851b2897fc8a71a007283"`)
     await db.query(`DROP INDEX "public"."IDX_caa8bfe29eb6373fc4a58c1af2"`)
     await db.query(`DROP TABLE "post"`)
+    await db.query(`DROP INDEX "public"."IDX_0d4e62dcf3e5e150431136f114"`)
+    await db.query(`DROP INDEX "public"."IDX_ea813cdf5e4158eb4eb24cd049"`)
+    await db.query(`DROP INDEX "public"."IDX_52122bf2cf235b80e8227a9c64"`)
     await db.query(`DROP INDEX "public"."IDX_9506f1c2a4fd7133f1d6732c46"`)
     await db.query(`DROP INDEX "public"."IDX_4873b2ec27a93cd3f2518cb181"`)
     await db.query(`DROP TABLE "activity"`)
@@ -116,6 +125,9 @@ module.exports = class Data1656050090114 {
     await db.query(`ALTER TABLE "comment_followers" DROP CONSTRAINT "FK_786ac17a6b890ba9a835ffab18f"`)
     await db.query(`ALTER TABLE "reaction" DROP CONSTRAINT "FK_4af0a7b3bc874c64e408aaa9853"`)
     await db.query(`ALTER TABLE "reaction" DROP CONSTRAINT "FK_1fa27851b2897fc8a71a0072834"`)
+    await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_0d4e62dcf3e5e150431136f1149"`)
+    await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_ea813cdf5e4158eb4eb24cd0495"`)
+    await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_52122bf2cf235b80e8227a9c645"`)
     await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_9506f1c2a4fd7133f1d6732c46e"`)
     await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_4873b2ec27a93cd3f2518cb1813"`)
     await db.query(`ALTER TABLE "activity" DROP CONSTRAINT "FK_96c7c848eec1feba0bc66b45190"`)

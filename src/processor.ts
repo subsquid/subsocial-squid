@@ -37,6 +37,7 @@ processor.setDataSource({
 });
 
 // processor.setBlockRange({ from: 677319 }); //1091772
+processor.setBlockRange({ from: 559971 }); //1091772
 
 processor.addEventHandler('Posts.PostCreated', postCreated);
 processor.addEventHandler('Posts.PostUpdated', postUpdated);

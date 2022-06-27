@@ -30,6 +30,10 @@ export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
   }
 };
 
+export const decorateEventName = (rawEventName: string) => {
+  return rawEventName.split('.')[1];
+};
+
 export const getActivityEntityId = (
   blockNumber: string,
   indexInBlock: string

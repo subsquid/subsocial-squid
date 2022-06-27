@@ -10,8 +10,9 @@ import {
   EventDataRequest
 } from '@subsquid/substrate-processor/lib/interfaces/dataSelection';
 
-export type EventHandlerContext<T extends EventDataRequest = { event: true }> =
-  PrEventHandlerContext<Store, T>;
+export type EventHandlerContext<
+  T extends EventDataRequest = { event: true; call: true }
+> = PrEventHandlerContext<Store, T>;
 export type BlockHandlerContext = PrBlockHandlerContext<Store>;
 export type CallHandlerContext<
   T extends CallDataRequest = { call: true; extrinsic: true }

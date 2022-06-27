@@ -43,11 +43,7 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
 
   const [accountId, postId] = event.asV1;
 
-  const account = await ensureAccount(
-    addressSs58ToString(accountId),
-    ctx,
-    true
-  );
+  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
   if (!account) return;
 
@@ -92,7 +88,17 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
 
   const [accountId, id] = event.asV1;
 
-  const post = await ctx.store.get(Post, id.toString());
+  const post = await ctx.store.get(Post, {
+    where: { id: id.toString() },
+    relations: [
+      'space',
+      'createdByAccount',
+      'rootPost',
+      'parentPost',
+      'rootPost.createdByAccount',
+      'parentPost.createdByAccount'
+    ]
+  });
   if (!post) {
     new EntityProvideFailWarning(Post, id.toString(), ctx);
     return;
@@ -104,16 +110,13 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
     return;
   }
 
-  const postStruct = postData.post.struct;
-
-  const postContent = postData.post.content;
+  const { struct: postStruct, content: postContent } = postData.post;
 
   if (post.updatedAtTime === postStruct.updatedAtTime) return;
 
   const createdByAccount = await ensureAccount(
     postStruct.createdByAccount,
-    ctx,
-    true
+    ctx
   );
 
   if (!createdByAccount) {
@@ -129,13 +132,8 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
     ? new Date(postStruct.updatedAtTime)
     : null;
 
-  if (postStruct.spaceId) {
-    const space = await ctx.store.get(Space, postStruct.spaceId.toString());
-    if (space) {
-      await updateCountersInSpace(ctx, space);
-    } else {
-      new EntityProvideFailWarning(Space, postStruct.spaceId.toString(), ctx);
-    }
+  if (postStruct.spaceId && post.space) {
+    await updateCountersInSpace(ctx, post.space);
   }
 
   if (postContent) {
@@ -162,11 +160,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   // TODO update postsCount for old and new spaces
 
-  const account = await ensureAccount(
-    addressSs58ToString(accountId),
-    ctx,
-    true
-  );
+  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
   if (!account) {
     new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
@@ -175,7 +169,14 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   const post = await ctx.store.get(Post, {
     where: { id: postId.toString() },
-    relations: ['space']
+    relations: [
+      'space',
+      'createdByAccount',
+      'rootPost',
+      'parentPost',
+      'rootPost.createdByAccount',
+      'parentPost.createdByAccount'
+    ]
   });
   if (!post) {
     new EntityProvideFailWarning(Post, postId.toString(), ctx);
@@ -223,18 +224,24 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostSharedEvent(ctx);
 
   const [accountId, id] = event.asV1;
-  const account = await ensureAccount(
-    addressSs58ToString(accountId),
-    ctx,
-    true
-  );
+  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
   if (!account) {
     new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
     return;
   }
 
-  const post = await ctx.store.get(Post, id.toString());
+  const post = await ctx.store.get(Post, {
+    where: { id: id.toString() },
+    relations: [
+      'space',
+      'createdByAccount',
+      'parentPost',
+      'rootPost',
+      'parentPost.createdByAccount',
+      'rootPost.createdByAccount'
+    ]
+  });
   if (!post) {
     new EntityProvideFailWarning(Post, id.toString(), ctx);
     return;
@@ -249,6 +256,7 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
   post.sharesCount = postStruct.sharesCount;
 
   await ctx.store.save<Post>(post);
+
   const activity = await setActivity({
     account,
     post,
@@ -260,30 +268,20 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
     return;
   }
 
-  if (!post.isComment || (post.isComment && !post.parentId)) {
+  if (!post.isComment || (post.isComment && !post.parentPost)) {
     await addNotificationForAccountFollowers(account, activity, ctx);
     await addNotificationForAccount(account, activity, ctx);
-  } else if (post.isComment && post.parentId && post.rootPostId) {
+  } else if (post.isComment && post.parentPost && post.rootPost) {
     /**
      * Notifications should not be added for creator followers if post is reply
      */
-    const rootPostInst = await ctx.store.get(Post, post.rootPostId);
-    const parentCommentInst = await ctx.store.get(Post, post.parentId);
-    if (!rootPostInst) {
-      new EntityProvideFailWarning(Post, post.rootPostId, ctx);
-      return;
-    }
-    if (!parentCommentInst) {
-      new EntityProvideFailWarning(Post, post.parentId, ctx);
-      return;
-    }
     await addNotificationForAccount(
-      rootPostInst.createdByAccount,
+      post.rootPost.createdByAccount,
       activity,
       ctx
     );
     await addNotificationForAccount(
-      parentCommentInst.createdByAccount,
+      post.parentPost.createdByAccount,
       activity,
       ctx
     );
@@ -370,7 +368,7 @@ export const ensurePost = async ({
     const { rootPostId } = postStruct as CommentStruct;
     const rootSpacePost = await ctx.store.get(Post, {
       where: { id: rootPostId },
-      relations: ['space']
+      relations: ['space', 'space.createdByAccount']
     });
     if (!rootSpacePost) {
       new EntityProvideFailWarning(Post, rootPostId, ctx);
@@ -408,7 +406,7 @@ export const ensurePost = async ({
     ? new Date(postStruct.updatedAtTime)
     : null;
   post.space = space;
-  await updateCountersInSpace(ctx, space);
+  // await updateCountersInSpace(ctx, space); // TODO refactor update cunters
 
   if (postStruct.isComment) {
     post.kind = PostKind.Comment;
@@ -424,18 +422,18 @@ export const ensurePost = async ({
     case PostKind.Comment:
       const { rootPostId, parentId } = asCommentStruct(postStruct);
 
-      post.rootPostId = rootPostId.toString();
-      post.parentId = parentId?.toString();
+      post.rootPost = await ctx.store.get(Post, rootPostId);
+      post.parentPost = await ctx.store.get(Post, parentId);
 
-      if (rootPostId && rootPostId !== null && ctx.store)
-        await updateReplyCount(ctx, BigInt(rootPostId.toString()));
-      if (parentId && parentId !== null && ctx.store)
-        await updateReplyCount(ctx, BigInt(parentId.toString()));
+      // if (rootPostId && rootPostId !== null && ctx.store)
+      //   await updateReplyCount(ctx, BigInt(rootPostId.toString()));
+      // if (parentId && parentId !== null && ctx.store)
+      //   await updateReplyCount(ctx, BigInt(parentId.toString()));
       break;
 
     case PostKind.SharedPost:
       const { sharedPostId } = asSharedPostStruct(postStruct);
-      post.sharedPostId = sharedPostId;
+      post.sharedPost = await ctx.store.get(Post, sharedPostId);
       break;
   }
 

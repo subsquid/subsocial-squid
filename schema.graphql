@@ -1,4 +1,23 @@
-enum EventAction {
+#enum EventName {
+#  "Posts.PostCreated"
+#  "Posts.PostDeleted"
+#  "Posts.PostUpdated"
+#  "Posts.PostShared"
+#  "Posts.PostMoved"
+#  "Reactions.PostReactionCreated"
+#  "Reactions.PostReactionUpdated"
+#  "Reactions.PostReactionDeleted"
+#  "SpaceCreated"
+#  "Spaces.SpaceUpdated"
+#  "Spaces.SpaceFollowed"
+#  "Spaces.SpaceUnfollowed"
+#  "ProfileFollows.AccountFollowed"
+#  "ProfileFollows.AccountUnfollowed"
+#  "Profiles.ProfileCreated"
+#  "Profiles.ProfileUpdated"
+#}
+
+enum EventName {
   PostCreated
   PostDeleted
   PostUpdated
@@ -41,7 +60,6 @@ type Account @entity {
   about: String
   createdAtBlock: BigInt
   createdAtTime: DateTime
-  createdOnDay: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
   followersCount: Int
@@ -64,9 +82,9 @@ type Account @entity {
 
 type Post @entity {
   id: ID!
-  parentId: String
-  rootPostId: String
-  sharedPostId: String
+  parentPost: Post
+  rootPost: Post
+  sharedPost: Post
   isComment: Boolean!
 
   createdByAccount: Account!
@@ -144,7 +162,7 @@ type Activity @entity {
   account: Account!
   blockNumber: BigInt!
   eventIndex: Int!
-  event: EventAction!
+  event: EventName!
   followingAccount: Account
   space: Space
   post: Post

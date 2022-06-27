@@ -1,4 +1,4 @@
-export enum EventAction {
+export enum EventName {
   PostCreated = "PostCreated",
   PostDeleted = "PostDeleted",
   PostUpdated = "PostUpdated",

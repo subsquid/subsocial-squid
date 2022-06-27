@@ -39,7 +39,26 @@ export type CommonEventHandlerContext = EventHandlerContext<
   { event: { args: true } }
 >;
 
-export enum EventAction {
+// export enum EventName {
+//   'Posts.PostCreated' = 'Posts.PostCreated',
+//   'Posts.PostDeleted' = 'Posts.PostDeleted',
+//   'Posts.PostUpdated' = 'Posts.PostUpdated',
+//   'Posts.PostShared' = 'Posts.PostShared',
+//   'Posts.PostMoved' = 'Posts.PostMoved',
+//   'Reactions.PostReactionCreated' = 'Reactions.PostReactionCreated',
+//   'Reactions.PostReactionUpdated' = 'Reactions.PostReactionUpdated',
+//   'Reactions.PostReactionDeleted' = 'Reactions.PostReactionDeleted',
+//   'Spaces.SpaceCreated' = 'Spaces.SpaceCreated',
+//   'Spaces.SpaceUpdated' = 'Spaces.SpaceUpdated',
+//   'Spaces.SpaceFollowed' = 'Spaces.SpaceFollowed',
+//   'Spaces.SpaceUnfollowed' = 'Spaces.SpaceUnfollowed',
+//   'ProfileFollows.AccountFollowed' = 'ProfileFollows.AccountFollowed',
+//   'ProfileFollows.AccountUnfollowed' = 'ProfileFollows.AccountUnfollowed',
+//   'Profiles.ProfileCreated' = 'Profiles.ProfileCreated',
+//   'Profiles.ProfileUpdated' = 'Profiles.ProfileUpdated'
+// }
+
+export enum EventName {
   PostCreated = 'PostCreated',
   PostDeleted = 'PostDeleted',
   PostUpdated = 'PostUpdated',

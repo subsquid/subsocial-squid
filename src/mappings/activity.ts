@@ -1,10 +1,10 @@
 import { Account, Space, Post, Activity, Reaction } from '../model';
-import { EventAction } from '../common/types';
+import { EventName } from '../common/types';
 import { ensureAccount } from './account';
 import { ensureSpace } from './space';
 import { ensurePost } from './post';
 import { EntityProvideFailWarning } from '../common/errors';
-import { getActivityEntityId } from './utils';
+import { getActivityEntityId, decorateEventName } from './utils';
 import { EventHandlerContext } from '../common/contexts';
 
 export const setActivity = async ({
@@ -13,8 +13,6 @@ export const setActivity = async ({
   space,
   post,
   reaction,
-  // comment,
-  // commentParent,
   followingAccount
 }: {
   account: Account | string;
@@ -22,15 +20,11 @@ export const setActivity = async ({
   space?: Space | string;
   post?: Post;
   reaction?: Reaction;
-  // comment?: Post;
-  // commentParent?: Post;
   followingAccount?: Account | string;
 }): Promise<Activity | null> => {
-  const { indexInBlock, name: method } = ctx.event;
+  const { indexInBlock, name: eventName } = ctx.event;
   const { height: blockNumber } = ctx.block;
-
-  console.log('ctx.event - ', ctx.event);
-  console.log('ctx.block - ', ctx.block);
+  const eventNameDecorated = decorateEventName(eventName);
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
@@ -51,27 +45,19 @@ export const setActivity = async ({
   activity.account = accountInst;
   activity.blockNumber = BigInt(blockNumber.toString());
   activity.eventIndex = indexInBlock;
-  activity.event = EventAction[method as keyof typeof EventAction];
+  activity.event = EventName[eventNameDecorated as keyof typeof EventName];
   activity.date = new Date();
 
   let comment: boolean | Post = false;
   let commentParent = null;
 
   // TODO check do we need to save Post or just ID
-  if (post && post.isComment && post.rootPostId && !post.parentId) {
+  if (post && post.isComment && post.rootPost && !post.parentPost) {
     comment = post;
-    commentParent = await ensurePost({
-      account: post.createdByAccount,
-      postId: post.rootPostId,
-      ctx
-    });
-  } else if (post && post.isComment && post.rootPostId && post.parentId) {
+    commentParent = post.rootPost;
+  } else if (post && post.isComment && post.rootPost && post.parentPost) {
     comment = post;
-    commentParent = await ensurePost({
-      account: post.createdByAccount,
-      postId: post.parentId,
-      ctx
-    });
+    commentParent = post.parentPost;
   }
 
   /**
@@ -79,8 +65,8 @@ export const setActivity = async ({
    * AccountUnfollowed
    */
   if (
-    (method === EventAction.AccountFollowed ||
-      method === EventAction.AccountUnfollowed) &&
+    (eventNameDecorated === EventName.AccountFollowed ||
+      eventNameDecorated === EventName.AccountUnfollowed) &&
     followingAccount
   ) {
     const followingAccountInst =
@@ -93,12 +79,17 @@ export const setActivity = async ({
   /**
    * PostCreated
    */
-  if (method === EventAction.PostCreated && post) {
+  if (eventNameDecorated === EventName.PostCreated && post) {
     activity.post = post;
     activity.space = post.space;
     // TODO Add Activity/Notification for following creator account to created post as owner
   }
-  if (method === EventAction.PostCreated && !post && comment && commentParent) {
+  if (
+    eventNameDecorated === EventName.PostCreated &&
+    !post &&
+    comment &&
+    commentParent
+  ) {
     activity.space = comment.space;
     activity.commentPost = comment;
     activity.commentParentPost = commentParent;
@@ -112,18 +103,23 @@ export const setActivity = async ({
    * SpaceUnfollowed
    */
   if (
-    (method === EventAction.SpaceCreated ||
-      EventAction.SpaceUpdated ||
-      method === EventAction.SpaceFollowed ||
-      EventAction.SpaceUnfollowed) &&
+    (eventNameDecorated === EventName.SpaceCreated ||
+      EventName.SpaceUpdated ||
+      eventNameDecorated === EventName.SpaceFollowed ||
+      EventName.SpaceUnfollowed) &&
     space
   ) {
     const spaceInst =
-      space instanceof Space
-        ? space
-        : await ensureSpace({ space, ctx, createIfNotExists: true });
+      space instanceof Space ? space : await ensureSpace({ space, ctx });
 
-    if (!spaceInst || !('id' in spaceInst)) return null;
+    if (!spaceInst || !('id' in spaceInst)) {
+      new EntityProvideFailWarning(
+        Space,
+        typeof space === 'string' ? space : space.id,
+        ctx
+      );
+      return null;
+    }
     activity.space = spaceInst;
   }
 
@@ -133,8 +129,8 @@ export const setActivity = async ({
    * PostReactionDeleted
    */
   if (
-    (method === EventAction.PostReactionCreated ||
-      method === EventAction.PostReactionUpdated) &&
+    (eventNameDecorated === EventName.PostReactionCreated ||
+      eventNameDecorated === EventName.PostReactionUpdated) &&
     post &&
     reaction
   ) {
@@ -143,8 +139,8 @@ export const setActivity = async ({
     activity.space = post.space;
   }
   if (
-    (method === EventAction.PostReactionCreated ||
-      method === EventAction.PostReactionUpdated) &&
+    (eventNameDecorated === EventName.PostReactionCreated ||
+      eventNameDecorated === EventName.PostReactionUpdated) &&
     reaction &&
     !post &&
     comment &&
@@ -156,13 +152,13 @@ export const setActivity = async ({
     activity.commentParentPost = commentParent;
   }
 
-  if (method === EventAction.PostReactionDeleted && post) {
+  if (eventNameDecorated === EventName.PostReactionDeleted && post) {
     activity.post = post;
     activity.space = post.space;
   }
 
   if (
-    method === EventAction.PostReactionDeleted &&
+    eventNameDecorated === EventName.PostReactionDeleted &&
     reaction &&
     !post &&
     comment &&

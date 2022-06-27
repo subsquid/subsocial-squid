@@ -6,9 +6,10 @@ import {
 import {
   addressSs58ToString,
   getAccountFollowersEntityId,
-  printEventLog
+  printEventLog,
+  decorateEventName
 } from './utils';
-import { EventAction } from '../common/types';
+import { EventName } from '../common/types';
 import { ensureAccount } from './account';
 import { setActivity } from './activity';
 import { deleteAccountPostsFromFeedForAccount } from './news-feed';
@@ -52,8 +53,8 @@ async function handleEvent(
   followingId: string,
   ctx: EventHandlerContext
 ) {
-  const followerAccount = await ensureAccount(followerId, ctx, true);
-  const followingAccount = await ensureAccount(followingId, ctx, true);
+  const followerAccount = await ensureAccount(followerId, ctx);
+  const followingAccount = await ensureAccount(followingId, ctx);
 
   if (!followerAccount || !followingAccount) return;
 
@@ -79,7 +80,8 @@ const processAccountFollowingUnfollowingRelations = async (
   activity: Activity,
   ctx: EventHandlerContext
 ): Promise<void> => {
-  const { name } = ctx.event; // TODO check if name === method
+  const { name } = ctx.event;
+  const eventNameDecorated = decorateEventName(name);
 
   const AccountFollowersEntityId = getAccountFollowersEntityId(
     followerAccount.id,
@@ -95,7 +97,7 @@ const processAccountFollowingUnfollowingRelations = async (
   let currentFollowingCountOfFollowerAcc =
     followerAccount.followingAccountsCount || 0;
 
-  if (name === EventAction.AccountFollowed) {
+  if (eventNameDecorated === EventName.AccountFollowed) {
     if (accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc += 1;
     currentFollowingCountOfFollowerAcc += 1;
@@ -108,7 +110,7 @@ const processAccountFollowingUnfollowingRelations = async (
 
     await ctx.store.save<AccountFollowers>(newAccountFollowersEnt);
     await addNotificationForAccount(followingAccount, activity, ctx);
-  } else if (name === EventAction.AccountUnfollowed) {
+  } else if (eventNameDecorated === EventName.AccountUnfollowed) {
     if (!accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc -= 1;
     currentFollowingCountOfFollowerAcc -= 1;

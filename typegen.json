@@ -25,5 +25,5 @@
     "ProfileFollows.AccountFollowed",
     "ProfileFollows.AccountUnfollowed"
   ],
-  "calls": ["Reactions.create_post_reaction"]
+  "calls": ["Reactions.create_post_reaction", "Reactions.update_post_reaction"]
 }

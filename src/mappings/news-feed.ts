@@ -8,7 +8,7 @@ import {
   SpaceFollowers
 } from '../model';
 import { getNewsFeedEntityId } from './utils';
-import { EventAction } from '../common/types';
+import { EventName } from '../common/types';
 import { EventHandlerContext } from '../common/contexts';
 
 /**
@@ -69,14 +69,14 @@ export const deleteSpacePostsFromFeedForAccount = async (
         account,
         activity: {
           space,
-          event: EventAction.PostCreated
+          event: EventName.PostCreated
         }
       },
       {
         account,
         activity: {
           space,
-          event: EventAction.PostMoved
+          event: EventName.PostMoved
         }
       }
     ],
@@ -97,7 +97,7 @@ export const deleteAccountPostsFromFeedForAccount = async (
         account,
         activity: {
           account: publisherAccount,
-          event: EventAction.PostCreated
+          event: EventName.PostCreated
         }
       }
     ],

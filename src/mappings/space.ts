@@ -13,18 +13,25 @@ import {
 } from '../types/events';
 import { ensureAccount } from './account';
 import { setActivity } from './activity';
+import { processSpaceFollowingUnfollowingRelations } from './space-follows';
 import {
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../common/errors';
 import { EventHandlerContext } from '../common/contexts';
 
-
 export async function spaceCreated(ctx: EventHandlerContext) {
   const event = new SpacesSpaceCreatedEvent(ctx);
   printEventLog(ctx);
 
   const [accountId, id] = event.asV1;
+
+  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
+
+  if (!account) {
+    new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
+    return;
+  }
 
   const space = await ensureSpace({ space: id.toString(), ctx });
 
@@ -33,8 +40,11 @@ export async function spaceCreated(ctx: EventHandlerContext) {
     return;
   }
   await ctx.store.save<Space>(space);
+
+  await processSpaceFollowingUnfollowingRelations(account, space, ctx);
+
   await setActivity({
-    account: addressSs58ToString(accountId),
+    account,
     space,
     ctx
   });
@@ -78,7 +88,6 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
   space.updatedAtTime = spaceStruct.updatedAtTime
     ? new Date(spaceStruct.updatedAtTime)
     : null;
-
   await ctx.store.save<Space>(space);
   await setActivity({
     account: addressSs58ToString(accountId),
@@ -108,8 +117,26 @@ export const ensureSpace = async ({
   createIfNotExists?: boolean;
 }): Promise<Space | SpaceDataExtended | null> => {
   let spaceInst =
-    space instanceof Space ? space : await ctx.store.get(Space, space);
+    space instanceof Space
+      ? space
+      : await ctx.store.get(Space, {
+          where: { id: space },
+          relations: ['createdByAccount', 'ownerAccount']
+        });
 
+  if (spaceInst && !isExtendedData) return spaceInst;
+  if (spaceInst && isExtendedData) {
+    const spaceDataSSApi = await resolveSpace(new BN(spaceInst.id, 10));
+    if (!spaceDataSSApi) {
+      new MissingSubsocialApiEntity('SpaceData', ctx);
+      return null;
+    }
+    return {
+      struct: spaceDataSSApi.struct,
+      content: spaceDataSSApi.content,
+      space: spaceInst
+    };
+  }
   const spaceId = space instanceof Space ? space.id : space;
 
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
@@ -126,8 +153,7 @@ export const ensureSpace = async ({
 
     const createdByAccount = await ensureAccount(
       spaceStruct.createdByAccount,
-      ctx,
-      true
+      ctx
     );
     if (!createdByAccount) {
       new EntityProvideFailWarning(Account, spaceStruct.createdByAccount, ctx);
@@ -141,7 +167,7 @@ export const ensureSpace = async ({
       new Date(spaceStruct.createdAtTime)
     );
   }
-  const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx, true);
+  const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
   if (!ownerAccount) {
     new EntityProvideFailWarning(Account, spaceStruct.ownerId, ctx);
     return null;
@@ -183,18 +209,18 @@ export async function updateCountersInSpace(
   const spaceChanged: Space = space;
   if (!space) return;
 
-  const spaceStruct = await resolveSpaceStruct(
-    new BN(spaceChanged.id.toString(), 10)
-  );
-  if (!spaceStruct) {
-    new MissingSubsocialApiEntity('SpaceStruct', ctx);
-    return;
-  }
-
-  spaceChanged.postsCount = spaceStruct.postsCount;
-  spaceChanged.hiddenPostsCount = spaceStruct.hiddenPostsCount;
-  spaceChanged.publicPostsCount =
-    spaceChanged.postsCount - spaceChanged.hiddenPostsCount;
-
-  await ctx.store.save<Space>(spaceChanged);
+  // const spaceStruct = await resolveSpaceStruct(
+  //   new BN(spaceChanged.id.toString(), 10)
+  // );
+  // if (!spaceStruct) {
+  //   new MissingSubsocialApiEntity('SpaceStruct', ctx);
+  //   return;
+  // }
+  //
+  // spaceChanged.postsCount = spaceStruct.postsCount;
+  // spaceChanged.hiddenPostsCount = spaceStruct.hiddenPostsCount;
+  // spaceChanged.publicPostsCount =
+  //   spaceChanged.postsCount - spaceChanged.hiddenPostsCount;
+  //
+  // await ctx.store.save<Space>(spaceChanged);
 }
