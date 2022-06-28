@@ -82,18 +82,15 @@ export const setActivity = async ({
   if (eventNameDecorated === EventName.PostCreated && post) {
     activity.post = post;
     activity.space = post.space;
-    // TODO Add Activity/Notification for following creator account to created post as owner
   }
   if (
     eventNameDecorated === EventName.PostCreated &&
-    !post &&
     comment &&
     commentParent
   ) {
     activity.space = comment.space;
     activity.commentPost = comment;
     activity.commentParentPost = commentParent;
-    // TODO Add Activity/Notification for following creator account to created post as owner
   }
 
   /**

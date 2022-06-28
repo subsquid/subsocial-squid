@@ -86,3 +86,9 @@ export enum Status {
   Active = 'Active',
   Deleted = 'Deleted'
 }
+
+export enum SpaceCountersAction {
+  PostAdded = 'PostAdded',
+  PostUpdated = 'PostUpdated',
+  PostDeleted = 'PostDeleted'
+}

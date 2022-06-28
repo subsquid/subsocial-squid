@@ -30,6 +30,12 @@ export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
   }
 };
 
+/**
+ * Remove pallet name from event name. It's required for using in conditions
+ * together with enum values "EventName" as enum value cannot be defined in
+ * format "PalletName.EventName".
+ * @param rawEventName
+ */
 export const decorateEventName = (rawEventName: string) => {
   return rawEventName.split('.')[1];
 };

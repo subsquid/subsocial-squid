@@ -5,8 +5,8 @@ import {
   addressSs58ToString,
   printEventLog
 } from './utils';
-import { SpaceDataExtended } from '../common/types';
-import { Account, Space } from '../model';
+import { SpaceCountersAction, SpaceDataExtended } from '../common/types';
+import { Account, Space, Post } from '../model';
 import {
   SpacesSpaceCreatedEvent,
   SpacesSpaceUpdatedEvent
@@ -176,11 +176,11 @@ export const ensureSpace = async ({
   spaceInst.ownerAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;
 
-  spaceInst.postsCount = spaceStruct.postsCount; // TODO Refactoring is required
-  spaceInst.hiddenPostsCount = spaceStruct.hiddenPostsCount; // TODO Refactoring is required
-  spaceInst.publicPostsCount =
-    spaceInst.postsCount - spaceInst.hiddenPostsCount; // TODO Refactoring is required
-  spaceInst.followersCount = spaceStruct.followersCount; // TODO Refactoring is required
+  spaceInst.postsCount = 0; // Initial value for counter
+  spaceInst.hiddenPostsCount = 0; // Initial value for counter
+  spaceInst.publicPostsCount = 0; // Initial value for counter
+  // spaceInst.followersCount = spaceStruct.followersCount;
+  spaceInst.followersCount = 0; // Initial value for counter
   // spaceInst.score = spaceStruct.score;
 
   if (spaceContent) {
@@ -202,25 +202,59 @@ export const ensureSpace = async ({
 };
 
 // TODO counters must be refactored
-export async function updateCountersInSpace(
-  ctx: EventHandlerContext,
-  space: Space
-): Promise<void> {
+export async function updatePostsCountersInSpace({
+  space,
+  post,
+  isPrevVisStateHidden = false,
+  action,
+  ctx
+}: {
+  space: Space;
+  post: Post;
+  isPrevVisStateHidden?: boolean;
+  action: SpaceCountersAction;
+  ctx: EventHandlerContext;
+}): Promise<void> {
   const spaceChanged: Space = space;
   if (!space) return;
 
-  // const spaceStruct = await resolveSpaceStruct(
-  //   new BN(spaceChanged.id.toString(), 10)
-  // );
-  // if (!spaceStruct) {
-  //   new MissingSubsocialApiEntity('SpaceStruct', ctx);
-  //   return;
-  // }
-  //
-  // spaceChanged.postsCount = spaceStruct.postsCount;
-  // spaceChanged.hiddenPostsCount = spaceStruct.hiddenPostsCount;
-  // spaceChanged.publicPostsCount =
-  //   spaceChanged.postsCount - spaceChanged.hiddenPostsCount;
-  //
-  // await ctx.store.save<Space>(spaceChanged);
+  let { publicPostsCount = 0, postsCount = 0, hiddenPostsCount = 0 } = space;
+
+  switch (action) {
+    case SpaceCountersAction.PostAdded:
+      postsCount = !postsCount ? 1 : postsCount + 1;
+      if (post.hidden) {
+        hiddenPostsCount = !hiddenPostsCount ? 1 : hiddenPostsCount + 1;
+      } else {
+        publicPostsCount = !publicPostsCount ? 1 : publicPostsCount + 1;
+      }
+      spaceChanged.postsCount = postsCount;
+      spaceChanged.hiddenPostsCount = hiddenPostsCount;
+      spaceChanged.publicPostsCount = publicPostsCount;
+      break;
+    case SpaceCountersAction.PostUpdated:
+      if (post.hidden && post.hidden !== isPrevVisStateHidden) {
+        hiddenPostsCount = !hiddenPostsCount ? 1 : hiddenPostsCount + 1;
+        publicPostsCount = !publicPostsCount ? 0 : publicPostsCount - 1;
+      } else if (!post.hidden && post.hidden !== isPrevVisStateHidden) {
+        publicPostsCount = !publicPostsCount ? 1 : publicPostsCount + 1;
+        hiddenPostsCount = !hiddenPostsCount ? 0 : hiddenPostsCount - 1;
+      }
+      spaceChanged.hiddenPostsCount = hiddenPostsCount;
+      spaceChanged.publicPostsCount = publicPostsCount;
+      break;
+    case SpaceCountersAction.PostDeleted:
+      postsCount = !postsCount ? 0 : postsCount - 1;
+      if (post.hidden) {
+        hiddenPostsCount = !hiddenPostsCount ? 0 : hiddenPostsCount - 1;
+      } else {
+        publicPostsCount = !publicPostsCount ? 0 : publicPostsCount - 1;
+      }
+      spaceChanged.postsCount = postsCount;
+      spaceChanged.hiddenPostsCount = hiddenPostsCount;
+      spaceChanged.publicPostsCount = publicPostsCount;
+      break;
+  }
+
+  await ctx.store.save<Space>(spaceChanged);
 }

@@ -31,6 +31,9 @@ export class Post {
   @Column_("bool", {nullable: false})
   isComment!: boolean
 
+  @Column_("bool", {nullable: false})
+  hidden!: boolean
+
   @Index_()
   @ManyToOne_(() => Account, {nullable: false})
   createdByAccount!: Account

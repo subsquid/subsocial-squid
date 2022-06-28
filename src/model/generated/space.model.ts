@@ -41,9 +41,6 @@ export class Space {
   @Column_("int4", {nullable: true})
   hiddenPostsCount!: number | undefined | null
 
-  @Column_("int4", {nullable: true})
-  score!: number | undefined | null
-
   @Column_("text", {nullable: true})
   content!: string | undefined | null
 
