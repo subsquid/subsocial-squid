@@ -166,10 +166,9 @@ type Activity @entity {
   event: EventName!
   followingAccount: Account
   space: Space
+  spacePrev: Space
   post: Post
   reaction: Reaction
-  commentPost: Post
-  commentParentPost: Post
   date: DateTime!
   aggregated: Boolean
   aggCount: BigInt

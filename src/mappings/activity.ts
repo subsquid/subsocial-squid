@@ -2,7 +2,6 @@ import { Account, Space, Post, Activity, Reaction } from '../model';
 import { EventName } from '../common/types';
 import { ensureAccount } from './account';
 import { ensureSpace } from './space';
-import { ensurePost } from './post';
 import { EntityProvideFailWarning } from '../common/errors';
 import { getActivityEntityId, decorateEventName } from './utils';
 import { EventHandlerContext } from '../common/contexts';
@@ -12,12 +11,14 @@ export const setActivity = async ({
   ctx,
   space,
   post,
+  spacePrev,
   reaction,
   followingAccount
 }: {
   account: Account | string;
   ctx: EventHandlerContext;
   space?: Space | string;
+  spacePrev?: Space | string;
   post?: Post;
   reaction?: Reaction;
   followingAccount?: Account | string;
@@ -48,18 +49,6 @@ export const setActivity = async ({
   activity.event = EventName[eventNameDecorated as keyof typeof EventName];
   activity.date = new Date();
 
-  let comment: boolean | Post = false;
-  let commentParent = null;
-
-  // TODO check do we need to save Post or just ID
-  if (post && post.isComment && post.rootPost && !post.parentPost) {
-    comment = post;
-    commentParent = post.rootPost;
-  } else if (post && post.isComment && post.rootPost && post.parentPost) {
-    comment = post;
-    commentParent = post.parentPost;
-  }
-
   /**
    * AccountFollowed
    * AccountUnfollowed
@@ -73,24 +62,73 @@ export const setActivity = async ({
       followingAccount instanceof Account
         ? followingAccount
         : await ensureAccount(followingAccount, ctx);
-    if (!followingAccountInst) return null;
-    activity.followingAccount = followingAccountInst;
+    if (!followingAccountInst) {
+      new EntityProvideFailWarning(
+        Account,
+        typeof followingAccount === 'string'
+          ? followingAccount
+          : followingAccount.id,
+        ctx
+      );
+    } else {
+      activity.followingAccount = followingAccountInst;
+      activity.aggregated = true;
+      activity.aggCount = BigInt(
+        !followingAccountInst.followersCount
+          ? 0
+          : followingAccountInst.followersCount - 1
+      );
+    }
   }
   /**
    * PostCreated
    */
-  if (eventNameDecorated === EventName.PostCreated && post) {
+
+  if (eventNameDecorated === EventName.PostCreated && post && !post.isComment) {
+    // Regular Post
     activity.post = post;
     activity.space = post.space;
-  }
-  if (
+  } else if (
     eventNameDecorated === EventName.PostCreated &&
-    comment &&
-    commentParent
+    post &&
+    post.isComment &&
+    post.rootPost
   ) {
-    activity.space = comment.space;
-    activity.commentPost = comment;
-    activity.commentParentPost = commentParent;
+    // Post Comment / Comment Reply
+    activity.post = post;
+    activity.space = post.rootPost.space;
+  }
+
+  /**
+   * PostMoved
+   */
+  if (eventNameDecorated === EventName.PostMoved && post && spacePrev) {
+    const spacePrevInst =
+      spacePrev instanceof Space
+        ? spacePrev
+        : await ensureSpace({ space: spacePrev, ctx });
+
+    if (!spacePrevInst || !('id' in spacePrevInst)) {
+      new EntityProvideFailWarning(
+        Space,
+        typeof spacePrev === 'string' ? spacePrev : spacePrev.id,
+        ctx
+      );
+    } else {
+      activity.post = post;
+      activity.space = post.space;
+      activity.spacePrev = spacePrevInst;
+      activity.aggregated = true;
+      activity.aggCount = BigInt(0);
+    }
+  }
+
+  /**
+   * PostShared
+   */
+  if (eventNameDecorated === EventName.PostShared && post) {
+    activity.post = post;
+    activity.space = post.space;
   }
 
   /**
@@ -101,9 +139,9 @@ export const setActivity = async ({
    */
   if (
     (eventNameDecorated === EventName.SpaceCreated ||
-      EventName.SpaceUpdated ||
+      eventNameDecorated === EventName.SpaceUpdated ||
       eventNameDecorated === EventName.SpaceFollowed ||
-      EventName.SpaceUnfollowed) &&
+      eventNameDecorated === EventName.SpaceUnfollowed) &&
     space
   ) {
     const spaceInst =
@@ -115,9 +153,24 @@ export const setActivity = async ({
         typeof space === 'string' ? space : space.id,
         ctx
       );
-      return null;
+    } else {
+      activity.space = spaceInst;
+
+      if (eventNameDecorated === EventName.SpaceCreated) {
+        activity.aggregated = true;
+        activity.aggCount = BigInt(0);
+      }
+
+      if (
+        eventNameDecorated === EventName.SpaceFollowed ||
+        eventNameDecorated === EventName.SpaceUnfollowed
+      ) {
+        activity.aggregated = true;
+        activity.aggCount = BigInt(
+          !spaceInst.followersCount ? 0 : spaceInst.followersCount - 1
+        );
+      }
     }
-    activity.space = spaceInst;
   }
 
   /**
@@ -127,47 +180,24 @@ export const setActivity = async ({
    */
   if (
     (eventNameDecorated === EventName.PostReactionCreated ||
+      eventNameDecorated === EventName.PostReactionDeleted ||
       eventNameDecorated === EventName.PostReactionUpdated) &&
     post &&
     reaction
   ) {
-    activity.reaction = reaction;
+    if (eventNameDecorated !== EventName.PostReactionDeleted)
+      activity.reaction = reaction;
     activity.post = post;
-    activity.space = post.space;
-  }
-  if (
-    (eventNameDecorated === EventName.PostReactionCreated ||
-      eventNameDecorated === EventName.PostReactionUpdated) &&
-    reaction &&
-    !post &&
-    comment &&
-    commentParent
-  ) {
-    activity.reaction = reaction;
-    activity.space = comment.space;
-    activity.commentPost = comment;
-    activity.commentParentPost = commentParent;
-  }
+    activity.space = post.rootPost ? post.rootPost.space : post.space;
 
-  if (eventNameDecorated === EventName.PostReactionDeleted && post) {
-    activity.post = post;
-    activity.space = post.space;
-  }
+    const upvotesCount = !post.upvotesCount ? 0 : post.upvotesCount;
+    const downvotesCount = !post.downvotesCount ? 0 : post.downvotesCount;
 
-  if (
-    eventNameDecorated === EventName.PostReactionDeleted &&
-    reaction &&
-    !post &&
-    comment &&
-    commentParent
-  ) {
-    activity.space = comment.space;
-    activity.commentPost = comment;
-    activity.commentParentPost = commentParent;
+    activity.aggregated = true;
+    activity.aggCount = BigInt(upvotesCount + downvotesCount - 1);
   }
 
   await ctx.store.save<Activity>(activity);
 
   return activity;
-  // TODO review activities handling
 };

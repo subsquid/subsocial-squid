@@ -18,3 +18,4 @@ export const indexerEndpointUrl =
 export const offchainUrl =
   process.env.OFFCHAIN_URL || 'https://app.subsocial.network/network/offchain';
 export const warningLogsTrace = process.env.WARNING_LOGS_TRACE || 'false';
+export const eventLogsTrace = process.env.EVENT_LOGS_TRACE || 'false';

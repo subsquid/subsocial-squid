@@ -238,6 +238,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   const activity = await setActivity({
     post,
+    spacePrev: prevSpaceInst,
     account,
     ctx
   });
@@ -250,7 +251,6 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
 }
 
-// TODO add update of counters
 export async function postShared(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
 
@@ -323,25 +323,25 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
   }
 }
 
-// TODO refactoring is required
-const updateReplyCount = async (ctx: EventHandlerContext, postId: bigint) => {
-  const post = await ctx.store.get(Post, postId.toString());
-  if (!post) {
-    new EntityProvideFailWarning(Post, postId.toString(), ctx);
-    return;
+const updatePostReplyCount = async (
+  targetPost: Post,
+  reply: Post,
+  ctx: EventHandlerContext
+) => {
+  const targetPostUpdated = targetPost;
+  targetPostUpdated.repliesCount = !targetPostUpdated.repliesCount
+    ? 1
+    : targetPostUpdated.repliesCount + 1;
+  if (reply.hidden) {
+    targetPostUpdated.hiddenRepliesCount = !targetPostUpdated.hiddenRepliesCount
+      ? 1
+      : targetPostUpdated.hiddenRepliesCount + 1;
+  } else {
+    targetPostUpdated.publicRepliesCount = !targetPostUpdated.publicRepliesCount
+      ? 1
+      : targetPostUpdated.publicRepliesCount + 1;
   }
-
-  const postStruct = await resolvePostStruct(new BN(postId.toString(), 10));
-  if (!postStruct) {
-    new MissingSubsocialApiEntity('PostStruct', ctx);
-    return;
-  }
-
-  post.repliesCount = postStruct.repliesCount;
-  post.hiddenRepliesCount = postStruct.hiddenRepliesCount;
-  post.publicRepliesCount = post.repliesCount - post.hiddenRepliesCount;
-
-  await ctx.store.save<Post>(post);
+  await ctx.store.save<Post>(targetPostUpdated);
 };
 
 export const ensurePost = async ({
@@ -402,7 +402,12 @@ export const ensurePost = async ({
     const { rootPostId } = asCommentStruct(postStruct);
     const rootSpacePost = await ctx.store.get(Post, {
       where: { id: rootPostId },
-      relations: ['space', 'space.createdByAccount', 'space.ownerAccount']
+      relations: [
+        'createdByAccount',
+        'space',
+        'space.createdByAccount',
+        'space.ownerAccount'
+      ]
     });
     if (!rootSpacePost) {
       new EntityProvideFailWarning(Post, rootPostId, ctx);
@@ -431,9 +436,9 @@ export const ensurePost = async ({
   post.createdOnDay = getDateWithoutTime(new Date(postStruct.createdAtTime));
   post.content = postStruct.contentId;
 
-  post.repliesCount = postStruct.repliesCount; // TODO review is required
-  post.hiddenRepliesCount = postStruct.hiddenRepliesCount; // TODO review is required
-  post.publicRepliesCount = post.repliesCount - post.hiddenRepliesCount; // TODO review is required
+  post.repliesCount = 0;
+  post.hiddenRepliesCount = 0;
+  post.publicRepliesCount = 0;
 
   post.sharesCount = 0;
   post.upvotesCount = 0;
@@ -452,19 +457,22 @@ export const ensurePost = async ({
     post.kind = PostKind.SharedPost;
   }
 
-  switch (
-    post.kind // TODO review is required
-  ) {
+  switch (post.kind) {
     case PostKind.Comment:
       const { rootPostId, parentId } = asCommentStruct(postStruct);
 
-      post.rootPost = await ctx.store.get(Post, rootPostId);
-      post.parentPost = await ctx.store.get(Post, parentId);
+      post.rootPost = await ctx.store.get(Post, {
+        where: { id: rootPostId },
+        relations: ['createdByAccount', 'space']
+      });
+      post.parentPost = await ctx.store.get(Post, {
+        where: { id: parentId },
+        relations: ['createdByAccount', 'space']
+      });
 
-      // if (rootPostId && rootPostId !== null && ctx.store)
-      //   await updateReplyCount(ctx, BigInt(rootPostId.toString()));
-      // if (parentId && parentId !== null && ctx.store)
-      //   await updateReplyCount(ctx, BigInt(parentId.toString()));
+      if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
+      if (post.parentPost)
+        await updatePostReplyCount(post.parentPost, post, ctx);
       break;
 
     case PostKind.SharedPost:

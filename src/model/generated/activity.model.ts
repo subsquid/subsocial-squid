@@ -37,20 +37,16 @@ export class Activity {
   space!: Space | undefined | null
 
   @Index_()
+  @ManyToOne_(() => Space, {nullable: true})
+  spacePrev!: Space | undefined | null
+
+  @Index_()
   @ManyToOne_(() => Post, {nullable: true})
   post!: Post | undefined | null
 
   @Index_()
   @ManyToOne_(() => Reaction, {nullable: true})
   reaction!: Reaction | undefined | null
-
-  @Index_()
-  @ManyToOne_(() => Post, {nullable: true})
-  commentPost!: Post | undefined | null
-
-  @Index_()
-  @ManyToOne_(() => Post, {nullable: true})
-  commentParentPost!: Post | undefined | null
 
   @Column_("timestamp with time zone", {nullable: false})
   date!: Date

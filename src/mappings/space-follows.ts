@@ -58,6 +58,7 @@ async function handleEvent(
     new EntityProvideFailWarning(Account, followerId, ctx);
     return;
   }
+  let { followingSpacesCount } = followerAccount;
 
   const space = await ctx.store.get(Space, {
     where: { id: spaceId },
@@ -67,7 +68,6 @@ async function handleEvent(
     new EntityProvideFailWarning(Space, spaceId, ctx);
     return;
   }
-  console.log('space - ', space);
   await processSpaceFollowingUnfollowingRelations(followerAccount, space, ctx);
 
   const activity = await setActivity({
@@ -82,10 +82,14 @@ async function handleEvent(
 
   if (eventNameDecorated === EventName.SpaceFollowed) {
     await addNotificationForAccount(space.ownerAccount, activity, ctx);
+    followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
   } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
     await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
     await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
+    followingSpacesCount = !followingSpacesCount ? 0 : followingSpacesCount - 1;
   }
+  followerAccount.followingSpacesCount = followingSpacesCount;
+  await ctx.store.save<Account>(followerAccount);
 }
 
 export async function processSpaceFollowingUnfollowingRelations(

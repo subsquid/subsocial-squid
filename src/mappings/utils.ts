@@ -3,12 +3,10 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
 import * as ss58 from '@subsquid/ss58';
-// import { MetaItem } from "@subsocial/types"
-// import { PostId } from "@subsocial/types/substrate/interfaces"
-// import { Network, TreasuryProposal } from "../generated/graphql-server/src/modules/treasury-proposal/treasury-proposal.model"
 import { Space, Post } from '../model';
 import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '../common/contexts';
+import { eventLogsTrace } from '../env';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -123,7 +121,8 @@ export const getDateWithoutTime = (date: Date | undefined): Date | undefined =>
 export const printEventLog = (ctx: EventHandlerContext) => {
   const { name, indexInBlock } = ctx.event;
   const { height } = ctx.block;
-  console.log(
-    `>>> method ::: ${name} ::: >>> blockNumber :::  ${height} ::: >>> indexInBlock [ ${indexInBlock} ]`
-  );
+  if (eventLogsTrace === 'true')
+    console.log(
+      `>>> method ::: ${name} ::: >>> blockNumber :::  ${height} ::: >>> indexInBlock [ ${indexInBlock} ]`
+    );
 };
