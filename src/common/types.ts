@@ -12,8 +12,7 @@ import {
   Reaction
 } from '../model';
 import { SpaceContent, SpaceStruct } from '@subsocial/types/dto';
-import { Store } from '@subsquid/typeorm-store';
-import { EventHandlerContext } from '@subsquid/substrate-processor';
+import { EventHandlerContext } from './contexts';
 
 export interface SpaceDataExtended {
   space: Space;
@@ -34,10 +33,6 @@ export type DbEntity =
   | typeof Reaction
   | typeof SpaceFollowers;
 
-export type CommonEventHandlerContext = EventHandlerContext<
-  Store,
-  { event: { args: true } }
->;
 
 // export enum EventName {
 //   'Posts.PostCreated' = 'Posts.PostCreated',

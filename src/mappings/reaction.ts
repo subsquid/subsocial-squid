@@ -188,8 +188,16 @@ export async function postReactionCreated(
 
   const { accountId, postId, reactionId, reactionKind } = event;
 
+  const account = await ensureAccount(accountId, ctx);
+
+  if (!account) {
+    new EntityProvideFailWarning(Account, accountId, ctx);
+    new CommonCriticalError();
+    return;
+  }
+
   const reaction = await ensureReaction({
-    account: accountId,
+    account,
     postId,
     reactionId,
     reactionKind,
@@ -216,7 +224,7 @@ export async function postReactionCreated(
 
   // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
-    account: accountId,
+    account,
     reaction,
     post,
     ctx

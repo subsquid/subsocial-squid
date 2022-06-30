@@ -31,6 +31,7 @@ import {
   addNotificationForAccountFollowers
 } from './notification';
 import {
+  CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../common/errors';

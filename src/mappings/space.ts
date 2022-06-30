@@ -89,6 +89,7 @@ export async function spaceUpdated(ctx: EventHandlerContext) {
     ? new Date(spaceStruct.updatedAtTime)
     : null;
   await ctx.store.save<Space>(space);
+
   await setActivity({
     account: addressSs58ToString(accountId),
     space,

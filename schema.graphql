@@ -143,10 +143,10 @@ type Space @entity {
   createdOnDay: DateTime
   updatedAtTime: DateTime
 
+  posts: [Post]! @derivedFrom(field: "space")
   postsCount: Int
   publicPostsCount: Int
   hiddenPostsCount: Int
-#  score: Int
 
   content: String
   name: String

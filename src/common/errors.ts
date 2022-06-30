@@ -9,7 +9,7 @@ export class UnknownVersionError extends Error {
 }
 
 export class CommonCriticalError extends Error {
-  constructor(msg: string) {
+  constructor(msg = 'Processor has been terminated') {
     super(msg);
   }
 }
