@@ -217,7 +217,12 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
     new MissingSubsocialApiEntity('PostStruct', ctx);
     return;
   }
-  const newSpaceInst = await ctx.store.get(Space, postStruct.spaceId);
+  const newSpaceInst = await ctx.store.get(Space, {
+    where: {
+      id: postStruct.spaceId
+    },
+    relations: ['ownerAccount', 'createdByAccount']
+  });
 
   if (!newSpaceInst || !('id' in newSpaceInst)) {
     new EntityProvideFailWarning(Space, postStruct.spaceId, ctx);

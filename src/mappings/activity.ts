@@ -54,6 +54,15 @@ export const setActivity = async ({
   activity.eventIndex = indexInBlock;
   activity.event = EventName[eventNameDecorated as keyof typeof EventName];
   activity.date = new Date();
+
+  /**
+   * AccountCreated
+   * AccountUpdated
+   *
+   * There is no special data for these events so fields "account" and
+   * "event" will identify current events.
+   */
+
   /**
    * AccountFollowed
    * AccountUnfollowed
@@ -73,7 +82,11 @@ export const setActivity = async ({
   /**
    * PostCreated
    */
-  if (eventNameDecorated === EventName.PostCreated && post)
+  if (
+    (eventNameDecorated === EventName.PostCreated ||
+      eventNameDecorated === EventName.PostUpdated) &&
+    post
+  )
     activity = await insertActivityForPostCreated({
       eventName: eventNameDecorated,
       post,
