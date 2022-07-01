@@ -11,6 +11,7 @@ import { insertActivityForPostReaction } from './activityUtils/insertActivityFor
 import { insertActivityForAccountFollowedUnfollowed } from './activityUtils/insertActivityForAccountFollowedUnfollowed';
 import { ensureAccount } from './account';
 import { EntityProvideFailWarning } from '../common/errors';
+import { insertActivityForAccountCreatedUpdated } from './activityUtils/insertActivityForAccountCreatedUpdated';
 
 export const setActivity = async ({
   account,
@@ -56,12 +57,17 @@ export const setActivity = async ({
   activity.date = new Date();
 
   /**
-   * AccountCreated
-   * AccountUpdated
-   *
-   * There is no special data for these events so fields "account" and
-   * "event" will identify current events.
+   * ProfileCreated
+   * ProfileUpdated
    */
+  if (
+    eventNameDecorated === EventName.ProfileCreated ||
+    eventNameDecorated === EventName.ProfileUpdated
+  ) {
+    activity = await insertActivityForAccountCreatedUpdated({
+      activity
+    });
+  }
 
   /**
    * AccountFollowed
