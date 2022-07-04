@@ -1,6 +1,7 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
+import {Post} from "./post.model"
 import {SpaceFollowers} from "./spaceFollowers.model"
 
 @Entity_()
@@ -32,6 +33,9 @@ export class Space {
   @Column_("timestamp with time zone", {nullable: true})
   updatedAtTime!: Date | undefined | null
 
+  @OneToMany_(() => Post, e => e.space)
+  posts!: Post[]
+
   @Column_("int4", {nullable: true})
   postsCount!: number | undefined | null
 
@@ -40,9 +44,6 @@ export class Space {
 
   @Column_("int4", {nullable: true})
   hiddenPostsCount!: number | undefined | null
-
-  @Column_("int4", {nullable: true})
-  score!: number | undefined | null
 
   @Column_("text", {nullable: true})
   content!: string | undefined | null

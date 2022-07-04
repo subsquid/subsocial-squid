@@ -1,7 +1,7 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
-import {EventAction} from "./_eventAction"
+import {EventName} from "./_eventName"
 import {Space} from "./space.model"
 import {Post} from "./post.model"
 import {Reaction} from "./reaction.model"
@@ -26,7 +26,7 @@ export class Activity {
   eventIndex!: number
 
   @Column_("varchar", {length: 19, nullable: false})
-  event!: EventAction
+  event!: EventName
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: true})
@@ -37,20 +37,16 @@ export class Activity {
   space!: Space | undefined | null
 
   @Index_()
+  @ManyToOne_(() => Space, {nullable: true})
+  spacePrev!: Space | undefined | null
+
+  @Index_()
   @ManyToOne_(() => Post, {nullable: true})
   post!: Post | undefined | null
 
   @Index_()
   @ManyToOne_(() => Reaction, {nullable: true})
   reaction!: Reaction | undefined | null
-
-  @Index_()
-  @ManyToOne_(() => Post, {nullable: true})
-  commentPost!: Post | undefined | null
-
-  @Index_()
-  @ManyToOne_(() => Post, {nullable: true})
-  commentParentPost!: Post | undefined | null
 
   @Column_("timestamp with time zone", {nullable: false})
   date!: Date

@@ -7,11 +7,11 @@ serve:
 
 
 migrate:
-	@npx sqd db:migrate
+	@npx squid-typeorm-migration apply
 
 
 migration:
-	@npx sqd db:create-migration Data
+	@npx squid-typeorm-migration generate Init
 
 
 build:
@@ -19,22 +19,21 @@ build:
 
 
 codegen:
-	@npx sqd codegen
+	@npx squid-typeorm-codegen
 
 
-typegen: subsocialVersions.json
-	@npx squid-substrate-typegen typegen.json
+typegen: typegen/versions.jsonl
+	@npx squid-substrate-typegen ./typegen/typegen.json
 
 
-subsocialVersions.json:
+versions.jsonl:
 	@make explore
 
 
 explore:
 	@npx squid-substrate-metadata-explorer \
 		--chain wss://arch.subsocial.network \
-		--archive https://subsocial.indexer.gc.subsquid.io/v4/graphql \
-		--out subsocialVersions.json
+		--out ./typegen/versions.jsonl
 
 
 up:

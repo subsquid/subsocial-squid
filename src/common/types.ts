@@ -32,7 +32,7 @@ export type DbEntity =
   | typeof Reaction
   | typeof SpaceFollowers;
 
-export enum EventAction {
+export enum EventName {
   PostCreated = 'PostCreated',
   PostDeleted = 'PostDeleted',
   PostUpdated = 'PostUpdated',
@@ -59,4 +59,10 @@ export enum ReactionKind {
 export enum Status {
   Active = 'Active',
   Deleted = 'Deleted'
+}
+
+export enum SpaceCountersAction {
+  PostAdded = 'PostAdded',
+  PostUpdated = 'PostUpdated',
+  PostDeleted = 'PostDeleted'
 }

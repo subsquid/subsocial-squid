@@ -39,9 +39,6 @@ export class Account {
   @Column_("timestamp with time zone", {nullable: true})
   createdAtTime!: Date | undefined | null
 
-  @Column_("timestamp with time zone", {nullable: true})
-  createdOnDay!: Date | undefined | null
-
   @OneToMany_(() => AccountFollowers, e => e.followingAccount)
   followers!: AccountFollowers[]
 

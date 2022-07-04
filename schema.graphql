@@ -1,4 +1,4 @@
-enum EventAction {
+enum EventName {
   PostCreated
   PostDeleted
   PostUpdated
@@ -41,7 +41,6 @@ type Account @entity {
   about: String
   createdAtBlock: BigInt
   createdAtTime: DateTime
-  createdOnDay: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
   followersCount: Int
@@ -64,10 +63,11 @@ type Account @entity {
 
 type Post @entity {
   id: ID!
-  parentId: String
-  rootPostId: String
-  sharedPostId: String
+  parentPost: Post
+  rootPost: Post
+  sharedPost: Post
   isComment: Boolean!
+  hidden: Boolean!
 
   createdByAccount: Account!
   createdAtBlock: BigInt
@@ -124,10 +124,10 @@ type Space @entity {
   createdOnDay: DateTime
   updatedAtTime: DateTime
 
+  posts: [Post]! @derivedFrom(field: "space")
   postsCount: Int
   publicPostsCount: Int
   hiddenPostsCount: Int
-  score: Int
 
   content: String
   name: String
@@ -144,13 +144,12 @@ type Activity @entity {
   account: Account!
   blockNumber: BigInt!
   eventIndex: Int!
-  event: EventAction!
+  event: EventName!
   followingAccount: Account
   space: Space
+  spacePrev: Space
   post: Post
   reaction: Reaction
-  commentPost: Post
-  commentParentPost: Post
   date: DateTime!
   aggregated: Boolean
   aggCount: BigInt
