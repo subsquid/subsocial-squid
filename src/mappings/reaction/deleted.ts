@@ -91,7 +91,6 @@ export async function postReactionDeleted(
 
   await ctx.store.save<Post>(deletedReactionPost);
 
-  // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
     account: accountInst,
     post: deletedReactionPost,

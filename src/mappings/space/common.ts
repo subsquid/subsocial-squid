@@ -108,7 +108,6 @@ export const ensureSpace = async ({
   return spaceInst;
 };
 
-// TODO counters must be refactored
 export async function updatePostsCountersInSpace({
   space,
   post,

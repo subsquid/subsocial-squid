@@ -94,7 +94,6 @@ export async function postReactionUpdated(
 
   await ctx.store.save<Post>(post);
 
-  // TODO track agg_count (upvotesCount + downvotesCount - 1)
   const activity = await setActivity({
     account,
     reaction,

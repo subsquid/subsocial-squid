@@ -23,8 +23,6 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   const [accountId, postId] = event.asV9;
 
-  // TODO update postsCount for old and new spaces
-
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
   const post = await ctx.store.get(Post, {
