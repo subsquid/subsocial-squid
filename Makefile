@@ -22,18 +22,18 @@ codegen:
 	@npx squid-typeorm-codegen
 
 
-typegen: subsocialVersions.jsonl
-	@npx squid-substrate-typegen typegen.json
+typegen: typegen/versions.jsonl
+	@npx squid-substrate-typegen ./typegen/typegen.json
 
 
-subsocialVersions.jsonl:
+versions.jsonl:
 	@make explore
 
 
 explore:
 	@npx squid-substrate-metadata-explorer \
 		--chain wss://arch.subsocial.network \
-		--out subsocialVersions.jsonl
+		--out ./typegen/versions.jsonl
 
 
 up:

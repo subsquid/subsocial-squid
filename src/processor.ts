@@ -1,7 +1,6 @@
 import { SubstrateProcessor } from '@subsquid/substrate-processor';
-import { Store, TypeormDatabase } from '@subsquid/typeorm-store';
+import { TypeormDatabase } from '@subsquid/typeorm-store';
 import * as envConfig from './env';
-// import { lookupArchive } from '@subsquid/archive-registry';
 import {
   postCreated,
   postUpdated,
@@ -20,7 +19,6 @@ import {
   accountUnfollowed
 } from './mappings';
 
-// const database = new TypeormDatabase('subsocial-processor');
 const database = new TypeormDatabase();
 const processor = new SubstrateProcessor(database);
 
@@ -35,9 +33,6 @@ processor.setDataSource({
   archive: envConfig.indexerEndpointUrl,
   chain: envConfig.chainNode
 });
-
-// processor.setBlockRange({ from: 677319 }); //1091772
-// processor.setBlockRange({ from: 559971 }); from spec v3
 
 processor.addEventHandler('Posts.PostCreated', postCreated);
 processor.addEventHandler('Posts.PostUpdated', postUpdated);

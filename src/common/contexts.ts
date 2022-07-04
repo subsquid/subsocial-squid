@@ -19,4 +19,4 @@ export type CallHandlerContext<
 > = PrCallHandlerContext<Store, T>;
 export type CommonHandlerContext = PrCommonHandlerContext<Store>;
 
-export { CallContext, EventContext } from '../types/support';
+export { CallContext, EventContext } from '../types/generated/support';

@@ -1,0 +1,29 @@
+{
+  "outDir": "../src/types/generated",
+  "specVersions": "./versions.jsonl",
+  "typesBundle": "subsocial",
+  "events": [
+    "Posts.PostCreated",
+    "Posts.PostDeleted",
+    "Posts.PostUpdated",
+    "Posts.PostShared",
+    "Posts.PostMoved",
+
+    "Reactions.PostReactionCreated",
+    "Reactions.PostReactionUpdated",
+    "Reactions.PostReactionDeleted",
+
+    "Spaces.SpaceCreated",
+    "Spaces.SpaceUpdated",
+
+    "Profiles.ProfileCreated",
+    "Profiles.ProfileUpdated",
+
+    "SpaceFollows.SpaceFollowed",
+    "SpaceFollows.SpaceUnfollowed",
+
+    "ProfileFollows.AccountFollowed",
+    "ProfileFollows.AccountUnfollowed"
+  ],
+  "calls": ["Reactions.create_post_reaction", "Reactions.update_post_reaction"]
+}

@@ -1,22 +1,3 @@
-#enum EventName {
-#  "Posts.PostCreated"
-#  "Posts.PostDeleted"
-#  "Posts.PostUpdated"
-#  "Posts.PostShared"
-#  "Posts.PostMoved"
-#  "Reactions.PostReactionCreated"
-#  "Reactions.PostReactionUpdated"
-#  "Reactions.PostReactionDeleted"
-#  "SpaceCreated"
-#  "Spaces.SpaceUpdated"
-#  "Spaces.SpaceFollowed"
-#  "Spaces.SpaceUnfollowed"
-#  "ProfileFollows.AccountFollowed"
-#  "ProfileFollows.AccountUnfollowed"
-#  "Profiles.ProfileCreated"
-#  "Profiles.ProfileUpdated"
-#}
-
 enum EventName {
   PostCreated
   PostDeleted
