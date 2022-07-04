@@ -18,5 +18,5 @@ export const indexerEndpointUrl =
   'https://subsocial.archive.subsquid.io/graphql';
 export const offchainUrl =
   process.env.OFFCHAIN_URL || 'https://app.subsocial.network/network/offchain';
-export const warningLogsTrace = process.env.WARNING_LOGS_TRACE || 'false';
+export const warningLogsTrace = process.env.WARNING_LOGS_TRACE || 'true';
 export const eventLogsTrace = process.env.EVENT_LOGS_TRACE || 'false';

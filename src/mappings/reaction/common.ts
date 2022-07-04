@@ -8,7 +8,10 @@ import {
 
 import { ensureAccount } from '../account';
 import { EventHandlerContext } from '../../common/contexts';
-import { EntityProvideFailWarning } from '../../common/errors';
+import {
+  CommonCriticalError,
+  EntityProvideFailWarning
+} from '../../common/errors';
 
 export function getReactionKindFromCall(
   eventName: string,
@@ -83,10 +86,11 @@ export async function ensureReaction({
 
   if (!postInst) {
     new EntityProvideFailWarning(Post, postId, ctx);
+    new CommonCriticalError();
     return null;
   }
 
-  const newReaction: Reaction = new Reaction();
+  const newReaction = new Reaction();
   newReaction.id = reactionId;
   newReaction.status = Status.Active;
   newReaction.account = accountInst;

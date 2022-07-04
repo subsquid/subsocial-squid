@@ -17,7 +17,7 @@ export async function handleEvent(
   followerId: string,
   followingId: string,
   ctx: EventHandlerContext
-) {
+): Promise<void> {
   const followerAccount = await ensureAccount(followerId, ctx);
   const followingAccount = await ensureAccount(followingId, ctx);
 

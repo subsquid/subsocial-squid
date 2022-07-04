@@ -2,7 +2,10 @@ import { addressSs58ToString, printEventLog } from '../../common/utils';
 import { Space } from '../../model';
 import { SpacesSpaceUpdatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
-import { EntityProvideFailWarning } from '../../common/errors';
+import {
+  CommonCriticalError,
+  EntityProvideFailWarning
+} from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import { ensureSpace } from './common';
 
@@ -28,6 +31,7 @@ export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
     !('content' in spaceExtData)
   ) {
     new EntityProvideFailWarning(Space, spaceId.toString(), ctx);
+    new CommonCriticalError();
     return;
   }
 

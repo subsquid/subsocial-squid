@@ -2,10 +2,10 @@ import BN from 'bn.js';
 import { resolveSpace } from '../../connection/resolvers/resolveSpaceData';
 import { getDateWithoutTime } from '../../common/utils';
 import { SpaceCountersAction, SpaceDataExtended } from '../../common/types';
-import { Account, Space, Post } from '../../model';
+import { Space, Post } from '../../model';
 import { ensureAccount } from '../account';
 import {
-  EntityProvideFailWarning,
+  CommonCriticalError,
   MissingSubsocialApiEntity
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
@@ -42,6 +42,7 @@ export const ensureSpace = async ({
     const spaceDataSSApi = await resolveSpace(new BN(spaceInst.id, 10));
     if (!spaceDataSSApi) {
       new MissingSubsocialApiEntity('SpaceData', ctx);
+      new CommonCriticalError();
       return null;
     }
     return {
@@ -55,6 +56,7 @@ export const ensureSpace = async ({
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
   if (!spaceDataSSApi) {
     new MissingSubsocialApiEntity('SpaceData', ctx);
+    new CommonCriticalError();
     return null;
   }
 

@@ -9,9 +9,10 @@ import {
 } from '@subsocial/api/flat-subsocial/flatteners';
 import { ensureAccount } from '../account';
 import {
+  CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
-} from '../../common/errors';
+} from "../../common/errors";
 import { EventHandlerContext } from '../../common/contexts';
 
 const updatePostReplyCount = async (
@@ -69,6 +70,7 @@ export const ensurePost = async ({
     !postData.post.content
   ) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
+    new CommonCriticalError();
     return null;
   }
 
