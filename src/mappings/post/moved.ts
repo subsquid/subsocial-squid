@@ -27,11 +27,6 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
-  if (!account) {
-    new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
-    return;
-  }
-
   const post = await ctx.store.get(Post, {
     where: { id: postId.toString() },
     relations: [

@@ -68,10 +68,6 @@ export const ensureSpace = async ({
       spaceStruct.createdByAccount,
       ctx
     );
-    if (!createdByAccount) {
-      new EntityProvideFailWarning(Account, spaceStruct.createdByAccount, ctx);
-      return null;
-    }
 
     spaceInst.createdByAccount = createdByAccount;
     spaceInst.createdAtBlock = BigInt(spaceStruct.createdAtBlock.toString());
@@ -81,10 +77,6 @@ export const ensureSpace = async ({
     );
   }
   const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
-  if (!ownerAccount) {
-    new EntityProvideFailWarning(Account, spaceStruct.ownerId, ctx);
-    return null;
-  }
 
   spaceInst.ownerAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;

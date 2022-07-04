@@ -24,11 +24,6 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
 
   const account = await ensureAccount(accountIdString, ctx);
 
-  if (!account) {
-    new EntityProvideFailWarning(Account, accountIdString, ctx);
-    return;
-  }
-
   const accountData = await resolveAccount(accountIdString);
 
   if (!accountData || !accountData.struct) {

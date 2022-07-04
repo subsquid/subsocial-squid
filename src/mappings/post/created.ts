@@ -19,8 +19,6 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
-  if (!account) return;
-
   const post = await ensurePost({
     account,
     postId: postId.toString(),

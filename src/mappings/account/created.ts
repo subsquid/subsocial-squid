@@ -17,13 +17,10 @@ export async function accountCreated(ctx: EventHandlerContext): Promise<void> {
 
   const accountIdString = addressSs58ToString(event.asV1);
 
-  const account: Account | null = await ensureAccount(accountIdString, ctx);
+  const account: Account = await ensureAccount(accountIdString, ctx);
 
-  if (account) {
-    await ctx.store.save<Account>(account);
-    await setActivity({
-      account,
-      ctx
-    });
-  }
+  await setActivity({
+    account,
+    ctx
+  });
 }

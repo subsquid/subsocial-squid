@@ -18,14 +18,6 @@ export const addNotificationForAccount = async (
 ): Promise<Notification | null> => {
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return null;
-  }
 
   const notification = new Notification();
 
@@ -44,14 +36,6 @@ export const addNotificationForAccountFollowers = async (
 ): Promise<void> => {
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return;
-  }
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: accountInst },
@@ -91,14 +75,6 @@ export const deleteAllNotificationsAboutSpace = async (
 ): Promise<void> => {
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return;
-  }
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
@@ -126,15 +102,6 @@ export const deleteAllNotificationsAboutAccount = async (
     followingAccount instanceof Account
       ? followingAccount
       : await ensureAccount(followingAccount, ctx);
-
-  if (!accountInst || !followingAccountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return;
-  }
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [

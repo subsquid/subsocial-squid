@@ -59,14 +59,6 @@ export const ensurePost = async ({
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return null;
-  }
 
   const postData = await resolvePost(new BN(postId.toString(), 10));
 

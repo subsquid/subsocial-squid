@@ -24,19 +24,11 @@ export const setActivity = async ({
   followingAccount?: Account;
 }): Promise<Activity | null> => {
   const { indexInBlock, name: eventName } = ctx.event;
-  const { height: blockNumber } = ctx.block;
+  const { height: blockNumber, timestamp } = ctx.block;
   const eventNameDecorated = decorateEventName(eventName);
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return null;
-  }
 
   let activity = new Activity();
   activity.id = getActivityEntityId(
@@ -47,7 +39,7 @@ export const setActivity = async ({
   activity.blockNumber = BigInt(blockNumber.toString());
   activity.eventIndex = indexInBlock;
   activity.event = EventName[eventNameDecorated as keyof typeof EventName];
-  activity.date = new Date();
+  activity.date = new Date(timestamp);
 
   /**
    * ProfileCreated

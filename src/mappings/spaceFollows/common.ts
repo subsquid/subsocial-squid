@@ -1,5 +1,8 @@
 import { Account, Activity, Space, SpaceFollowers } from '../../model';
-import { getSpaceFollowersEntityId, decorateEventName } from '../../common/utils';
+import {
+  getSpaceFollowersEntityId,
+  decorateEventName
+} from '../../common/utils';
 import { ensureAccount } from '../account';
 import { setActivity } from '../activity';
 import { deleteSpacePostsFromFeedForAccount } from '../newsFeed';
@@ -20,10 +23,6 @@ export async function handleEvent(
   const followerAccount = await ensureAccount(followerId, ctx);
   const eventNameDecorated = decorateEventName(eventName);
 
-  if (!followerAccount) {
-    new EntityProvideFailWarning(Account, followerId, ctx);
-    return;
-  }
   let { followingSpacesCount } = followerAccount;
 
   const space = await ctx.store.get(Space, {
@@ -66,7 +65,6 @@ export async function processSpaceFollowingUnfollowingRelations(
   if (!space) return;
   const followerAccountInst =
     follower instanceof Account ? follower : await ensureAccount(follower, ctx);
-  if (!followerAccountInst) return;
 
   const { name: eventName } = ctx.event;
   const eventNameDecorated = decorateEventName(eventName);

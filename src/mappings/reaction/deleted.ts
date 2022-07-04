@@ -66,10 +66,6 @@ export async function postReactionDeleted(
   const { accountId, reactionId } = event;
 
   const accountInst = await ensureAccount(accountId, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(Account, accountId, ctx);
-    return;
-  }
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },

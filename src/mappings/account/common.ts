@@ -6,7 +6,7 @@ import { EventHandlerContext } from '../../common/contexts';
 export async function ensureAccount(
   accountId: string,
   ctx: EventHandlerContext
-): Promise<Account | null> {
+): Promise<Account> {
   let account = await ctx.store.get(Account, accountId);
 
   if (account) return account;
@@ -15,31 +15,31 @@ export async function ensureAccount(
 
   if (!accountData || !accountData.struct) {
     new MissingSubsocialApiEntity('ProfileData', ctx);
-    return null;
   }
 
-  const { struct: accountStruct, content: accountContent = null } = accountData;
   account = new Account();
   account.id = accountId;
-  account.reputation = accountStruct.reputation;
-  account.hasProfile = accountStruct.hasProfile;
   account.followersCount = 0;
   account.followingAccountsCount = 0;
   account.followingSpacesCount = 0;
 
-  if (
-    accountStruct &&
-    accountStruct.createdAtBlock &&
-    accountStruct.createdAtTime
-  ) {
-    account.createdAtBlock = BigInt(accountStruct.createdAtBlock);
-    account.createdAtTime = new Date(accountStruct.createdAtTime);
+  if (accountData && accountData.struct) {
+    const { struct } = accountData;
+    account.createdAtBlock = struct.createdAtBlock
+      ? BigInt(struct.createdAtBlock)
+      : null;
+    account.createdAtTime = struct.createdAtTime
+      ? new Date(struct.createdAtTime)
+      : null;
+    account.reputation = struct.reputation;
+    account.hasProfile = struct.hasProfile;
   }
 
-  if (accountContent) {
-    account.name = accountContent.name;
-    account.avatar = accountContent.avatar;
-    account.about = accountContent.about;
+  if (accountData && accountData.content) {
+    const { content } = accountData;
+    account.name = content.name;
+    account.avatar = content.avatar;
+    account.about = content.about;
   }
 
   await ctx.store.save<Account>(account);

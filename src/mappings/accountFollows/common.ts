@@ -1,5 +1,8 @@
 import { Account, AccountFollowers, Activity } from '../../model';
-import { getAccountFollowersEntityId, decorateEventName } from '../../common/utils';
+import {
+  getAccountFollowersEntityId,
+  decorateEventName
+} from '../../common/utils';
 import { EventName } from '../../common/types';
 import { ensureAccount } from '../account';
 import { setActivity } from '../activity';
@@ -17,8 +20,6 @@ export async function handleEvent(
 ) {
   const followerAccount = await ensureAccount(followerId, ctx);
   const followingAccount = await ensureAccount(followingId, ctx);
-
-  if (!followerAccount || !followingAccount) return;
 
   const activity = await setActivity({
     account: followerAccount,

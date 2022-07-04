@@ -58,11 +58,6 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
     ctx
   );
 
-  if (!createdByAccount) {
-    new EntityProvideFailWarning(Account, postStruct.createdByAccount, ctx);
-    return;
-  }
-
   post.hidden = postStruct.hidden;
   post.createdByAccount = createdByAccount;
   post.content = postStruct.contentId;

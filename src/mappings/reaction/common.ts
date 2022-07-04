@@ -75,14 +75,6 @@ export async function ensureReaction({
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
-  if (!accountInst) {
-    new EntityProvideFailWarning(
-      Account,
-      typeof account === 'string' ? account : account.id,
-      ctx
-    );
-    return null;
-  }
 
   const postInst = await ctx.store.get(Post, {
     where: { id: postId },
@@ -101,7 +93,7 @@ export async function ensureReaction({
   newReaction.post = postInst;
   newReaction.kind = reactionKind;
   newReaction.createdAtBlock = BigInt(ctx.block.height.toString());
-  newReaction.createdAtTime = new Date();
+  newReaction.createdAtTime = new Date(ctx.block.timestamp);
 
   if (createIfNotExists) await ctx.store.save<Reaction>(newReaction);
   return newReaction;

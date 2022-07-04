@@ -16,11 +16,6 @@ export async function spaceCreated(ctx: EventHandlerContext) {
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
-  if (!account) {
-    new EntityProvideFailWarning(Account, addressSs58ToString(accountId), ctx);
-    return;
-  }
-
   const space = await ensureSpace({ space: id.toString(), ctx });
 
   if (!space || !('id' in space)) {

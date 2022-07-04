@@ -66,10 +66,6 @@ export async function postReactionUpdated(
   const { accountId, postId, reactionId, reactionKind } = event;
 
   const account = await ensureAccount(accountId, ctx);
-  if (!account) {
-    new EntityProvideFailWarning(Account, accountId, ctx);
-    return;
-  }
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
@@ -82,7 +78,7 @@ export async function postReactionUpdated(
   }
 
   reaction.kind = reactionKind as unknown as ReactionKind;
-  reaction.updatedAtTime = new Date();
+  reaction.updatedAtTime = new Date(ctx.block.timestamp);
   reaction.updatedAtBlock = BigInt(ctx.block.height.toString());
   await ctx.store.save<Reaction>(reaction);
 

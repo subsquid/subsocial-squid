@@ -3,24 +3,10 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
 import * as ss58 from '@subsquid/ss58';
-import { Space, Post } from '../model';
-import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from './contexts';
 import { eventLogsTrace } from '../env';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
-
-export type RelationFieldType = 'posts' | 'spaces';
-export type ObjectType = Space | Post | undefined;
-export type TagInEntityTagType = GetOrCreateTagType & {
-  entityWithRelations: ObjectType;
-};
-export type GetOrCreateTagType = {
-  store: Store;
-  tags: string[];
-  entity: ObjectType;
-  relationField: RelationFieldType;
-};
 
 export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
   if (ctx.event.extrinsic === undefined) {
@@ -89,28 +75,6 @@ export const addressSs58ToString = (address: Uint8Array) => {
   const codecInst = getSubsocialSs58Codec();
   return codecInst.encode(address);
 };
-
-export const formatTegs = (tags: string[]) => {
-  return tags.flatMap((value) => {
-    value = value.trim();
-    let splitter = ' ';
-    if (value.includes(';')) splitter = ';';
-
-    return value
-      .split(splitter)
-      .filter((el) => el != '')
-      .map((value) => {
-        if (value.startsWith('#')) {
-          value = value.replace('#', '');
-        }
-
-        return value.trim().toLowerCase().replace(',', '').replace(/'/g, '`');
-      });
-  });
-};
-
-export const formatDate = (date: string) =>
-  dayjs(Number(date)).format('YYYY-MM-DD hh:mm:ss');
 
 export const stringDateToTimestamp = (date: string | undefined) =>
   date && date !== '' && new Date(Number(date)).getTime();

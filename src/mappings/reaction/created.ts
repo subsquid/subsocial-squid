@@ -69,12 +69,6 @@ export async function postReactionCreated(
 
   const account = await ensureAccount(accountId, ctx);
 
-  if (!account) {
-    new EntityProvideFailWarning(Account, accountId, ctx);
-    new CommonCriticalError();
-    return;
-  }
-
   const reaction = await ensureReaction({
     account,
     postId,
