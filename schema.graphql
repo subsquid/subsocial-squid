@@ -71,7 +71,7 @@ type Post @entity  {
 
   createdByAccount: Account!
   createdAtBlock: BigInt
-  createdAtTime: DateTime
+  createdAtTime: DateTime @index
   createdOnDay: DateTime
   updatedAtTime: DateTime
   space: Space!
@@ -79,15 +79,15 @@ type Post @entity  {
 
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
   commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")
-  followersCount: Int
+  followersCount: Int @index
 
   repliesCount: Int
-  publicRepliesCount: Int
+  publicRepliesCount: Int @index
   hiddenRepliesCount: Int
-  sharesCount: Int
-  upvotesCount: Int
-  downvotesCount: Int
-  reactionsCount: Int
+  sharesCount: Int @index
+  upvotesCount: Int @index
+  downvotesCount: Int @index
+  reactionsCount: Int @index
   reactions: [Reaction] @derivedFrom(field: "post")
   #  score: Int
 
@@ -120,14 +120,14 @@ type Space @entity {
   ownerAccount: Account!
 
   createdAtBlock: BigInt
-  createdAtTime: DateTime
+  createdAtTime: DateTime @index
   createdOnDay: DateTime
   updatedAtTime: DateTime
   updatedAtBlock: BigInt
 
   posts: [Post]! @derivedFrom(field: "space")
   postsCount: Int
-  publicPostsCount: Int
+  publicPostsCount: Int @index
   hiddenPostsCount: Int
 
   content: String
@@ -136,7 +136,7 @@ type Space @entity {
   summary: String
   tagsOriginal: String
 
-  followersCount: Int
+  followersCount: Int @index
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
 }
 
@@ -152,7 +152,7 @@ type Activity @entity {
   post: Post
   reaction: Reaction
   date: DateTime!
-  aggregated: Boolean
+  aggregated: Boolean @index
   aggCount: BigInt
 }
 

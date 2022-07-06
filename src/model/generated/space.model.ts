@@ -24,6 +24,7 @@ export class Space {
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
   createdAtBlock!: bigint | undefined | null
 
+  @Index_()
   @Column_("timestamp with time zone", {nullable: true})
   createdAtTime!: Date | undefined | null
 
@@ -42,6 +43,7 @@ export class Space {
   @Column_("int4", {nullable: true})
   postsCount!: number | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   publicPostsCount!: number | undefined | null
 
@@ -63,6 +65,7 @@ export class Space {
   @Column_("text", {nullable: true})
   tagsOriginal!: string | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   followersCount!: number | undefined | null
 

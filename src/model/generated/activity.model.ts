@@ -52,6 +52,7 @@ export class Activity {
   @Column_("timestamp with time zone", {nullable: false})
   date!: Date
 
+  @Index_()
   @Column_("bool", {nullable: true})
   aggregated!: boolean | undefined | null
 

@@ -43,6 +43,7 @@ export class Post {
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
   createdAtBlock!: bigint | undefined | null
 
+  @Index_()
   @Column_("timestamp with time zone", {nullable: true})
   createdAtTime!: Date | undefined | null
 
@@ -66,27 +67,33 @@ export class Post {
   @OneToMany_(() => CommentFollowers, e => e.followingComment)
   commentFollowers!: CommentFollowers[]
 
+  @Index_()
   @Column_("int4", {nullable: true})
   followersCount!: number | undefined | null
 
   @Column_("int4", {nullable: true})
   repliesCount!: number | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   publicRepliesCount!: number | undefined | null
 
   @Column_("int4", {nullable: true})
   hiddenRepliesCount!: number | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   sharesCount!: number | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   upvotesCount!: number | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   downvotesCount!: number | undefined | null
 
+  @Index_()
   @Column_("int4", {nullable: true})
   reactionsCount!: number | undefined | null
 
