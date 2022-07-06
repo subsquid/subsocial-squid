@@ -21,6 +21,7 @@ export async function insertActivityForPostReaction(
 
   const upvotesCount = !post.upvotesCount ? 0 : post.upvotesCount;
   const downvotesCount = !post.downvotesCount ? 0 : post.downvotesCount;
+  const aggCountNum = upvotesCount + downvotesCount - 1;
 
   let creator = post.createdByAccount; // Regular Post
   if (post.rootPost) {
@@ -30,7 +31,7 @@ export async function insertActivityForPostReaction(
   }
 
   activity.aggregated = activity.account.id !== creator.id;
-  activity.aggCount = BigInt(upvotesCount + downvotesCount - 1);
+  activity.aggCount = BigInt(aggCountNum < 0 ? 0 : aggCountNum);
 
   await updateAggregatedStatus({
     eventName,
