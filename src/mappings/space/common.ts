@@ -121,6 +121,7 @@ export async function updatePostsCountersInSpace({
 }): Promise<void> {
   const spaceChanged: Space = space;
   if (!space) return;
+  if (post.isComment) return;
 
   let { publicPostsCount = 0, postsCount = 0, hiddenPostsCount = 0 } = space;
 
