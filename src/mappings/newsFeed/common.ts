@@ -33,27 +33,28 @@ export const addPostToFeeds = async (
     relations: ['followerAccount']
   });
 
-  const uniqueFollowersId: string[] = [];
-  const filteredFollowersList: Account[] = [];
+  const followers: [string, Account][] = [
+    ...accountFollowers,
+    ...spaceFollowers
+  ].map((account: AccountFollowers | SpaceFollowers) => [
+    account.id,
+    account as unknown as Account
+  ]);
 
-  [...accountFollowers, ...spaceFollowers].forEach(
-    (item: AccountFollowers | SpaceFollowers) => {
-      if (!uniqueFollowersId.includes(item.followerAccount.id)) {
-        uniqueFollowersId.push(item.followerAccount.id);
-        filteredFollowersList.push(item.followerAccount);
-      }
-    }
+  const filteredFollowersMap: Map<string, Account> = new Map<string, Account>(
+    followers
   );
 
-  const feedItemsList = filteredFollowersList.map(
-    (account: Account): NewsFeed => {
-      const newFeedItem = new NewsFeed();
-      newFeedItem.id = getNewsFeedEntityId(account.id, activity.id);
-      newFeedItem.account = account;
-      newFeedItem.activity = activity;
-      return newFeedItem;
-    }
-  );
+  const feedItemsList: NewsFeed[] = [];
+
+  filteredFollowersMap.forEach((account: Account) => {
+    const newFeedItem = new NewsFeed({
+      id: getNewsFeedEntityId(account.id, activity.id),
+      account,
+      activity
+    });
+    feedItemsList.push(newFeedItem);
+  });
 
   await ctx.store.save<NewsFeed>(feedItemsList);
 };
