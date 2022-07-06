@@ -122,6 +122,7 @@ export const ensurePost = async ({
   post.upvotesCount = 0;
   post.downvotesCount = 0;
   post.reactionsCount = 0;
+  post.followersCount = 0;
   post.updatedAtTime = postStruct.updatedAtTime
     ? new Date(postStruct.updatedAtTime)
     : null;

@@ -36,9 +36,9 @@ export const addPostToFeeds = async (
   const followers: [string, Account][] = [
     ...accountFollowers,
     ...spaceFollowers
-  ].map((account: AccountFollowers | SpaceFollowers) => [
-    account.id,
-    account as unknown as Account
+  ].map((relation: AccountFollowers | SpaceFollowers) => [
+    relation.followerAccount.id,
+    relation.followerAccount as unknown as Account
   ]);
 
   const filteredFollowersMap: Map<string, Account> = new Map<string, Account>(
