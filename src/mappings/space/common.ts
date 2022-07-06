@@ -1,6 +1,9 @@
 import BN from 'bn.js';
 import { resolveSpace } from '../../connection/resolvers/resolveSpaceData';
-import { getDateWithoutTime } from '../../common/utils';
+import {
+  ensurePositiveOrZeroValue,
+  getDateWithoutTime
+} from '../../common/utils';
 import { SpaceCountersAction, SpaceDataExtended } from '../../common/types';
 import { Space, Post } from '../../model';
 import { ensureAccount } from '../account';
@@ -127,11 +130,11 @@ export async function updatePostsCountersInSpace({
 
   switch (action) {
     case SpaceCountersAction.PostAdded:
-      postsCount = !postsCount ? 1 : postsCount + 1;
+      postsCount += 1;
       if (post.hidden) {
-        hiddenPostsCount = !hiddenPostsCount ? 1 : hiddenPostsCount + 1;
+        hiddenPostsCount += 1;
       } else {
-        publicPostsCount = !publicPostsCount ? 1 : publicPostsCount + 1;
+        publicPostsCount += 1;
       }
       spaceChanged.postsCount = postsCount;
       spaceChanged.hiddenPostsCount = hiddenPostsCount;
@@ -139,21 +142,21 @@ export async function updatePostsCountersInSpace({
       break;
     case SpaceCountersAction.PostUpdated:
       if (post.hidden && post.hidden !== isPrevVisStateHidden) {
-        hiddenPostsCount = !hiddenPostsCount ? 1 : hiddenPostsCount + 1;
-        publicPostsCount = !publicPostsCount ? 0 : publicPostsCount - 1;
+        hiddenPostsCount += 1;
+        publicPostsCount = ensurePositiveOrZeroValue(publicPostsCount - 1);
       } else if (!post.hidden && post.hidden !== isPrevVisStateHidden) {
-        publicPostsCount = !publicPostsCount ? 1 : publicPostsCount + 1;
-        hiddenPostsCount = !hiddenPostsCount ? 0 : hiddenPostsCount - 1;
+        publicPostsCount += 1;
+        hiddenPostsCount = ensurePositiveOrZeroValue(hiddenPostsCount - 1);
       }
       spaceChanged.hiddenPostsCount = hiddenPostsCount;
       spaceChanged.publicPostsCount = publicPostsCount;
       break;
     case SpaceCountersAction.PostDeleted:
-      postsCount = !postsCount ? 0 : postsCount - 1;
+      postsCount = ensurePositiveOrZeroValue(postsCount - 1);
       if (post.hidden) {
-        hiddenPostsCount = !hiddenPostsCount ? 0 : hiddenPostsCount - 1;
+        hiddenPostsCount = ensurePositiveOrZeroValue(hiddenPostsCount - 1);
       } else {
-        publicPostsCount = !publicPostsCount ? 0 : publicPostsCount - 1;
+        publicPostsCount = ensurePositiveOrZeroValue(publicPostsCount - 1);
       }
       spaceChanged.postsCount = postsCount;
       spaceChanged.hiddenPostsCount = hiddenPostsCount;

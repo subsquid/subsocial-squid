@@ -40,15 +40,15 @@ export class Space {
   @OneToMany_(() => Post, e => e.space)
   posts!: Post[]
 
-  @Column_("int4", {nullable: true})
-  postsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  postsCount!: number
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  publicPostsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  publicPostsCount!: number
 
-  @Column_("int4", {nullable: true})
-  hiddenPostsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  hiddenPostsCount!: number
 
   @Column_("text", {nullable: true})
   content!: string | undefined | null
@@ -66,8 +66,8 @@ export class Space {
   tagsOriginal!: string | undefined | null
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  followersCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  followersCount!: number
 
   @OneToMany_(() => SpaceFollowers, e => e.followingSpace)
   followers!: SpaceFollowers[]

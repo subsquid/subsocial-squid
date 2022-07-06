@@ -43,17 +43,17 @@ type Account @entity {
   createdAtTime: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
-  followersCount: Int
+  followersCount: Int!
 
   followingAccounts: [AccountFollowers]! @derivedFrom(field: "followerAccount")
-  followingAccountsCount: Int
+  followingAccountsCount: Int!
 
   posts: [Post] @derivedFrom(field: "createdByAccount")
 
   spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
   spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
   spacesFollowed: [SpaceFollowers!] @derivedFrom(field: "followerAccount")
-  followingSpacesCount: Int
+  followingSpacesCount: Int!
 
   feeds: [NewsFeed]! @derivedFrom(field: "account")
   notifications: [Notification]! @derivedFrom(field: "account")
@@ -79,15 +79,15 @@ type Post @entity  {
 
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
   commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")
-  followersCount: Int @index
+  followersCount: Int! @index
 
-  repliesCount: Int
-  publicRepliesCount: Int @index
-  hiddenRepliesCount: Int
-  sharesCount: Int @index
-  upvotesCount: Int @index
-  downvotesCount: Int @index
-  reactionsCount: Int @index
+  repliesCount: Int!
+  publicRepliesCount: Int! @index
+  hiddenRepliesCount: Int!
+  sharesCount: Int! @index
+  upvotesCount: Int! @index
+  downvotesCount: Int! @index
+  reactionsCount: Int! @index
   reactions: [Reaction] @derivedFrom(field: "post")
   #  score: Int
 
@@ -126,9 +126,9 @@ type Space @entity {
   updatedAtBlock: BigInt
 
   posts: [Post]! @derivedFrom(field: "space")
-  postsCount: Int
-  publicPostsCount: Int @index
-  hiddenPostsCount: Int
+  postsCount: Int!
+  publicPostsCount: Int! @index
+  hiddenPostsCount: Int!
 
   content: String
   name: String
@@ -136,7 +136,7 @@ type Space @entity {
   summary: String
   tagsOriginal: String
 
-  followersCount: Int @index
+  followersCount: Int! @index
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
 }
 
@@ -153,7 +153,7 @@ type Activity @entity {
   reaction: Reaction
   date: DateTime!
   aggregated: Boolean @index
-  aggCount: BigInt
+  aggCount: BigInt!
 }
 
 type AccountFollowers @entity {

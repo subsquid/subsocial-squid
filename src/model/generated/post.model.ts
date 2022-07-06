@@ -68,34 +68,34 @@ export class Post {
   commentFollowers!: CommentFollowers[]
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  followersCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  followersCount!: number
 
-  @Column_("int4", {nullable: true})
-  repliesCount!: number | undefined | null
-
-  @Index_()
-  @Column_("int4", {nullable: true})
-  publicRepliesCount!: number | undefined | null
-
-  @Column_("int4", {nullable: true})
-  hiddenRepliesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  repliesCount!: number
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  sharesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  publicRepliesCount!: number
+
+  @Column_("int4", {nullable: false})
+  hiddenRepliesCount!: number
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  upvotesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  sharesCount!: number
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  downvotesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  upvotesCount!: number
 
   @Index_()
-  @Column_("int4", {nullable: true})
-  reactionsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  downvotesCount!: number
+
+  @Index_()
+  @Column_("int4", {nullable: false})
+  reactionsCount!: number
 
   @OneToMany_(() => Reaction, e => e.post)
   reactions!: Reaction[]

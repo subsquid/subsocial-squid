@@ -46,6 +46,8 @@ export const setActivity = async ({
   activity.eventIndex = indexInBlock;
   activity.event = EventName[eventNameDecorated as keyof typeof EventName];
   activity.date = new Date(timestamp);
+  activity.aggregated = false;
+  activity.aggCount = BigInt(0);
 
   /**
    * ProfileCreated

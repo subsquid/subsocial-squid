@@ -47,7 +47,7 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
     return;
   }
 
-  post.sharesCount = !post.sharesCount ? 1 : post.sharesCount + 1;
+  post.sharesCount += 1;
 
   await ctx.store.save<Post>(post);
 

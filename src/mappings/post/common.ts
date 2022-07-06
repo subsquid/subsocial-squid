@@ -12,7 +12,7 @@ import {
   CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
-} from "../../common/errors";
+} from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 
 const updatePostReplyCount = async (
@@ -21,17 +21,11 @@ const updatePostReplyCount = async (
   ctx: EventHandlerContext
 ): Promise<void> => {
   const targetPostUpdated = targetPost;
-  targetPostUpdated.repliesCount = !targetPostUpdated.repliesCount
-    ? 1
-    : targetPostUpdated.repliesCount + 1;
+  targetPostUpdated.repliesCount += 1;
   if (reply.hidden) {
-    targetPostUpdated.hiddenRepliesCount = !targetPostUpdated.hiddenRepliesCount
-      ? 1
-      : targetPostUpdated.hiddenRepliesCount + 1;
+    targetPostUpdated.hiddenRepliesCount += 1;
   } else {
-    targetPostUpdated.publicRepliesCount = !targetPostUpdated.publicRepliesCount
-      ? 1
-      : targetPostUpdated.publicRepliesCount + 1;
+    targetPostUpdated.publicRepliesCount += 1;
   }
   await ctx.store.save<Post>(targetPostUpdated);
 };

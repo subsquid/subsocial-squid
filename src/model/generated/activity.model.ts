@@ -56,6 +56,6 @@ export class Activity {
   @Column_("bool", {nullable: true})
   aggregated!: boolean | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  aggCount!: bigint | undefined | null
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+  aggCount!: bigint
 }

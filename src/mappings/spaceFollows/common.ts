@@ -7,7 +7,8 @@ import {
 } from '../../model';
 import {
   getSpaceFollowersEntityId,
-  decorateEventName
+  decorateEventName,
+  ensurePositiveOrZeroValue
 } from '../../common/utils';
 import { ensureAccount } from '../account';
 import { setActivity } from '../activity';
@@ -56,7 +57,7 @@ export async function handleEvent(
   } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
     await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
     await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
-    followingSpacesCount = !followingSpacesCount ? 0 : followingSpacesCount - 1;
+    followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
   }
   followerAccount.followingSpacesCount = followingSpacesCount;
   await ctx.store.save<Account>(followerAccount);

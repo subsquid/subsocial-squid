@@ -76,6 +76,10 @@ export const addressSs58ToString = (address: Uint8Array) => {
   return codecInst.encode(address);
 };
 
+export const ensurePositiveOrZeroValue = (inputValue: number): number => {
+  return inputValue < 0 ? 0 : inputValue;
+};
+
 export const stringDateToTimestamp = (date: string | undefined) =>
   date && date !== '' && new Date(Number(date)).getTime();
 

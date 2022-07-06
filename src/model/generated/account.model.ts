@@ -43,14 +43,14 @@ export class Account {
   @OneToMany_(() => AccountFollowers, e => e.followingAccount)
   followers!: AccountFollowers[]
 
-  @Column_("int4", {nullable: true})
-  followersCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  followersCount!: number
 
   @OneToMany_(() => AccountFollowers, e => e.followerAccount)
   followingAccounts!: AccountFollowers[]
 
-  @Column_("int4", {nullable: true})
-  followingAccountsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  followingAccountsCount!: number
 
   @OneToMany_(() => Post, e => e.createdByAccount)
   posts!: Post[]
@@ -64,8 +64,8 @@ export class Account {
   @OneToMany_(() => SpaceFollowers, e => e.followerAccount)
   spacesFollowed!: SpaceFollowers[]
 
-  @Column_("int4", {nullable: true})
-  followingSpacesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  followingSpacesCount!: number
 
   @OneToMany_(() => NewsFeed, e => e.account)
   feeds!: NewsFeed[]
