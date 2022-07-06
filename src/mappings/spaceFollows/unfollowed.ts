@@ -8,9 +8,6 @@ export async function spaceUnfollowed(ctx: EventHandlerContext): Promise<void> {
 
   const event = new SpaceFollowsSpaceUnfollowedEvent(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
   const [followerId, spaceId] = event.asV1;
 
   await handleEvent(addressSs58ToString(followerId), spaceId.toString(), ctx);

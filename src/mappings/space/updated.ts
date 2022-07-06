@@ -1,43 +1,40 @@
 import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { Space } from '../../model';
+import { Reaction, Space } from '../../model';
 import { SpacesSpaceUpdatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import {
   CommonCriticalError,
-  EntityProvideFailWarning
+  EntityProvideFailWarning,
+  MissingSubsocialApiEntity
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import { ensureSpace } from './common';
+import { resolveSpace } from '../../connection/resolvers/resolveSpaceData';
+import BN from 'bn.js';
 
 export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new SpacesSpaceUpdatedEvent(ctx);
   printEventLog(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
-
   const [accountId, spaceId] = event.asV1;
 
-  const spaceExtData = await ensureSpace({
+  const space = await ensureSpace({
     space: spaceId.toString(),
-    ctx,
-    isExtendedData: true
+    ctx
   });
 
-  if (
-    !spaceExtData ||
-    !('struct' in spaceExtData) ||
-    !('content' in spaceExtData)
-  ) {
+  if (!space) {
     new EntityProvideFailWarning(Space, spaceId.toString(), ctx);
-    new CommonCriticalError();
-    return;
+    throw new CommonCriticalError();
   }
 
-  const { space, struct: spaceStruct } = spaceExtData;
+  const spaceDataSSApi = await resolveSpace(new BN(spaceId.toString(), 10));
+  if (!spaceDataSSApi) {
+    new MissingSubsocialApiEntity('SpaceData', ctx);
+    throw new CommonCriticalError();
+  }
 
-  if (!spaceStruct) return;
+  const { struct: spaceStruct } = spaceDataSSApi;
 
   if (
     spaceStruct.updatedAtTime &&

@@ -66,7 +66,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
     relations: ['ownerAccount', 'createdByAccount']
   });
 
-  if (!newSpaceInst || !('id' in newSpaceInst)) {
+  if (!newSpaceInst) {
     new EntityProvideFailWarning(Space, postStruct.spaceId, ctx);
     return;
   }

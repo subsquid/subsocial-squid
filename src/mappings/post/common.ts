@@ -64,8 +64,7 @@ export const ensurePost = async ({
     !postData.post.content
   ) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
-    new CommonCriticalError();
-    return null;
+    throw new CommonCriticalError();
   }
 
   const { struct: postStruct, content: postContent } = postData.post;
@@ -90,18 +89,18 @@ export const ensurePost = async ({
     });
     if (!rootSpacePost) {
       new EntityProvideFailWarning(Post, rootPostId, ctx);
-      return null;
+      throw new CommonCriticalError();
     }
     space = rootSpacePost.space;
   }
 
-  if (!space || !('id' in space)) {
+  if (!space) {
     new EntityProvideFailWarning(
       Space,
       postStruct.spaceId ? postStruct.spaceId.toString() : 'unknown',
       ctx
     );
-    return null;
+    throw new CommonCriticalError();
   }
 
   const post = new Post();

@@ -17,10 +17,6 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostUpdatedEvent(ctx);
   printEventLog(ctx);
 
-  if (ctx.event.extrinsic === undefined) {
-    throw new Error(`No extrinsic has been provided`);
-  }
-
   const [accountId, id] = event.asV1;
 
   const post = await ctx.store.get(Post, {

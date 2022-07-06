@@ -4,7 +4,7 @@ import {
   ensurePositiveOrZeroValue,
   getDateWithoutTime
 } from '../../common/utils';
-import { SpaceCountersAction, SpaceDataExtended } from '../../common/types';
+import { SpaceCountersAction } from '../../common/types';
 import { Space, Post } from '../../model';
 import { ensureAccount } from '../account';
 import {
@@ -18,20 +18,17 @@ import { EventHandlerContext } from '../../common/contexts';
  * Space instance will be created.
  * @param space
  * @param ctx
- * @param isExtendedData
  * @param createIfNotExists
  */
 export const ensureSpace = async ({
   space,
   ctx,
-  isExtendedData = false,
   createIfNotExists = false
 }: {
   space: Space | string;
   ctx: EventHandlerContext;
-  isExtendedData?: boolean;
   createIfNotExists?: boolean;
-}): Promise<Space | SpaceDataExtended | null> => {
+}): Promise<Space | null> => {
   let spaceInst =
     space instanceof Space
       ? space
@@ -40,20 +37,7 @@ export const ensureSpace = async ({
           relations: ['createdByAccount', 'ownerAccount']
         });
 
-  if (spaceInst && !isExtendedData) return spaceInst;
-  if (spaceInst && isExtendedData) {
-    const spaceDataSSApi = await resolveSpace(new BN(spaceInst.id, 10));
-    if (!spaceDataSSApi) {
-      new MissingSubsocialApiEntity('SpaceData', ctx);
-      new CommonCriticalError();
-      return null;
-    }
-    return {
-      struct: spaceDataSSApi.struct,
-      content: spaceDataSSApi.content,
-      space: spaceInst
-    };
-  }
+  if (spaceInst) return spaceInst;
   const spaceId = space instanceof Space ? space.id : space;
 
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
@@ -100,12 +84,6 @@ export const ensureSpace = async ({
 
   if (createIfNotExists) await ctx.store.save<Space>(spaceInst);
 
-  if (isExtendedData)
-    return {
-      struct: spaceStruct,
-      content: spaceContent,
-      space: spaceInst
-    };
   return spaceInst;
 };
 
