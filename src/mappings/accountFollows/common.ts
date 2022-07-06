@@ -1,9 +1,8 @@
-import { Account, AccountFollowers, Activity } from '../../model';
+import { Account, AccountFollowers, Activity, EventName } from '../../model';
 import {
   getAccountFollowersEntityId,
   decorateEventName
 } from '../../common/utils';
-import { EventName } from '../../common/types';
 import { ensureAccount } from '../account';
 import { setActivity } from '../activity';
 import { deleteAccountPostsFromFeedForAccount } from '../newsFeed';

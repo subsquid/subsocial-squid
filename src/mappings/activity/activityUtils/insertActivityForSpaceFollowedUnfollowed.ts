@@ -1,5 +1,4 @@
-import { Activity, Space } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Activity, Space, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import { updateAggregatedStatus } from './aggregationUtils';
 

@@ -1,5 +1,4 @@
-import { Post, Activity } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Post, Activity, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import {
   getAggregationCount,

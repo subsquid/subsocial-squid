@@ -1,4 +1,10 @@
-import { Account, Activity, Space, SpaceFollowers } from '../../model';
+import {
+  Account,
+  Activity,
+  Space,
+  SpaceFollowers,
+  EventName
+} from '../../model';
 import {
   getSpaceFollowersEntityId,
   decorateEventName
@@ -11,7 +17,6 @@ import {
   deleteAllNotificationsAboutSpace
 } from '../notification';
 import { EntityProvideFailWarning } from '../../common/errors';
-import { EventName } from '../../common/types';
 import { EventHandlerContext } from '../../common/contexts';
 
 export async function handleEvent(

@@ -1,5 +1,11 @@
-import { Account, Space, Post, Activity, Reaction } from '../../model';
-import { EventName } from '../../common/types';
+import {
+  Account,
+  Space,
+  Post,
+  Activity,
+  Reaction,
+  EventName
+} from '../../model';
 import { getActivityEntityId, decorateEventName } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import { ensureAccount } from '../account';

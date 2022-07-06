@@ -1,7 +1,6 @@
 import { Not } from 'typeorm';
 import { FindManyOptions } from '@subsquid/typeorm-store/src/store';
-import { Account, Space, Post, Activity } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Account, Space, Post, Activity, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 
 type GetAggregationCountParams = {

@@ -1,5 +1,4 @@
-import { Account, Post, Reaction, Activity } from '../../model';
-import { ReactionKind } from '../../common/types';
+import { ReactionKind, Post, Reaction, Activity } from '../../model';
 import { ReactionsPostReactionCreatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';

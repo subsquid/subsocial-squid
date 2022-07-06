@@ -32,35 +32,6 @@ export type DbEntity =
   | typeof Reaction
   | typeof SpaceFollowers;
 
-export enum EventName {
-  PostCreated = 'PostCreated',
-  PostDeleted = 'PostDeleted',
-  PostUpdated = 'PostUpdated',
-  PostShared = 'PostShared',
-  PostMoved = 'PostMoved',
-  PostReactionCreated = 'PostReactionCreated',
-  PostReactionUpdated = 'PostReactionUpdated',
-  PostReactionDeleted = 'PostReactionDeleted',
-  SpaceCreated = 'SpaceCreated',
-  SpaceUpdated = 'SpaceUpdated',
-  SpaceFollowed = 'SpaceFollowed',
-  SpaceUnfollowed = 'SpaceUnfollowed',
-  AccountFollowed = 'AccountFollowed',
-  AccountUnfollowed = 'AccountUnfollowed',
-  ProfileCreated = 'ProfileCreated',
-  ProfileUpdated = 'ProfileUpdated'
-}
-
-export enum ReactionKind {
-  Upvote = 'Upvote',
-  Downvote = 'Downvote'
-}
-
-export enum Status {
-  Active = 'Active',
-  Deleted = 'Deleted'
-}
-
 export enum SpaceCountersAction {
   PostAdded = 'PostAdded',
   PostUpdated = 'PostUpdated',

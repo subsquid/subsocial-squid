@@ -5,10 +5,10 @@ import {
   Space,
   Post,
   AccountFollowers,
-  SpaceFollowers
+  SpaceFollowers,
+  EventName
 } from '../../model';
 import { getNewsFeedEntityId } from '../../common/utils';
-import { EventName } from '../../common/types';
 import { EventHandlerContext } from '../../common/contexts';
 
 /**
