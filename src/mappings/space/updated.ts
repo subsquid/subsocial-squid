@@ -48,6 +48,10 @@ export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
   space.updatedAtTime = spaceStruct.updatedAtTime
     ? new Date(spaceStruct.updatedAtTime)
     : null;
+  space.updatedAtBlock = spaceStruct.updatedAtBlock
+    ? BigInt(spaceStruct.updatedAtBlock)
+    : BigInt(ctx.block.height.toString());
+
   await ctx.store.save<Space>(space);
 
   await setActivity({

@@ -33,6 +33,9 @@ export class Space {
   @Column_("timestamp with time zone", {nullable: true})
   updatedAtTime!: Date | undefined | null
 
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
+  updatedAtBlock!: bigint | undefined | null
+
   @OneToMany_(() => Post, e => e.space)
   posts!: Post[]
 

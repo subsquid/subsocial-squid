@@ -28,9 +28,11 @@ export class Post {
   @ManyToOne_(() => Post, {nullable: true})
   sharedPost!: Post | undefined | null
 
+  @Index_()
   @Column_("bool", {nullable: false})
   isComment!: boolean
 
+  @Index_()
   @Column_("bool", {nullable: false})
   hidden!: boolean
 
@@ -54,6 +56,7 @@ export class Post {
   @ManyToOne_(() => Space, {nullable: false})
   space!: Space
 
+  @Index_()
   @Column_("varchar", {length: 11, nullable: true})
   kind!: PostKind | undefined | null
 

@@ -86,9 +86,7 @@ export const ensureSpace = async ({
   spaceInst.postsCount = 0; // Initial value for counter
   spaceInst.hiddenPostsCount = 0; // Initial value for counter
   spaceInst.publicPostsCount = 0; // Initial value for counter
-  // spaceInst.followersCount = spaceStruct.followersCount;
   spaceInst.followersCount = 0; // Initial value for counter
-  // spaceInst.score = spaceStruct.score;
 
   if (spaceContent) {
     spaceInst.name = spaceContent.name;

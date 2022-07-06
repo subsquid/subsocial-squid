@@ -35,7 +35,7 @@ enum Status {
 type Account @entity {
   id: ID!
   reputation: Int
-  hasProfile: Boolean
+  hasProfile: Boolean @index
   name: String
   avatar: String
   about: String
@@ -61,13 +61,13 @@ type Account @entity {
   reactions: [Reaction]! @derivedFrom(field: "account")
 }
 
-type Post @entity {
+type Post @entity  {
   id: ID!
   parentPost: Post
   rootPost: Post
   sharedPost: Post
-  isComment: Boolean!
-  hidden: Boolean!
+  isComment: Boolean! @index
+  hidden: Boolean! @index
 
   createdByAccount: Account!
   createdAtBlock: BigInt
@@ -75,7 +75,7 @@ type Post @entity {
   createdOnDay: DateTime
   updatedAtTime: DateTime
   space: Space!
-  kind: PostKind
+  kind: PostKind @index
 
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
   commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")
@@ -106,7 +106,7 @@ type Reaction @entity {
   id: ID!
   post: Post!
   account: Account!
-  kind: ReactionKind!
+  kind: ReactionKind! @index
   status: Status! @index
   createdAtBlock: BigInt!
   createdAtTime: DateTime!
@@ -123,6 +123,7 @@ type Space @entity {
   createdAtTime: DateTime
   createdOnDay: DateTime
   updatedAtTime: DateTime
+  updatedAtBlock: BigInt
 
   posts: [Post]! @derivedFrom(field: "space")
   postsCount: Int
@@ -144,7 +145,7 @@ type Activity @entity {
   account: Account!
   blockNumber: BigInt!
   eventIndex: Int!
-  event: EventName!
+  event: EventName! @index
   followingAccount: Account
   space: Space
   spacePrev: Space
