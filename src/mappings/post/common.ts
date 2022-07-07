@@ -14,6 +14,43 @@ import {
   MissingSubsocialApiEntity
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
+import assert from 'assert';
+import {
+  PostsMovePostCall,
+  PostsCreatePostCall
+} from '../../types/generated/calls';
+
+export function getNewPostSpaceIdFromCall(
+  ctx: EventHandlerContext
+): string | null {
+  assert(ctx.event.call);
+  let spaceId = null;
+
+  const call = new PostsCreatePostCall({
+    _chain: ctx._chain,
+    call: ctx.event.call
+  });
+  if (call.isV1) {
+    spaceId = call.asV1.spaceIdOpt;
+  }
+  if (call.isV17) {
+    spaceId = call.asV1.spaceIdOpt;
+  }
+  return spaceId ? spaceId.toString() : null;
+}
+
+export function getMovedPostSpaceIdFromCall(
+  ctx: EventHandlerContext
+): string | null {
+  assert(ctx.event.call);
+
+  const call = new PostsMovePostCall({
+    _chain: ctx._chain,
+    call: ctx.event.call
+  });
+  const newSpaceId = call.asV9.newSpaceId;
+  return newSpaceId ? newSpaceId.toString() : null;
+}
 
 const updatePostReplyCount = async (
   targetPost: Post,
@@ -70,10 +107,10 @@ export const ensurePost = async ({
   const { struct: postStruct, content: postContent } = postData.post;
 
   let space = null;
-
-  if (!postStruct.isComment && postStruct.spaceId) {
+  if (!postStruct.isComment) {
+    const spaceId = getNewPostSpaceIdFromCall(ctx);
     space = await ctx.store.get(Space, {
-      where: { id: postStruct.spaceId },
+      where: { id: spaceId },
       relations: ['createdByAccount', 'ownerAccount']
     });
   } else if (postStruct.isComment) {
@@ -95,11 +132,7 @@ export const ensurePost = async ({
   }
 
   if (!space) {
-    new EntityProvideFailWarning(
-      Space,
-      postStruct.spaceId ? postStruct.spaceId.toString() : 'unknown',
-      ctx
-    );
+    new EntityProvideFailWarning(Space, 'unknown', ctx);
     throw new CommonCriticalError();
   }
 

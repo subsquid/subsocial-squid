@@ -16,6 +16,7 @@ import {
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import { SpaceCountersAction } from '../../common/types';
+import { getMovedPostSpaceIdFromCall } from './common';
 
 export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostMovedEvent(ctx);
@@ -54,20 +55,17 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
     ctx
   });
 
-  const postStruct = await resolvePostStruct(postId as unknown as PostId);
-  if (!postStruct || !postStruct.spaceId) {
-    new MissingSubsocialApiEntity('PostStruct', ctx);
-    return;
-  }
+  const newSpaceId = getMovedPostSpaceIdFromCall(ctx);
+
   const newSpaceInst = await ctx.store.get(Space, {
     where: {
-      id: postStruct.spaceId
+      id: newSpaceId
     },
     relations: ['ownerAccount', 'createdByAccount']
   });
 
   if (!newSpaceInst) {
-    new EntityProvideFailWarning(Space, postStruct.spaceId, ctx);
+    new EntityProvideFailWarning(Space, newSpaceId || 'null', ctx);
     return;
   }
   post.space = newSpaceInst;
