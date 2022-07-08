@@ -25,16 +25,28 @@ export function getNewPostSpaceIdFromCall(
 ): string | null {
   assert(ctx.event.call);
   let spaceId = null;
-
-  const call = new PostsCreatePostCall({
-    _chain: ctx._chain,
-    call: ctx.event.call
-  });
-  if (call.isV1) {
-    spaceId = call.asV1.spaceIdOpt;
-  }
-  if (call.isV17) {
-    spaceId = call.asV1.spaceIdOpt;
+  try {
+    const call = new PostsCreatePostCall({
+      _chain: ctx._chain,
+      call: ctx.event.call
+    });
+    if (call.isV1) {
+      spaceId = call.asV1.spaceIdOpt;
+    }
+    if (call.isV17) {
+      spaceId = call.asV1.spaceIdOpt;
+    }
+  } catch (e) {
+    const callData = ctx.event.call.args.calls.find(
+      (callItem: { __kind: string; value: any }) =>
+        callItem.__kind === 'Posts' &&
+        callItem.value &&
+        callItem.value.__kind === 'create_post'
+    );
+    if (!callData) return null;
+    spaceId = callData.value.spaceIdOpt
+      ? callData.value.spaceIdOpt.toString()
+      : null;
   }
   return spaceId ? spaceId.toString() : null;
 }
@@ -43,12 +55,27 @@ export function getMovedPostSpaceIdFromCall(
   ctx: EventHandlerContext
 ): string | null {
   assert(ctx.event.call);
+  let newSpaceId = null;
 
-  const call = new PostsMovePostCall({
-    _chain: ctx._chain,
-    call: ctx.event.call
-  });
-  const newSpaceId = call.asV9.newSpaceId;
+  try {
+    const call = new PostsMovePostCall({
+      _chain: ctx._chain,
+      call: ctx.event.call
+    });
+    newSpaceId = call.asV9.newSpaceId;
+  } catch (e) {
+    const callData = ctx.event.call.args.calls.find(
+      (callItem: { __kind: string; value: any }) =>
+        callItem.__kind === 'Posts' &&
+        callItem.value &&
+        callItem.value.__kind === 'move_post'
+    );
+    if (!callData) return null;
+    newSpaceId = callData.value.newSpaceId
+      ? callData.value.newSpaceId.toString()
+      : null;
+  }
+
   return newSpaceId ? newSpaceId.toString() : null;
 }
 
