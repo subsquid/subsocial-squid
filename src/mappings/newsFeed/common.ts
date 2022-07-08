@@ -23,9 +23,23 @@ export const addPostToFeeds = async (
   activity: Activity,
   ctx: EventHandlerContext
 ): Promise<void> => {
+  const feedItemsMap: Map<string, NewsFeed> = new Map();
+
   const accountFollowers = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: post.createdByAccount },
     relations: ['followerAccount']
+  });
+
+  accountFollowers.forEach(({ followerAccount }) => {
+    const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+    feedItemsMap.set(
+      id,
+      new NewsFeed({
+        account: followerAccount,
+        id,
+        activity
+      })
+    );
   });
 
   const spaceFollowers = await ctx.store.find(SpaceFollowers, {
@@ -33,30 +47,19 @@ export const addPostToFeeds = async (
     relations: ['followerAccount']
   });
 
-  const followers: [string, Account][] = [
-    ...accountFollowers,
-    ...spaceFollowers
-  ].map((relation: AccountFollowers | SpaceFollowers) => [
-    relation.followerAccount.id,
-    relation.followerAccount as unknown as Account
-  ]);
-
-  const filteredFollowersMap: Map<string, Account> = new Map<string, Account>(
-    followers
-  );
-
-  const feedItemsList: NewsFeed[] = [];
-
-  filteredFollowersMap.forEach((account: Account) => {
-    const newFeedItem = new NewsFeed({
-      id: getNewsFeedEntityId(account.id, activity.id),
-      account,
-      activity
-    });
-    feedItemsList.push(newFeedItem);
+  spaceFollowers.forEach(({ followerAccount }) => {
+    const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+    feedItemsMap.set(
+      id,
+      new NewsFeed({
+        account: followerAccount,
+        id,
+        activity
+      })
+    );
   });
 
-  await ctx.store.save<NewsFeed>(feedItemsList);
+  await ctx.store.save([...feedItemsMap.values()]);
 };
 
 export const deleteSpacePostsFromFeedForAccount = async (
