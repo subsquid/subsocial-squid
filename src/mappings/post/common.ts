@@ -121,17 +121,12 @@ export const ensurePost = async ({
 
   const postData = await resolvePost(new BN(postId.toString(), 10));
 
-  if (
-    !postData ||
-    !postData.post ||
-    !postData.post.struct ||
-    !postData.post.content
-  ) {
+  if (!postData || !postData.post || !postData.post.struct) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
     throw new CommonCriticalError();
   }
 
-  const { struct: postStruct, content: postContent } = postData.post;
+  const { struct: postStruct, content: postContent = null } = postData.post;
 
   let space = null;
   if (!postStruct.isComment) {
