@@ -25,6 +25,7 @@ export function getNewPostSpaceIdFromCall(
 ): string | null {
   assert(ctx.event.call);
   let spaceId = null;
+
   try {
     const call = new PostsCreatePostCall({
       _chain: ctx._chain,
@@ -34,7 +35,7 @@ export function getNewPostSpaceIdFromCall(
       spaceId = call.asV1.spaceIdOpt;
     }
     if (call.isV17) {
-      spaceId = call.asV1.spaceIdOpt;
+      spaceId = call.asV17.spaceIdOpt;
     }
   } catch (e) {
     const callData = ctx.event.call.args.calls.find(
