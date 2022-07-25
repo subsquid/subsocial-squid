@@ -4,7 +4,7 @@ import { EventHandlerContext } from '../../../common/contexts';
 type InsertActivityForPostMovedParams = {
   eventName: EventName;
   post: Post;
-  spacePrev: Space;
+  spacePrev: Space | null;
   activity: Activity;
   ctx: EventHandlerContext;
 };

@@ -54,8 +54,8 @@ export class Post {
   updatedAtTime!: Date | undefined | null
 
   @Index_()
-  @ManyToOne_(() => Space, {nullable: false})
-  space!: Space
+  @ManyToOne_(() => Space, {nullable: true})
+  space!: Space | undefined | null
 
   @Index_()
   @Column_("varchar", {length: 11, nullable: true})

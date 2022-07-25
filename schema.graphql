@@ -49,6 +49,7 @@ type Account @entity {
   followingAccountsCount: Int!
 
   posts: [Post] @derivedFrom(field: "createdByAccount")
+  followingPostsCount: Int!
 
   spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
   spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
@@ -74,7 +75,7 @@ type Post @entity  {
   createdAtTime: DateTime @index
   createdOnDay: DateTime
   updatedAtTime: DateTime
-  space: Space!
+  space: Space
   kind: PostKind @index
 
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")

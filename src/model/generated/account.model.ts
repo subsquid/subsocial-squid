@@ -55,6 +55,9 @@ export class Account {
   @OneToMany_(() => Post, e => e.createdByAccount)
   posts!: Post[]
 
+  @Column_("int4", {nullable: false})
+  followingPostsCount!: number
+
   @OneToMany_(() => Space, e => e.createdByAccount)
   spacesCreated!: Space[]
 

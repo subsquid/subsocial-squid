@@ -1,10 +1,10 @@
 import { EventHandlerContext } from '../../common/contexts';
-import { Post, Account } from '../../model';
-import { printEventLog } from '../../common/utils';
+import { Account, Post } from '../../model';
+import { ensurePositiveOrZeroValue, printEventLog } from '../../common/utils';
 import { processPostFollowingUnfollowingRelations } from './common';
 import { PostFollowingUnfollowingCustomEvents } from '../../common/types';
 
-export async function postFollowed(
+export async function postUnfollowed(
   post: Post,
   ctx: EventHandlerContext
 ): Promise<void> {
@@ -13,14 +13,18 @@ export async function postFollowed(
   await processPostFollowingUnfollowingRelations(
     post,
     post.createdByAccount,
-    PostFollowingUnfollowingCustomEvents.PostFollowed,
+    PostFollowingUnfollowingCustomEvents.PostUnfollowed,
     ctx
   );
 
   const postUpdated = post;
   const accountUpdated = post.createdByAccount;
-  postUpdated.followersCount += 1;
-  accountUpdated.followingPostsCount += 1;
+  postUpdated.followersCount = ensurePositiveOrZeroValue(
+    postUpdated.followersCount - 1
+  );
+  accountUpdated.followingPostsCount = ensurePositiveOrZeroValue(
+    accountUpdated.followingPostsCount - 1
+  );
 
   await ctx.store.save<Post>(postUpdated);
   await ctx.store.save<Account>(accountUpdated);

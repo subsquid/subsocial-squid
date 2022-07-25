@@ -78,7 +78,7 @@ export const deleteAllNotificationsAboutSpace = async (
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
       {
-        account,
+        account: accountInst,
         activity: {
           space: followingSpace
         }

@@ -22,6 +22,7 @@ export async function ensureAccount(
   account.followersCount = 0;
   account.followingAccountsCount = 0;
   account.followingSpacesCount = 0;
+  account.followingPostsCount = 0;
 
   if (accountData && accountData.struct) {
     const { struct } = accountData;

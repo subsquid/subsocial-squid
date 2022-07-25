@@ -72,7 +72,7 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   await ctx.store.save<Post>(post);
 
   await updatePostsCountersInSpace({
-    space: post.space,
+    space: post.space || null,
     post,
     isPrevVisStateHidden: prevVisStateHidden,
     action: SpaceCountersAction.PostUpdated,

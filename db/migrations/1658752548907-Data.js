@@ -1,5 +1,5 @@
-module.exports = class Data1657279551900 {
-  name = 'Data1657279551900'
+module.exports = class Data1658752548907 {
+  name = 'Data1658752548907'
 
   async up(db) {
     await db.query(`CREATE TABLE "account_followers" ("id" character varying NOT NULL, "follower_account_id" character varying NOT NULL, "following_account_id" character varying NOT NULL, CONSTRAINT "PK_dade5b6e74b543ca2ea018b5a5a" PRIMARY KEY ("id"))`)
@@ -25,7 +25,7 @@ module.exports = class Data1657279551900 {
     await db.query(`CREATE INDEX "IDX_1fa27851b2897fc8a71a007283" ON "reaction" ("account_id") `)
     await db.query(`CREATE INDEX "IDX_1440a3a8c0c7ab3c7feee27f9f" ON "reaction" ("kind") `)
     await db.query(`CREATE INDEX "IDX_caa8bfe29eb6373fc4a58c1af2" ON "reaction" ("status") `)
-    await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "is_comment" boolean NOT NULL, "hidden" boolean NOT NULL, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "kind" character varying(11), "followers_count" integer NOT NULL, "replies_count" integer NOT NULL, "public_replies_count" integer NOT NULL, "hidden_replies_count" integer NOT NULL, "shares_count" integer NOT NULL, "upvotes_count" integer NOT NULL, "downvotes_count" integer NOT NULL, "reactions_count" integer NOT NULL, "title" text, "content" text, "slug" text, "summary" text, "image" text, "canonical" text, "tags_original" text, "proposal_index" integer, "parent_post_id" character varying, "root_post_id" character varying, "shared_post_id" character varying, "created_by_account_id" character varying NOT NULL, "space_id" character varying NOT NULL, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "is_comment" boolean NOT NULL, "hidden" boolean NOT NULL, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "kind" character varying(11), "followers_count" integer NOT NULL, "replies_count" integer NOT NULL, "public_replies_count" integer NOT NULL, "hidden_replies_count" integer NOT NULL, "shares_count" integer NOT NULL, "upvotes_count" integer NOT NULL, "downvotes_count" integer NOT NULL, "reactions_count" integer NOT NULL, "title" text, "content" text, "slug" text, "summary" text, "image" text, "canonical" text, "tags_original" text, "proposal_index" integer, "parent_post_id" character varying, "root_post_id" character varying, "shared_post_id" character varying, "created_by_account_id" character varying NOT NULL, "space_id" character varying, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_0d4e62dcf3e5e150431136f114" ON "post" ("parent_post_id") `)
     await db.query(`CREATE INDEX "IDX_ea813cdf5e4158eb4eb24cd049" ON "post" ("root_post_id") `)
     await db.query(`CREATE INDEX "IDX_52122bf2cf235b80e8227a9c64" ON "post" ("shared_post_id") `)
@@ -56,7 +56,7 @@ module.exports = class Data1657279551900 {
     await db.query(`CREATE TABLE "notification" ("id" character varying NOT NULL, "account_id" character varying NOT NULL, "activity_id" character varying NOT NULL, CONSTRAINT "PK_705b6c7cdf9b2c2ff7ac7872cb7" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_6bfa96ab97f1a09d73091294ef" ON "notification" ("account_id") `)
     await db.query(`CREATE INDEX "IDX_894ef2df998c9dbbdd45e39d88" ON "notification" ("activity_id") `)
-    await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "reputation" integer, "has_profile" boolean, "name" text, "avatar" text, "about" text, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "followers_count" integer NOT NULL, "following_accounts_count" integer NOT NULL, "following_spaces_count" integer NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "account" ("id" character varying NOT NULL, "reputation" integer, "has_profile" boolean, "name" text, "avatar" text, "about" text, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "followers_count" integer NOT NULL, "following_accounts_count" integer NOT NULL, "following_posts_count" integer NOT NULL, "following_spaces_count" integer NOT NULL, CONSTRAINT "PK_54115ee388cdb6d86bb4bf5b2ea" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_12dbd9880e109de2340cf75f8c" ON "account" ("has_profile") `)
     await db.query(`ALTER TABLE "account_followers" ADD CONSTRAINT "FK_7bb4dcd7984d41c97348ceb69a2" FOREIGN KEY ("follower_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     await db.query(`ALTER TABLE "account_followers" ADD CONSTRAINT "FK_9130c3e03dd8405027b2855e180" FOREIGN KEY ("following_account_id") REFERENCES "account"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
