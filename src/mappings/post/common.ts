@@ -12,8 +12,73 @@ import {
   CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
-} from "../../common/errors";
+} from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
+import assert from 'assert';
+import {
+  PostsMovePostCall,
+  PostsCreatePostCall
+} from '../../types/generated/calls';
+
+export function getNewPostSpaceIdFromCall(
+  ctx: EventHandlerContext
+): string | null {
+  assert(ctx.event.call);
+  let spaceId = null;
+
+  try {
+    const call = new PostsCreatePostCall({
+      _chain: ctx._chain,
+      call: ctx.event.call
+    });
+    if (call.isV1) {
+      spaceId = call.asV1.spaceIdOpt;
+    }
+    if (call.isV17) {
+      spaceId = call.asV17.spaceIdOpt;
+    }
+  } catch (e) {
+    const callData = ctx.event.call.args.calls.find(
+      (callItem: { __kind: string; value: any }) =>
+        callItem.__kind === 'Posts' &&
+        callItem.value &&
+        callItem.value.__kind === 'create_post'
+    );
+    if (!callData) return null;
+    spaceId = callData.value.spaceIdOpt
+      ? callData.value.spaceIdOpt.toString()
+      : null;
+  }
+  return spaceId ? spaceId.toString() : null;
+}
+
+export function getMovedPostSpaceIdFromCall(
+  ctx: EventHandlerContext
+): string | null {
+  assert(ctx.event.call);
+  let newSpaceId = null;
+
+  try {
+    const call = new PostsMovePostCall({
+      _chain: ctx._chain,
+      call: ctx.event.call
+    });
+    newSpaceId = call.asV9.newSpaceId;
+  } catch (e) {
+    const callData = ctx.event.call.args.calls.find(
+      (callItem: { __kind: string; value: any }) =>
+        callItem.__kind === 'Posts' &&
+        callItem.value &&
+        callItem.value.__kind === 'move_post'
+    );
+    if (!callData) return null;
+    newSpaceId = callData.value.newSpaceId
+      ? callData.value.newSpaceId.toString()
+      : null;
+  }
+
+  return newSpaceId ? newSpaceId.toString() : null;
+}
 
 const updatePostReplyCount = async (
   targetPost: Post,
@@ -21,17 +86,11 @@ const updatePostReplyCount = async (
   ctx: EventHandlerContext
 ): Promise<void> => {
   const targetPostUpdated = targetPost;
-  targetPostUpdated.repliesCount = !targetPostUpdated.repliesCount
-    ? 1
-    : targetPostUpdated.repliesCount + 1;
+  targetPostUpdated.repliesCount += 1;
   if (reply.hidden) {
-    targetPostUpdated.hiddenRepliesCount = !targetPostUpdated.hiddenRepliesCount
-      ? 1
-      : targetPostUpdated.hiddenRepliesCount + 1;
+    targetPostUpdated.hiddenRepliesCount += 1;
   } else {
-    targetPostUpdated.publicRepliesCount = !targetPostUpdated.publicRepliesCount
-      ? 1
-      : targetPostUpdated.publicRepliesCount + 1;
+    targetPostUpdated.publicRepliesCount += 1;
   }
   await ctx.store.save<Post>(targetPostUpdated);
 };
@@ -63,24 +122,18 @@ export const ensurePost = async ({
 
   const postData = await resolvePost(new BN(postId.toString(), 10));
 
-  if (
-    !postData ||
-    !postData.post ||
-    !postData.post.struct ||
-    !postData.post.content
-  ) {
+  if (!postData || !postData.post || !postData.post.struct) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
-    new CommonCriticalError();
-    return null;
+    throw new CommonCriticalError();
   }
 
-  const { struct: postStruct, content: postContent } = postData.post;
+  const { struct: postStruct, content: postContent = null } = postData.post;
 
   let space = null;
-
-  if (!postStruct.isComment && postStruct.spaceId) {
+  if (!postStruct.isComment) {
+    const spaceId = getNewPostSpaceIdFromCall(ctx);
     space = await ctx.store.get(Space, {
-      where: { id: postStruct.spaceId },
+      where: { id: spaceId },
       relations: ['createdByAccount', 'ownerAccount']
     });
   } else if (postStruct.isComment) {
@@ -96,18 +149,14 @@ export const ensurePost = async ({
     });
     if (!rootSpacePost) {
       new EntityProvideFailWarning(Post, rootPostId, ctx);
-      return null;
+      throw new CommonCriticalError();
     }
     space = rootSpacePost.space;
   }
 
-  if (!space || !('id' in space)) {
-    new EntityProvideFailWarning(
-      Space,
-      postStruct.spaceId ? postStruct.spaceId.toString() : 'unknown',
-      ctx
-    );
-    return null;
+  if (!space) {
+    new EntityProvideFailWarning(Space, 'unknown', ctx);
+    throw new CommonCriticalError();
   }
 
   const post = new Post();
@@ -129,6 +178,7 @@ export const ensurePost = async ({
   post.upvotesCount = 0;
   post.downvotesCount = 0;
   post.reactionsCount = 0;
+  post.followersCount = 0;
   post.updatedAtTime = postStruct.updatedAtTime
     ? new Date(postStruct.updatedAtTime)
     : null;

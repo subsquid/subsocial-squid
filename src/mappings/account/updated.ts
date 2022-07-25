@@ -1,24 +1,15 @@
 import { Account } from '../../model';
 import { ProfilesProfileUpdatedEvent } from '../../types/generated/events';
-import {
-  addressSs58ToString,
-  validateEventHandlerInputs,
-  printEventLog
-} from '../../common/utils';
+import { addressSs58ToString, printEventLog } from '../../common/utils';
 import { resolveAccount } from '../../connection/resolvers/resolveAccountData';
 import { setActivity } from '../activity';
 import { ensureAccount } from './common';
-import {
-  EntityProvideFailWarning,
-  MissingSubsocialApiEntity
-} from '../../common/errors';
+import { MissingSubsocialApiEntity } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 
 export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
   const event = new ProfilesProfileUpdatedEvent(ctx);
-
-  validateEventHandlerInputs(ctx);
 
   const accountIdString = addressSs58ToString(event.asV1);
 

@@ -24,6 +24,7 @@ export class Space {
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
   createdAtBlock!: bigint | undefined | null
 
+  @Index_()
   @Column_("timestamp with time zone", {nullable: true})
   createdAtTime!: Date | undefined | null
 
@@ -33,17 +34,21 @@ export class Space {
   @Column_("timestamp with time zone", {nullable: true})
   updatedAtTime!: Date | undefined | null
 
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
+  updatedAtBlock!: bigint | undefined | null
+
   @OneToMany_(() => Post, e => e.space)
   posts!: Post[]
 
-  @Column_("int4", {nullable: true})
-  postsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  postsCount!: number
 
-  @Column_("int4", {nullable: true})
-  publicPostsCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  publicPostsCount!: number
 
-  @Column_("int4", {nullable: true})
-  hiddenPostsCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  hiddenPostsCount!: number
 
   @Column_("text", {nullable: true})
   content!: string | undefined | null
@@ -60,8 +65,9 @@ export class Space {
   @Column_("text", {nullable: true})
   tagsOriginal!: string | undefined | null
 
-  @Column_("int4", {nullable: true})
-  followersCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  followersCount!: number
 
   @OneToMany_(() => SpaceFollowers, e => e.followingSpace)
   followers!: SpaceFollowers[]

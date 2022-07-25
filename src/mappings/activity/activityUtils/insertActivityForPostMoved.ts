@@ -1,5 +1,4 @@
-import { Post, Activity, Space } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Post, Activity, Space, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 
 type InsertActivityForPostMovedParams = {

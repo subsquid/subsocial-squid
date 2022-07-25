@@ -1,7 +1,7 @@
-import {  Post, Activity, Reaction } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Post, Activity, Reaction, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import { updateAggregatedStatus } from './aggregationUtils';
+import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForPostReactionParams = {
   eventName: EventName;
@@ -20,8 +20,7 @@ export async function insertActivityForPostReaction(
   activity.post = post;
   activity.space = post.rootPost ? post.rootPost.space : post.space;
 
-  const upvotesCount = !post.upvotesCount ? 0 : post.upvotesCount;
-  const downvotesCount = !post.downvotesCount ? 0 : post.downvotesCount;
+  const aggCountNum = post.upvotesCount + post.downvotesCount - 1;
 
   let creator = post.createdByAccount; // Regular Post
   if (post.rootPost) {
@@ -31,7 +30,7 @@ export async function insertActivityForPostReaction(
   }
 
   activity.aggregated = activity.account.id !== creator.id;
-  activity.aggCount = BigInt(upvotesCount + downvotesCount - 1);
+  activity.aggCount = BigInt(ensurePositiveOrZeroValue(aggCountNum));
 
   await updateAggregatedStatus({
     eventName,

@@ -22,13 +22,8 @@ codegen:
 	@npx squid-typeorm-codegen
 
 
-typegen: typegen/versions.jsonl
+typegen:
 	@npx squid-substrate-typegen ./typegen/typegen.json
-
-
-versions.jsonl:
-	@make explore
-
 
 explore:
 	@npx squid-substrate-metadata-explorer \

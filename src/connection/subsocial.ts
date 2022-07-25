@@ -1,4 +1,3 @@
-import { registry } from '@subsocial/types/substrate/registry';
 import { ApiPromise } from '@polkadot/api';
 import { getSubstrateApi, newFlatSubsocialApi } from '@subsocial/api';
 import { ipfsReadOnlyNodeUrl, offchainUrl, chainNode } from '../env';

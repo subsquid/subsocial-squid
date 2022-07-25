@@ -1,7 +1,7 @@
-import { Activity, Space } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Activity, Space, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import { updateAggregatedStatus } from './aggregationUtils';
+import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForSpaceFollowedUnfollowedParams = {
   eventName: EventName;
@@ -18,7 +18,7 @@ export async function insertActivityForSpaceFollowedUnfollowed(
   activity.space = space;
   activity.aggregated = activity.account.id !== space.ownerAccount.id;
   activity.aggCount = BigInt(
-    !space.followersCount ? 0 : space.followersCount - 1
+    ensurePositiveOrZeroValue(space.followersCount - 1)
   );
   await updateAggregatedStatus({
     eventName,

@@ -1,5 +1,4 @@
-import { Account, Post, Reaction, Activity } from '../../model';
-import { ReactionKind, Status } from '../../common/types';
+import { ReactionKind, Status, Post, Reaction, Activity } from '../../model';
 import { ReactionsPostReactionDeletedEvent } from '../../types/generated/events';
 
 import { setActivity } from '../activity';

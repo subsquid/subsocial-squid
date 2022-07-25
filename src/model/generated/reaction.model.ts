@@ -22,6 +22,7 @@ export class Reaction {
   @ManyToOne_(() => Account, {nullable: false})
   account!: Account
 
+  @Index_()
   @Column_("varchar", {length: 8, nullable: false})
   kind!: ReactionKind
 

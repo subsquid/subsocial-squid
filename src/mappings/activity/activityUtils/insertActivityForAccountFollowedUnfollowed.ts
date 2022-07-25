@@ -1,7 +1,7 @@
-import { Account, Activity } from '../../../model';
-import { EventName } from '../../../common/types';
+import { Account, Activity, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import { updateAggregatedStatus } from './aggregationUtils';
+import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForAccountFollowedUnfollowedParams = {
   eventName: EventName;
@@ -18,7 +18,7 @@ export async function insertActivityForAccountFollowedUnfollowed(
   activity.followingAccount = followingAccount;
   activity.aggregated = true;
   activity.aggCount = BigInt(
-    !followingAccount.followersCount ? 0 : followingAccount.followersCount - 1
+    ensurePositiveOrZeroValue(followingAccount.followersCount - 1)
   );
 
   await updateAggregatedStatus({

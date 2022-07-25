@@ -1,7 +1,10 @@
 import BN from 'bn.js';
 import { resolveSpace } from '../../connection/resolvers/resolveSpaceData';
-import { getDateWithoutTime } from '../../common/utils';
-import { SpaceCountersAction, SpaceDataExtended } from '../../common/types';
+import {
+  ensurePositiveOrZeroValue,
+  getDateWithoutTime
+} from '../../common/utils';
+import { SpaceCountersAction } from '../../common/types';
 import { Space, Post } from '../../model';
 import { ensureAccount } from '../account';
 import {
@@ -15,20 +18,17 @@ import { EventHandlerContext } from '../../common/contexts';
  * Space instance will be created.
  * @param space
  * @param ctx
- * @param isExtendedData
  * @param createIfNotExists
  */
 export const ensureSpace = async ({
   space,
   ctx,
-  isExtendedData = false,
   createIfNotExists = false
 }: {
   space: Space | string;
   ctx: EventHandlerContext;
-  isExtendedData?: boolean;
   createIfNotExists?: boolean;
-}): Promise<Space | SpaceDataExtended | null> => {
+}): Promise<Space | null> => {
   let spaceInst =
     space instanceof Space
       ? space
@@ -37,20 +37,7 @@ export const ensureSpace = async ({
           relations: ['createdByAccount', 'ownerAccount']
         });
 
-  if (spaceInst && !isExtendedData) return spaceInst;
-  if (spaceInst && isExtendedData) {
-    const spaceDataSSApi = await resolveSpace(new BN(spaceInst.id, 10));
-    if (!spaceDataSSApi) {
-      new MissingSubsocialApiEntity('SpaceData', ctx);
-      new CommonCriticalError();
-      return null;
-    }
-    return {
-      struct: spaceDataSSApi.struct,
-      content: spaceDataSSApi.content,
-      space: spaceInst
-    };
-  }
+  if (spaceInst) return spaceInst;
   const spaceId = space instanceof Space ? space.id : space;
 
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
@@ -86,9 +73,7 @@ export const ensureSpace = async ({
   spaceInst.postsCount = 0; // Initial value for counter
   spaceInst.hiddenPostsCount = 0; // Initial value for counter
   spaceInst.publicPostsCount = 0; // Initial value for counter
-  // spaceInst.followersCount = spaceStruct.followersCount;
   spaceInst.followersCount = 0; // Initial value for counter
-  // spaceInst.score = spaceStruct.score;
 
   if (spaceContent) {
     spaceInst.name = spaceContent.name;
@@ -99,12 +84,6 @@ export const ensureSpace = async ({
 
   if (createIfNotExists) await ctx.store.save<Space>(spaceInst);
 
-  if (isExtendedData)
-    return {
-      struct: spaceStruct,
-      content: spaceContent,
-      space: spaceInst
-    };
   return spaceInst;
 };
 
@@ -123,16 +102,17 @@ export async function updatePostsCountersInSpace({
 }): Promise<void> {
   const spaceChanged: Space = space;
   if (!space) return;
+  if (post.isComment) return;
 
   let { publicPostsCount = 0, postsCount = 0, hiddenPostsCount = 0 } = space;
 
   switch (action) {
     case SpaceCountersAction.PostAdded:
-      postsCount = !postsCount ? 1 : postsCount + 1;
+      postsCount += 1;
       if (post.hidden) {
-        hiddenPostsCount = !hiddenPostsCount ? 1 : hiddenPostsCount + 1;
+        hiddenPostsCount += 1;
       } else {
-        publicPostsCount = !publicPostsCount ? 1 : publicPostsCount + 1;
+        publicPostsCount += 1;
       }
       spaceChanged.postsCount = postsCount;
       spaceChanged.hiddenPostsCount = hiddenPostsCount;
@@ -140,21 +120,21 @@ export async function updatePostsCountersInSpace({
       break;
     case SpaceCountersAction.PostUpdated:
       if (post.hidden && post.hidden !== isPrevVisStateHidden) {
-        hiddenPostsCount = !hiddenPostsCount ? 1 : hiddenPostsCount + 1;
-        publicPostsCount = !publicPostsCount ? 0 : publicPostsCount - 1;
+        hiddenPostsCount += 1;
+        publicPostsCount = ensurePositiveOrZeroValue(publicPostsCount - 1);
       } else if (!post.hidden && post.hidden !== isPrevVisStateHidden) {
-        publicPostsCount = !publicPostsCount ? 1 : publicPostsCount + 1;
-        hiddenPostsCount = !hiddenPostsCount ? 0 : hiddenPostsCount - 1;
+        publicPostsCount += 1;
+        hiddenPostsCount = ensurePositiveOrZeroValue(hiddenPostsCount - 1);
       }
       spaceChanged.hiddenPostsCount = hiddenPostsCount;
       spaceChanged.publicPostsCount = publicPostsCount;
       break;
     case SpaceCountersAction.PostDeleted:
-      postsCount = !postsCount ? 0 : postsCount - 1;
+      postsCount = ensurePositiveOrZeroValue(postsCount - 1);
       if (post.hidden) {
-        hiddenPostsCount = !hiddenPostsCount ? 0 : hiddenPostsCount - 1;
+        hiddenPostsCount = ensurePositiveOrZeroValue(hiddenPostsCount - 1);
       } else {
-        publicPostsCount = !publicPostsCount ? 0 : publicPostsCount - 1;
+        publicPostsCount = ensurePositiveOrZeroValue(publicPostsCount - 1);
       }
       spaceChanged.postsCount = postsCount;
       spaceChanged.hiddenPostsCount = hiddenPostsCount;

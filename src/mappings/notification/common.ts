@@ -8,7 +8,6 @@ import {
 } from '../../model';
 import { ensureAccount } from '../account';
 import { getNotificationEntityId } from '../../common/utils';
-import { EntityProvideFailWarning } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 
 export const addNotificationForAccount = async (

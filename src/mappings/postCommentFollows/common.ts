@@ -22,7 +22,7 @@ export const processPostFollowingUnfollowing = async (
     newPostFollowersEnt.followingPost = post;
     await ctx.store.save<PostFollowers>(newPostFollowersEnt);
   }
-  post.followersCount = (post.followersCount || 0) + 1;
+  post.followersCount += 1;
   await ctx.store.save<Post>(post);
   // TODO Check if we need add Activity entity for this "custom" event
 };

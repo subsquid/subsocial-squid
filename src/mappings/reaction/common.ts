@@ -1,6 +1,5 @@
 import assert from 'assert';
-import { Account, Post, Reaction } from '../../model';
-import { ReactionKind, Status } from '../../common/types';
+import { Account, Post, Reaction, ReactionKind, Status } from '../../model';
 import {
   ReactionsCreatePostReactionCall,
   ReactionsUpdatePostReactionCall

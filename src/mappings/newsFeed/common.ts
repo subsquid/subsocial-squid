@@ -5,10 +5,10 @@ import {
   Space,
   Post,
   AccountFollowers,
-  SpaceFollowers
+  SpaceFollowers,
+  EventName
 } from '../../model';
 import { getNewsFeedEntityId } from '../../common/utils';
-import { EventName } from '../../common/types';
 import { EventHandlerContext } from '../../common/contexts';
 
 /**
@@ -23,9 +23,23 @@ export const addPostToFeeds = async (
   activity: Activity,
   ctx: EventHandlerContext
 ): Promise<void> => {
+  const feedItemsMap: Map<string, NewsFeed> = new Map();
+
   const accountFollowers = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: post.createdByAccount },
     relations: ['followerAccount']
+  });
+
+  accountFollowers.forEach(({ followerAccount }) => {
+    const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+    feedItemsMap.set(
+      id,
+      new NewsFeed({
+        account: followerAccount,
+        id,
+        activity
+      })
+    );
   });
 
   const spaceFollowers = await ctx.store.find(SpaceFollowers, {
@@ -33,29 +47,19 @@ export const addPostToFeeds = async (
     relations: ['followerAccount']
   });
 
-  const uniqueFollowersId: string[] = [];
-  const filteredFollowersList: Account[] = [];
+  spaceFollowers.forEach(({ followerAccount }) => {
+    const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+    feedItemsMap.set(
+      id,
+      new NewsFeed({
+        account: followerAccount,
+        id,
+        activity
+      })
+    );
+  });
 
-  [...accountFollowers, ...spaceFollowers].forEach(
-    (item: AccountFollowers | SpaceFollowers) => {
-      if (!uniqueFollowersId.includes(item.followerAccount.id)) {
-        uniqueFollowersId.push(item.followerAccount.id);
-        filteredFollowersList.push(item.followerAccount);
-      }
-    }
-  );
-
-  const feedItemsList = filteredFollowersList.map(
-    (account: Account): NewsFeed => {
-      const newFeedItem = new NewsFeed();
-      newFeedItem.id = getNewsFeedEntityId(account.id, activity.id);
-      newFeedItem.account = account;
-      newFeedItem.activity = activity;
-      return newFeedItem;
-    }
-  );
-
-  await ctx.store.save<NewsFeed>(feedItemsList);
+  await ctx.store.save([...feedItemsMap.values()]);
 };
 
 export const deleteSpacePostsFromFeedForAccount = async (

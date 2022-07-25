@@ -25,6 +25,7 @@ export class Activity {
   @Column_("int4", {nullable: false})
   eventIndex!: number
 
+  @Index_()
   @Column_("varchar", {length: 19, nullable: false})
   event!: EventName
 
@@ -51,9 +52,10 @@ export class Activity {
   @Column_("timestamp with time zone", {nullable: false})
   date!: Date
 
+  @Index_()
   @Column_("bool", {nullable: true})
   aggregated!: boolean | undefined | null
 
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  aggCount!: bigint | undefined | null
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
+  aggCount!: bigint
 }

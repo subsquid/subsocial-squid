@@ -35,7 +35,7 @@ enum Status {
 type Account @entity {
   id: ID!
   reputation: Int
-  hasProfile: Boolean
+  hasProfile: Boolean @index
   name: String
   avatar: String
   about: String
@@ -43,17 +43,17 @@ type Account @entity {
   createdAtTime: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
-  followersCount: Int
+  followersCount: Int!
 
   followingAccounts: [AccountFollowers]! @derivedFrom(field: "followerAccount")
-  followingAccountsCount: Int
+  followingAccountsCount: Int!
 
   posts: [Post] @derivedFrom(field: "createdByAccount")
 
   spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
   spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
   spacesFollowed: [SpaceFollowers!] @derivedFrom(field: "followerAccount")
-  followingSpacesCount: Int
+  followingSpacesCount: Int!
 
   feeds: [NewsFeed]! @derivedFrom(field: "account")
   notifications: [Notification]! @derivedFrom(field: "account")
@@ -61,33 +61,33 @@ type Account @entity {
   reactions: [Reaction]! @derivedFrom(field: "account")
 }
 
-type Post @entity {
+type Post @entity  {
   id: ID!
   parentPost: Post
   rootPost: Post
   sharedPost: Post
-  isComment: Boolean!
-  hidden: Boolean!
+  isComment: Boolean! @index
+  hidden: Boolean! @index
 
   createdByAccount: Account!
   createdAtBlock: BigInt
-  createdAtTime: DateTime
+  createdAtTime: DateTime @index
   createdOnDay: DateTime
   updatedAtTime: DateTime
   space: Space!
-  kind: PostKind
+  kind: PostKind @index
 
   postFollowers: [PostFollowers] @derivedFrom(field: "followingPost")
   commentFollowers: [CommentFollowers] @derivedFrom(field: "followingComment")
-  followersCount: Int
+  followersCount: Int! @index
 
-  repliesCount: Int
-  publicRepliesCount: Int
-  hiddenRepliesCount: Int
-  sharesCount: Int
-  upvotesCount: Int
-  downvotesCount: Int
-  reactionsCount: Int
+  repliesCount: Int!
+  publicRepliesCount: Int! @index
+  hiddenRepliesCount: Int!
+  sharesCount: Int! @index
+  upvotesCount: Int! @index
+  downvotesCount: Int! @index
+  reactionsCount: Int! @index
   reactions: [Reaction] @derivedFrom(field: "post")
   #  score: Int
 
@@ -106,7 +106,7 @@ type Reaction @entity {
   id: ID!
   post: Post!
   account: Account!
-  kind: ReactionKind!
+  kind: ReactionKind! @index
   status: Status! @index
   createdAtBlock: BigInt!
   createdAtTime: DateTime!
@@ -120,14 +120,15 @@ type Space @entity {
   ownerAccount: Account!
 
   createdAtBlock: BigInt
-  createdAtTime: DateTime
+  createdAtTime: DateTime @index
   createdOnDay: DateTime
   updatedAtTime: DateTime
+  updatedAtBlock: BigInt
 
   posts: [Post]! @derivedFrom(field: "space")
-  postsCount: Int
-  publicPostsCount: Int
-  hiddenPostsCount: Int
+  postsCount: Int!
+  publicPostsCount: Int! @index
+  hiddenPostsCount: Int!
 
   content: String
   name: String
@@ -135,7 +136,7 @@ type Space @entity {
   summary: String
   tagsOriginal: String
 
-  followersCount: Int
+  followersCount: Int! @index
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
 }
 
@@ -144,15 +145,15 @@ type Activity @entity {
   account: Account!
   blockNumber: BigInt!
   eventIndex: Int!
-  event: EventName!
+  event: EventName! @index
   followingAccount: Account
   space: Space
   spacePrev: Space
   post: Post
   reaction: Reaction
   date: DateTime!
-  aggregated: Boolean
-  aggCount: BigInt
+  aggregated: Boolean @index
+  aggCount: BigInt!
 }
 
 type AccountFollowers @entity {

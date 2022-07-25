@@ -1,10 +1,13 @@
-import { Account, Post, Reaction, Activity } from '../../model';
-import { ReactionKind } from '../../common/types';
+import { ReactionKind, Post, Reaction, Activity } from '../../model';
 import { ReactionsPostReactionUpdatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { ensureAccount } from '../account';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
+import {
+  addressSs58ToString,
+  ensurePositiveOrZeroValue,
+  printEventLog
+} from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
@@ -85,11 +88,11 @@ export async function postReactionUpdated(
   const { post } = reaction;
 
   if (reaction.kind === ReactionKind.Upvote) {
-    post.upvotesCount = !post.upvotesCount ? 1 : post.upvotesCount + 1;
-    post.downvotesCount = !post.downvotesCount ? 0 : post.downvotesCount - 1;
+    post.upvotesCount += 1;
+    post.downvotesCount = ensurePositiveOrZeroValue(post.downvotesCount - 1);
   } else if (reaction.kind === ReactionKind.Downvote) {
-    post.downvotesCount = !post.downvotesCount ? 1 : post.downvotesCount + 1;
-    post.upvotesCount = !post.upvotesCount ? 0 : post.upvotesCount - 1;
+    post.downvotesCount += 1;
+    post.upvotesCount = ensurePositiveOrZeroValue(post.upvotesCount - 1);
   }
 
   await ctx.store.save<Post>(post);

@@ -1,5 +1,11 @@
-import { Account, Space, Post, Activity, Reaction } from '../../model';
-import { EventName } from '../../common/types';
+import {
+  Account,
+  Space,
+  Post,
+  Activity,
+  Reaction,
+  EventName
+} from '../../model';
 import { getActivityEntityId, decorateEventName } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import { ensureAccount } from '../account';
@@ -40,6 +46,8 @@ export const setActivity = async ({
   activity.eventIndex = indexInBlock;
   activity.event = EventName[eventNameDecorated as keyof typeof EventName];
   activity.date = new Date(timestamp);
+  activity.aggregated = false;
+  activity.aggCount = BigInt(0);
 
   /**
    * ProfileCreated

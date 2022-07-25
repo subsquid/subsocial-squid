@@ -28,9 +28,11 @@ export class Post {
   @ManyToOne_(() => Post, {nullable: true})
   sharedPost!: Post | undefined | null
 
+  @Index_()
   @Column_("bool", {nullable: false})
   isComment!: boolean
 
+  @Index_()
   @Column_("bool", {nullable: false})
   hidden!: boolean
 
@@ -41,6 +43,7 @@ export class Post {
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
   createdAtBlock!: bigint | undefined | null
 
+  @Index_()
   @Column_("timestamp with time zone", {nullable: true})
   createdAtTime!: Date | undefined | null
 
@@ -54,6 +57,7 @@ export class Post {
   @ManyToOne_(() => Space, {nullable: false})
   space!: Space
 
+  @Index_()
   @Column_("varchar", {length: 11, nullable: true})
   kind!: PostKind | undefined | null
 
@@ -63,29 +67,35 @@ export class Post {
   @OneToMany_(() => CommentFollowers, e => e.followingComment)
   commentFollowers!: CommentFollowers[]
 
-  @Column_("int4", {nullable: true})
-  followersCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  followersCount!: number
 
-  @Column_("int4", {nullable: true})
-  repliesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  repliesCount!: number
 
-  @Column_("int4", {nullable: true})
-  publicRepliesCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  publicRepliesCount!: number
 
-  @Column_("int4", {nullable: true})
-  hiddenRepliesCount!: number | undefined | null
+  @Column_("int4", {nullable: false})
+  hiddenRepliesCount!: number
 
-  @Column_("int4", {nullable: true})
-  sharesCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  sharesCount!: number
 
-  @Column_("int4", {nullable: true})
-  upvotesCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  upvotesCount!: number
 
-  @Column_("int4", {nullable: true})
-  downvotesCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  downvotesCount!: number
 
-  @Column_("int4", {nullable: true})
-  reactionsCount!: number | undefined | null
+  @Index_()
+  @Column_("int4", {nullable: false})
+  reactionsCount!: number
 
   @OneToMany_(() => Reaction, e => e.post)
   reactions!: Reaction[]
