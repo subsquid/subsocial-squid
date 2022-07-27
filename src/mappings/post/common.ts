@@ -77,7 +77,7 @@ export function getMovedPostSpaceIdFromCall(
       : null;
   }
 
-  return newSpaceId !== undefined || newSpaceId !== null
+  return !!(newSpaceId !== undefined || newSpaceId !== null)
     ? newSpaceId.toString()
     : null;
 }
