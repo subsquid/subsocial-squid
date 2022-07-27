@@ -7,6 +7,7 @@ import { ensureAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import {
+  CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../../common/errors';
@@ -34,6 +35,7 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   });
   if (!post) {
     new EntityProvideFailWarning(Post, id.toString(), ctx);
+    throw new CommonCriticalError();
     return;
   }
 

@@ -77,7 +77,9 @@ export function getMovedPostSpaceIdFromCall(
       : null;
   }
 
-  return newSpaceId ? newSpaceId.toString() : null;
+  return newSpaceId !== undefined || newSpaceId !== null
+    ? newSpaceId.toString()
+    : null;
 }
 
 const updatePostReplyCount = async (

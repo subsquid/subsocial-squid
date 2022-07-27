@@ -8,7 +8,10 @@ import {
   addPostToFeeds,
   deleteSpacePostsFromFeedForAccount
 } from '../newsFeed';
-import { EntityProvideFailWarning } from '../../common/errors';
+import {
+  CommonCriticalError,
+  EntityProvideFailWarning
+} from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import { SpaceCountersAction } from '../../common/types';
 import {
@@ -40,6 +43,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   });
   if (!post) {
     new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    throw new CommonCriticalError();
     return;
   }
   const prevSpaceInst = post.space || null;
@@ -69,9 +73,14 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
     if (!newSpaceInst) {
       new EntityProvideFailWarning(Space, newSpaceId || 'null', ctx);
+      throw new CommonCriticalError();
       return;
     }
   }
+
+  // console.log('>>>>>>> newSpaceId - ', newSpaceId, typeof newSpaceId);
+  // console.log('>>>>>>> newSpaceInst - ', newSpaceInst);
+  // throw Error('newSpaceId');
 
   post.space = newSpaceInst;
 
@@ -101,6 +110,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
+    throw new CommonCriticalError();
     return;
   }
   await addPostToFeeds(post, activity, ctx);
