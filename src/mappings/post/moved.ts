@@ -61,6 +61,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
     });
 
   const newSpaceId = getMovedPostSpaceIdFromCall(ctx);
+  console.log('newSpaceId - ', newSpaceId, typeof newSpaceId);
   let newSpaceInst = null;
 
   if (newSpaceId !== '0') {
