@@ -64,26 +64,26 @@ export function getMovedPostSpaceIdFromCall(
       call: ctx.event.call
     });
     newSpaceId = call.asV9.newSpaceId;
-    console.log('call try - ', call);
-    console.log('call.asV9 try - ', call.asV9);
-    console.log('newSpaceId try - ', newSpaceId, typeof newSpaceId);
+    /**
+     * For some reason if newSpaceId === 0 in extrinsic, "asV9" function returns
+     * "undefined" for this property. As result, we need go through such
+     * additional condition.
+     */
+    if (call.isV9 && call.asV9.postId && newSpaceId === undefined)
+      newSpaceId = '0';
   } catch (e) {
-    console.log('ctx.event.call.args.calls - ', ctx.event.call.args.calls);
     const callData = ctx.event.call.args.calls.find(
       (callItem: { __kind: string; value: any }) =>
         callItem.__kind === 'Posts' &&
         callItem.value &&
         callItem.value.__kind === 'move_post'
     );
-    console.log('callData tch - ', callData);
 
     if (!callData) return null;
     newSpaceId = callData.value.newSpaceId
       ? callData.value.newSpaceId.toString()
       : null;
   }
-
-  console.log('newSpaceId - ', newSpaceId);
 
   return newSpaceId !== undefined && newSpaceId !== null
     ? newSpaceId.toString()
