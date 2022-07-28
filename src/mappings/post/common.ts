@@ -64,6 +64,8 @@ export function getMovedPostSpaceIdFromCall(
       call: ctx.event.call
     });
     newSpaceId = call.asV9.newSpaceId;
+    console.log('call try - ', call);
+    console.log('call.asV9 try - ', call.asV9);
     console.log('newSpaceId try - ', newSpaceId, typeof newSpaceId);
   } catch (e) {
     console.log('ctx.event.call.args.calls - ', ctx.event.call.args.calls);
