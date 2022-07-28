@@ -64,18 +64,24 @@ export function getMovedPostSpaceIdFromCall(
       call: ctx.event.call
     });
     newSpaceId = call.asV9.newSpaceId;
+    console.log('newSpaceId try - ', newSpaceId, typeof newSpaceId);
   } catch (e) {
+    console.log('ctx.event.call.args.calls - ', ctx.event.call.args.calls);
     const callData = ctx.event.call.args.calls.find(
       (callItem: { __kind: string; value: any }) =>
         callItem.__kind === 'Posts' &&
         callItem.value &&
         callItem.value.__kind === 'move_post'
     );
+    console.log('callData tch - ', callData);
+
     if (!callData) return null;
     newSpaceId = callData.value.newSpaceId
       ? callData.value.newSpaceId.toString()
       : null;
   }
+
+  console.log('newSpaceId - ', newSpaceId);
 
   return newSpaceId !== undefined && newSpaceId !== null
     ? newSpaceId.toString()
