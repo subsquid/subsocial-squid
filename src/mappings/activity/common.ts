@@ -24,7 +24,7 @@ export const setActivity = async ({
   account: Account | string;
   ctx: EventHandlerContext;
   space?: Space;
-  spacePrev?: Space;
+  spacePrev?: Space | null;
   post?: Post;
   reaction?: Reaction;
   followingAccount?: Account;
@@ -97,11 +97,11 @@ export const setActivity = async ({
   /**
    * PostMoved
    */
-  if (eventNameDecorated === EventName.PostMoved && post && spacePrev) {
+  if (eventNameDecorated === EventName.PostMoved && post) {
     activity = await insertActivityData.insertActivityForPostMoved({
       eventName: eventNameDecorated,
+      spacePrev: spacePrev || null,
       post,
-      spacePrev,
       activity,
       ctx
     });

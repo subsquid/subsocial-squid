@@ -78,6 +78,7 @@ export async function postReactionCreated(
 
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    throw new CommonCriticalError();
     return;
   }
 
@@ -103,6 +104,7 @@ export async function postReactionCreated(
 
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
+    throw new CommonCriticalError();
     return;
   }
   await addNotificationForAccount(

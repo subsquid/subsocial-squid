@@ -32,7 +32,7 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   await ctx.store.save<Post>(post);
 
   await updatePostsCountersInSpace({
-    space: post.space,
+    space: post.space || null,
     post,
     action: SpaceCountersAction.PostAdded,
     ctx

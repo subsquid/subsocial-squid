@@ -94,12 +94,14 @@ export async function updatePostsCountersInSpace({
   action,
   ctx
 }: {
-  space: Space;
+  space: Space | null;
   post: Post;
   isPrevVisStateHidden?: boolean;
   action: SpaceCountersAction;
   ctx: EventHandlerContext;
 }): Promise<void> {
+  if (!space) return;
+
   const spaceChanged: Space = space;
   if (!space) return;
   if (post.isComment) return;

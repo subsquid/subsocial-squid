@@ -42,22 +42,24 @@ export const addPostToFeeds = async (
     );
   });
 
-  const spaceFollowers = await ctx.store.find(SpaceFollowers, {
-    where: { followingSpace: post.space },
-    relations: ['followerAccount']
-  });
+  if (post.space) {
+    const spaceFollowers = await ctx.store.find(SpaceFollowers, {
+      where: { followingSpace: post.space },
+      relations: ['followerAccount']
+    });
 
-  spaceFollowers.forEach(({ followerAccount }) => {
-    const id = getNewsFeedEntityId(followerAccount.id, activity.id);
-    feedItemsMap.set(
-      id,
-      new NewsFeed({
-        account: followerAccount,
+    spaceFollowers.forEach(({ followerAccount }) => {
+      const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+      feedItemsMap.set(
         id,
-        activity
-      })
-    );
-  });
+        new NewsFeed({
+          account: followerAccount,
+          id,
+          activity
+        })
+      );
+    });
+  }
 
   await ctx.store.save([...feedItemsMap.values()]);
 };

@@ -64,6 +64,13 @@ export function getMovedPostSpaceIdFromCall(
       call: ctx.event.call
     });
     newSpaceId = call.asV9.newSpaceId;
+    /**
+     * For some reason if newSpaceId === 0 in extrinsic, "asV9" function returns
+     * "undefined" for this property. As result, we need go through such
+     * additional condition.
+     */
+    if (call.isV9 && call.asV9.postId && newSpaceId === undefined)
+      newSpaceId = '0';
   } catch (e) {
     const callData = ctx.event.call.args.calls.find(
       (callItem: { __kind: string; value: any }) =>
@@ -71,13 +78,16 @@ export function getMovedPostSpaceIdFromCall(
         callItem.value &&
         callItem.value.__kind === 'move_post'
     );
+
     if (!callData) return null;
     newSpaceId = callData.value.newSpaceId
       ? callData.value.newSpaceId.toString()
       : null;
   }
 
-  return newSpaceId ? newSpaceId.toString() : null;
+  return newSpaceId !== undefined && newSpaceId !== null
+    ? newSpaceId.toString()
+    : null;
 }
 
 const updatePostReplyCount = async (
@@ -93,6 +103,36 @@ const updatePostReplyCount = async (
     targetPostUpdated.publicRepliesCount += 1;
   }
   await ctx.store.save<Post>(targetPostUpdated);
+};
+
+export const updateSpaceForPostChildren = async (
+  rootPost: Post,
+  newSpace: Space | null,
+  ctx: EventHandlerContext
+) => {
+  if (!rootPost.isComment) return;
+
+  const children = await ctx.store.find(Post, {
+    where: [
+      {
+        rootPost
+      },
+      {
+        parentPost: rootPost
+      }
+    ],
+    relations: [
+      'createdByAccount',
+      'space',
+      'space.createdByAccount',
+      'space.ownerAccount'
+    ]
+  });
+
+  for (let i = 0; i <= children.length - 1; i++) {
+    children[i].space = newSpace;
+  }
+  await ctx.store.save<Post>(children);
 };
 
 export const ensurePost = async ({

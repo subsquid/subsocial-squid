@@ -6,6 +6,7 @@
     "watch": "yarn chokidar \"src/mappings/**/*\" \"src/common/**/*\" \"src/processor.ts\" \"typegen\" -c 'yarn build'",
     "init": "node db/init.js",
     "db:reset": ". ./scripts/reset-db.sh",
+    "db:reset-soft": ". ./scripts/soft-reset-db.sh",
     "db:migrate": "npx squid-typeorm-migration apply",
     "schema:reset": ". ./scripts/reset-schema.sh",
     "processor:start": "node -r dotenv/config lib/processor.js",

@@ -73,6 +73,7 @@ export async function postReactionDeleted(
 
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    throw new CommonCriticalError();
     return;
   }
 
@@ -99,6 +100,7 @@ export async function postReactionDeleted(
 
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
+    throw new CommonCriticalError();
     return;
   }
   await addNotificationForAccount(

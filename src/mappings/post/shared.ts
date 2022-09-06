@@ -10,6 +10,7 @@ import {
   addNotificationForAccountFollowers
 } from '../notification';
 import {
+  CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../../common/errors';
@@ -38,12 +39,7 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
   });
   if (!post) {
     new EntityProvideFailWarning(Post, id.toString(), ctx);
-    return;
-  }
-
-  const postStruct = await resolvePostStruct(id as unknown as PostId);
-  if (!postStruct) {
-    new MissingSubsocialApiEntity('PostStruct', ctx);
+    throw new CommonCriticalError();
     return;
   }
 
@@ -59,6 +55,7 @@ export async function postShared(ctx: EventHandlerContext): Promise<void> {
 
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
+    throw new CommonCriticalError();
     return;
   }
 

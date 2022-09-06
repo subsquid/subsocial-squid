@@ -37,3 +37,8 @@ export enum SpaceCountersAction {
   PostUpdated = 'PostUpdated',
   PostDeleted = 'PostDeleted'
 }
+
+export enum PostFollowingUnfollowingCustomEvents {
+  PostFollowed = 'PostFollowed',
+  PostUnfollowed = 'PostUnfollowed'
+}
