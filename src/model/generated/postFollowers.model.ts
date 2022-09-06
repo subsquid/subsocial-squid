@@ -12,10 +12,10 @@ export class PostFollowers {
   id!: string
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   followerAccount!: Account
 
   @Index_()
-  @ManyToOne_(() => Post, {nullable: false})
+  @ManyToOne_(() => Post, {nullable: true})
   followingPost!: Post
 }

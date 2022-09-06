@@ -34,13 +34,14 @@ export const ensureSpace = async ({
       ? space
       : await ctx.store.get(Space, {
           where: { id: space },
-          relations: ['createdByAccount', 'ownerAccount']
+          relations: { createdByAccount: true, ownerAccount: true }
         });
 
   if (spaceInst) return spaceInst;
   const spaceId = space instanceof Space ? space.id : space;
 
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
+
   if (!spaceDataSSApi) {
     new MissingSubsocialApiEntity('SpaceData', ctx);
     new CommonCriticalError();

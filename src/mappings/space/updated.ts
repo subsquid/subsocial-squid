@@ -16,7 +16,7 @@ export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new SpacesSpaceUpdatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, spaceId] = event.asV1;
+  const { account: accountId, spaceId } = event.asV13;
 
   const space = await ensureSpace({
     space: spaceId.toString(),

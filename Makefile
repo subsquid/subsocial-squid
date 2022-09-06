@@ -27,7 +27,7 @@ typegen:
 
 explore:
 	@npx squid-substrate-metadata-explorer \
-		--chain wss://arch.subsocial.network \
+		--chain wss://para.f3joule.space \
 		--out ./typegen/versions.jsonl
 
 

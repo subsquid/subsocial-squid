@@ -34,13 +34,14 @@ enum Status {
 
 type Account @entity {
   id: ID!
-  reputation: Int
-  hasProfile: Boolean @index
-  name: String
-  avatar: String
-  about: String
-  createdAtBlock: BigInt
-  createdAtTime: DateTime
+#  reputation: Int
+#  hasProfile: Boolean @index
+#  name: String
+#  avatar: String
+#  about: String
+  profileSpace: Space
+#  createdAtBlock: BigInt
+#  createdAtTime: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
   followersCount: Int!

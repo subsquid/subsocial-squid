@@ -15,7 +15,7 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostCreatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, postId] = event.asV1;
+  const { account: accountId, postId } = event.asV13;
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 

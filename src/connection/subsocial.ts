@@ -22,6 +22,7 @@ export const resolveSubsocialApi = async (): Promise<FlatSubsocialApi> => {
   // registry.setChainProperties(properties);
   subsocial = await newFlatSubsocialApi({
     substrateNodeUrl: chainNode,
+    substrateApi: api,
     ...ipfsConfig
   });
 

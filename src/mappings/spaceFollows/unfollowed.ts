@@ -8,7 +8,7 @@ export async function spaceUnfollowed(ctx: EventHandlerContext): Promise<void> {
 
   const event = new SpaceFollowsSpaceUnfollowedEvent(ctx);
 
-  const [followerId, spaceId] = event.asV1;
+  const { follower: followerId, spaceId } = event.asV13;
 
   await handleEvent(addressSs58ToString(followerId), spaceId.toString(), ctx);
 }

@@ -37,8 +37,8 @@ export const addNotificationForAccountFollowers = async (
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
-    where: { followingAccount: accountInst },
-    relations: ['followerAccount']
+    where: { followingAccount: { id: accountInst.id } },
+    relations: { followerAccount: true }
   });
 
   const notificationsDraftList = accountFollowersRelations.map(
@@ -78,13 +78,13 @@ export const deleteAllNotificationsAboutSpace = async (
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
       {
-        account: accountInst,
+        account: { id: accountInst.id },
         activity: {
-          space: followingSpace
+          space: { id: followingSpace.id }
         }
       }
     ],
-    relations: ['activity', 'activity.space']
+    relations: { activity: { space: true } }
   });
 
   await ctx.store.remove<NewsFeed>(relatedNotifications);
@@ -105,13 +105,13 @@ export const deleteAllNotificationsAboutAccount = async (
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
       {
-        account: accountInst,
+        account: { id: accountInst.id },
         activity: {
-          account: followingAccountInst
+          account: { id: followingAccountInst.id }
         }
       }
     ],
-    relations: ['activity', 'activity.account']
+    relations: { activity: { account: true } }
   });
 
   await ctx.store.remove<NewsFeed>(relatedNotifications);

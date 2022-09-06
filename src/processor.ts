@@ -36,7 +36,7 @@ processor.setDataSource({
 
 processor.addEventHandler('Posts.PostCreated', postCreated);
 processor.addEventHandler('Posts.PostUpdated', postUpdated);
-processor.addEventHandler('Posts.PostShared', postShared);
+// processor.addEventHandler('Posts.PostShared', postShared); // TODO must be reimplemented
 processor.addEventHandler('Posts.PostMoved', postMoved);
 
 processor.addEventHandler('Spaces.SpaceCreated', spaceCreated);
@@ -46,15 +46,15 @@ processor.addEventHandler('Reactions.PostReactionCreated', postReactionCreated);
 processor.addEventHandler('Reactions.PostReactionUpdated', postReactionUpdated);
 processor.addEventHandler('Reactions.PostReactionDeleted', postReactionDeleted);
 
-processor.addEventHandler('Profiles.ProfileCreated', accountCreated);
+// processor.addEventHandler('Profiles.ProfileCreated', accountCreated); // TODO must be reimplemented
 processor.addEventHandler('Profiles.ProfileUpdated', accountUpdated);
 
 processor.addEventHandler('SpaceFollows.SpaceFollowed', spaceFollowed);
 processor.addEventHandler('SpaceFollows.SpaceUnfollowed', spaceUnfollowed);
 
-processor.addEventHandler('ProfileFollows.AccountFollowed', accountFollowed);
+processor.addEventHandler('AccountFollows.AccountFollowed', accountFollowed);
 processor.addEventHandler(
-  'ProfileFollows.AccountUnfollowed',
+  'AccountFollows.AccountUnfollowed',
   accountUnfollowed
 );
 

@@ -14,11 +14,11 @@ export class Space {
   id!: string
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   createdByAccount!: Account
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   ownerAccount!: Account
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})

@@ -1,12 +1,10 @@
 {
   "outDir": "../src/types/generated",
-  "specVersions": "./versions.jsonl",
+  "specVersions": "https://subsocial.archive.subsquid.io/graphql",
   "typesBundle": "subsocial",
   "events": [
     "Posts.PostCreated",
-    "Posts.PostDeleted",
     "Posts.PostUpdated",
-    "Posts.PostShared",
     "Posts.PostMoved",
 
     "Reactions.PostReactionCreated",
@@ -16,14 +14,13 @@
     "Spaces.SpaceCreated",
     "Spaces.SpaceUpdated",
 
-    "Profiles.ProfileCreated",
     "Profiles.ProfileUpdated",
 
     "SpaceFollows.SpaceFollowed",
     "SpaceFollows.SpaceUnfollowed",
 
-    "ProfileFollows.AccountFollowed",
-    "ProfileFollows.AccountUnfollowed"
+    "AccountFollows.AccountFollowed",
+    "AccountFollows.AccountUnfollowed"
   ],
   "calls": [
     "Reactions.create_post_reaction",

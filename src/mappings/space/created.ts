@@ -15,14 +15,14 @@ export async function spaceCreated(ctx: EventHandlerContext) {
   const event = new SpacesSpaceCreatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, id] = event.asV1;
+  const { account: accountId, spaceId } = event.asV13;
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
-  const space = await ensureSpace({ space: id.toString(), ctx });
+  const space = await ensureSpace({ space: spaceId.toString(), ctx });
 
   if (!space) {
-    new EntityProvideFailWarning(Space, id.toString(), ctx);
+    new EntityProvideFailWarning(Space, spaceId.toString(), ctx);
     throw new CommonCriticalError();
     return;
   }

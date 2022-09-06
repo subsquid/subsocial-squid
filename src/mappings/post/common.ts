@@ -19,6 +19,7 @@ import {
   PostsMovePostCall,
   PostsCreatePostCall
 } from '../../types/generated/calls';
+import { FindOptionsRelations } from 'typeorm';
 
 export function getNewPostSpaceIdFromCall(
   ctx: EventHandlerContext
@@ -31,11 +32,8 @@ export function getNewPostSpaceIdFromCall(
       _chain: ctx._chain,
       call: ctx.event.call
     });
-    if (call.isV1) {
-      spaceId = call.asV1.spaceIdOpt;
-    }
-    if (call.isV17) {
-      spaceId = call.asV17.spaceIdOpt;
+    if (call.isV13) {
+      spaceId = call.asV13.spaceIdOpt;
     }
   } catch (e) {
     const callData = ctx.event.call.args.calls.find(
@@ -57,37 +55,38 @@ export function getMovedPostSpaceIdFromCall(
 ): string | null {
   assert(ctx.event.call);
   let newSpaceId = null;
-
-  try {
-    const call = new PostsMovePostCall({
-      _chain: ctx._chain,
-      call: ctx.event.call
-    });
-    newSpaceId = call.asV9.newSpaceId;
-    /**
-     * For some reason if newSpaceId === 0 in extrinsic, "asV9" function returns
-     * "undefined" for this property. As result, we need go through such
-     * additional condition.
-     */
-    if (call.isV9 && call.asV9.postId && newSpaceId === undefined)
-      newSpaceId = '0';
-  } catch (e) {
-    const callData = ctx.event.call.args.calls.find(
-      (callItem: { __kind: string; value: any }) =>
-        callItem.__kind === 'Posts' &&
-        callItem.value &&
-        callItem.value.__kind === 'move_post'
-    );
-
-    if (!callData) return null;
-    newSpaceId = callData.value.newSpaceId
-      ? callData.value.newSpaceId.toString()
-      : null;
-  }
-
-  return newSpaceId !== undefined && newSpaceId !== null
-    ? newSpaceId.toString()
-    : null;
+  //
+  // try {
+  //   const call = new PostsMovePostCall({
+  //     _chain: ctx._chain,
+  //     call: ctx.event.call
+  //   });
+  //   newSpaceId = call.asV9.newSpaceId;
+  //   /**
+  //    * For some reason if newSpaceId === 0 in extrinsic, "asV9" function returns
+  //    * "undefined" for this property. As result, we need go through such
+  //    * additional condition.
+  //    */
+  //   if (call.isV9 && call.asV9.postId && newSpaceId === undefined)
+  //     newSpaceId = '0';
+  // } catch (e) {
+  //   const callData = ctx.event.call.args.calls.find(
+  //     (callItem: { __kind: string; value: any }) =>
+  //       callItem.__kind === 'Posts' &&
+  //       callItem.value &&
+  //       callItem.value.__kind === 'move_post'
+  //   );
+  //
+  //   if (!callData) return null;
+  //   newSpaceId = callData.value.newSpaceId
+  //     ? callData.value.newSpaceId.toString()
+  //     : null;
+  // }
+  //
+  // return newSpaceId !== undefined && newSpaceId !== null
+  //   ? newSpaceId.toString()
+  //   : null;
+  return null;
 }
 
 const updatePostReplyCount = async (
@@ -115,18 +114,16 @@ export const updateSpaceForPostChildren = async (
   const children = await ctx.store.find(Post, {
     where: [
       {
-        rootPost
+        rootPost: { id: rootPost.id }
       },
       {
-        parentPost: rootPost
+        parentPost: { id: rootPost.id }
       }
     ],
-    relations: [
-      'createdByAccount',
-      'space',
-      'space.createdByAccount',
-      'space.ownerAccount'
-    ]
+    relations: {
+      createdByAccount: true,
+      space: { createdByAccount: true, ownerAccount: true }
+    }
   });
 
   for (let i = 0; i <= children.length - 1; i++) {
@@ -146,7 +143,7 @@ export const ensurePost = async ({
   postId: string;
   ctx: EventHandlerContext;
   createIfNotExists?: boolean;
-  relations?: string[];
+  relations?: FindOptionsRelations<Post>;
 }): Promise<Post | null> => {
   let existingPost = await ctx.store.get(Post, postId);
   if (relations)
@@ -172,20 +169,20 @@ export const ensurePost = async ({
   let space = null;
   if (!postStruct.isComment) {
     const spaceId = getNewPostSpaceIdFromCall(ctx);
-    space = await ctx.store.get(Space, {
-      where: { id: spaceId },
-      relations: ['createdByAccount', 'ownerAccount']
-    });
+    if (spaceId) {
+      space = await ctx.store.get(Space, {
+        where: { id: spaceId },
+        relations: { createdByAccount: true, ownerAccount: true }
+      });
+    }
   } else if (postStruct.isComment) {
     const { rootPostId } = asCommentStruct(postStruct);
     const rootSpacePost = await ctx.store.get(Post, {
       where: { id: rootPostId },
-      relations: [
-        'createdByAccount',
-        'space',
-        'space.createdByAccount',
-        'space.ownerAccount'
-      ]
+      relations: {
+        createdByAccount: true,
+        space: { createdByAccount: true, ownerAccount: true }
+      }
     });
     if (!rootSpacePost) {
       new EntityProvideFailWarning(Post, rootPostId, ctx);
@@ -238,11 +235,11 @@ export const ensurePost = async ({
 
       post.rootPost = await ctx.store.get(Post, {
         where: { id: rootPostId },
-        relations: ['createdByAccount', 'space']
+        relations: { createdByAccount: true, space: true }
       });
       post.parentPost = await ctx.store.get(Post, {
         where: { id: parentId },
-        relations: ['createdByAccount', 'space']
+        relations: { createdByAccount: true, space: true }
       });
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
@@ -251,6 +248,7 @@ export const ensurePost = async ({
       break;
 
     case PostKind.SharedPost:
+      //@ts-ignore
       const { sharedPostId } = asSharedPostStruct(postStruct);
       post.sharedPost = await ctx.store.get(Post, sharedPostId);
       break;

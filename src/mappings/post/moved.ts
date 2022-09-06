@@ -24,22 +24,23 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostMovedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, postId] = event.asV9;
+  const {
+    account: accountId,
+    postId,
+    fromSpace: fromSpaceId,
+    toSpace: toSpaceId
+  } = event.asV13;
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
   const post = await ctx.store.get(Post, {
     where: { id: postId.toString() },
-    relations: [
-      'space',
-      'createdByAccount',
-      'rootPost',
-      'parentPost',
-      'rootPost.createdByAccount',
-      'parentPost.createdByAccount',
-      'space.ownerAccount',
-      'space.createdByAccount'
-    ]
+    relations: {
+      createdByAccount: true,
+      rootPost: { createdByAccount: true },
+      parentPost: { createdByAccount: true },
+      space: { createdByAccount: true, ownerAccount: true }
+    }
   });
   if (!post) {
     new EntityProvideFailWarning(Post, postId.toString(), ctx);
@@ -60,28 +61,24 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
       ctx
     });
 
-  const newSpaceId = getMovedPostSpaceIdFromCall(ctx);
-  console.log('newSpaceId - ', newSpaceId, typeof newSpaceId);
+  // const newSpaceId = getMovedPostSpaceIdFromCall(ctx);
+
   let newSpaceInst = null;
 
-  if (newSpaceId !== '0') {
+  if (toSpaceId && toSpaceId.toString() !== '0') {
     newSpaceInst = await ctx.store.get(Space, {
       where: {
-        id: newSpaceId
+        id: toSpaceId.toString()
       },
-      relations: ['ownerAccount', 'createdByAccount']
+      relations: { ownerAccount: true, createdByAccount: true }
     });
 
     if (!newSpaceInst) {
-      new EntityProvideFailWarning(Space, newSpaceId || 'null', ctx);
+      new EntityProvideFailWarning(Space, toSpaceId.toString() || 'null', ctx);
       throw new CommonCriticalError();
       return;
     }
   }
-
-  // console.log('>>>>>>> newSpaceId - ', newSpaceId, typeof newSpaceId);
-  // console.log('>>>>>>> newSpaceInst - ', newSpaceInst);
-  // throw Error('newSpaceId');
 
   post.space = newSpaceInst;
 

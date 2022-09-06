@@ -6,7 +6,7 @@ export const resolveSpace = async (
   id: AnySpaceId
 ): Promise<SpaceData | undefined> => {
   const subsocial = await resolveSubsocialApi();
-
+//@ts-ignore
   return await subsocial.findSpace({ id });
 };
 
@@ -14,6 +14,6 @@ export const resolveSpaceStruct = async (
   id: AnySpaceId
 ): Promise<SpaceStruct | undefined> => {
   const subsocial = await resolveSubsocialApi();
-
+  //@ts-ignore
   return await subsocial.findSpaceStruct(id.toString());
 };

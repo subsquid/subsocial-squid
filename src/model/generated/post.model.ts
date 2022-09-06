@@ -37,7 +37,7 @@ export class Post {
   hidden!: boolean
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   createdByAccount!: Account
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})

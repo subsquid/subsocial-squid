@@ -18,30 +18,26 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostUpdatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, id] = event.asV1;
+  const { account: accountId, postId } = event.asV13;
 
   const post = await ctx.store.get(Post, {
-    where: { id: id.toString() },
-    relations: [
-      'space',
-      'createdByAccount',
-      'rootPost',
-      'parentPost',
-      'rootPost.createdByAccount',
-      'parentPost.createdByAccount',
-      'space.ownerAccount',
-      'space.createdByAccount'
-    ]
+    where: { id: postId.toString() },
+    relations: {
+      createdByAccount: true,
+      rootPost: { createdByAccount: true },
+      parentPost: { createdByAccount: true },
+      space: { ownerAccount: true, createdByAccount: true }
+    }
   });
   if (!post) {
-    new EntityProvideFailWarning(Post, id.toString(), ctx);
+    new EntityProvideFailWarning(Post, postId.toString(), ctx);
     throw new CommonCriticalError();
     return;
   }
 
   const prevVisStateHidden = post.hidden;
 
-  const postData = await resolvePost(id as unknown as PostId);
+  const postData = await resolvePost(postId as unknown as PostId);
   if (!postData) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
     return;

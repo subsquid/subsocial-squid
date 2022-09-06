@@ -6,7 +6,7 @@ export const resolvePost = async (
   id: AnyPostId
 ): Promise<PostWithSomeDetails | undefined> => {
   const subsocial = await resolveSubsocialApi();
-
+  //@ts-ignore
   return subsocial.findPostWithSomeDetails({ id });
 };
 
@@ -14,6 +14,6 @@ export const resolvePostStruct = async (
   id: AnyPostId
 ): Promise<PostStruct | undefined> => {
   const subsocial = await resolveSubsocialApi();
-
+  //@ts-ignore
   return subsocial.findPostStruct(id.toString());
 };

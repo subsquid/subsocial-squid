@@ -12,10 +12,10 @@ export class SpaceFollowers {
   id!: string
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   followerAccount!: Account
 
   @Index_()
-  @ManyToOne_(() => Space, {nullable: false})
+  @ManyToOne_(() => Space, {nullable: true})
   followingSpace!: Space
 }

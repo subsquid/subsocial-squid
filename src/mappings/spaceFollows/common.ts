@@ -33,7 +33,7 @@ export async function handleEvent(
 
   const space = await ctx.store.get(Space, {
     where: { id: spaceId },
-    relations: ['ownerAccount', 'createdByAccount']
+    relations: { ownerAccount: true, createdByAccount: true }
   });
   if (!space) {
     new EntityProvideFailWarning(Space, spaceId, ctx);

@@ -16,30 +16,31 @@ export function getReactionKindFromCall(
   eventName: string,
   ctx: EventHandlerContext
 ): ReactionKind | null {
-  assert(ctx.event.call);
-
-  let call = null;
-  let kind = null;
-  switch (eventName) {
-    case 'Reactions.PostReactionCreated':
-      call = new ReactionsCreatePostReactionCall({
-        _chain: ctx._chain,
-        call: ctx.event.call
-      });
-      kind = call.asV1.kind;
-      break;
-    case 'Reactions.PostReactionUpdated':
-      call = new ReactionsUpdatePostReactionCall({
-        _chain: ctx._chain,
-        call: ctx.event.call
-      });
-      kind = call.asV1.newKind;
-      break;
-  }
-
-  if (!call || !kind) return null;
-
-  return ReactionKind[kind.__kind as keyof typeof ReactionKind];
+  // assert(ctx.event.call);
+  //
+  // let call = null;
+  // let kind = null;
+  // switch (eventName) {
+  //   case 'Reactions.PostReactionCreated':
+  //     call = new ReactionsCreatePostReactionCall({
+  //       _chain: ctx._chain,
+  //       call: ctx.event.call
+  //     });
+  //     kind = call.asV1.kind;
+  //     break;
+  //   case 'Reactions.PostReactionUpdated':
+  //     call = new ReactionsUpdatePostReactionCall({
+  //       _chain: ctx._chain,
+  //       call: ctx.event.call
+  //     });
+  //     kind = call.asV1.newKind;
+  //     break;
+  // }
+  //
+  // if (!call || !kind) return null;
+  //
+  // return ReactionKind[kind.__kind as keyof typeof ReactionKind];
+  return null;
 }
 
 export async function getReactionKindFromSquidDb(
@@ -71,7 +72,7 @@ export async function ensureReaction({
 }): Promise<Reaction | null> {
   const existingReaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: ['post', 'post.createdByAccount', 'post.space']
+    relations: { post: { createdByAccount: true, space: true } }
   });
   if (existingReaction) return existingReaction;
 
@@ -80,7 +81,7 @@ export async function ensureReaction({
 
   const postInst = await ctx.store.get(Post, {
     where: { id: postId },
-    relations: ['createdByAccount', 'space']
+    relations: { createdByAccount: true, space: true }
   });
 
   if (!postInst) {

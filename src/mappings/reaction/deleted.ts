@@ -24,34 +24,34 @@ async function getPostReactionDeletedEvent(
   ctx: EventHandlerContext
 ): Promise<ReactionEvent | null> {
   const event = new ReactionsPostReactionDeletedEvent(ctx);
-  if (event.isV1) {
-    const [accountId, postId, reactionId] = event.asV1;
-    const reactionKind = await getReactionKindFromSquidDb(
-      reactionId.toString(),
-      ctx
-    );
-    if (!reactionKind) {
-      new CommonCriticalError(
-        'reactionKind can not be extracted from DB entity'
-      );
-      return null;
-    }
-    return {
-      accountId: addressSs58ToString(accountId),
-      postId: postId.toString(),
-      reactionId: reactionId.toString(),
-      reactionKind
-    };
-  }
-  if (event.isV15) {
-    const [accountId, postId, reactionId, reactionKind] = event.asV15;
-    return {
-      accountId: addressSs58ToString(accountId),
-      postId: postId.toString(),
-      reactionId: reactionId.toString(),
-      reactionKind: ReactionKind[reactionKind.__kind]
-    };
-  }
+  // if (event.isV1) {
+  //   const [accountId, postId, reactionId] = event.asV1;
+  //   const reactionKind = await getReactionKindFromSquidDb(
+  //     reactionId.toString(),
+  //     ctx
+  //   );
+  //   if (!reactionKind) {
+  //     new CommonCriticalError(
+  //       'reactionKind can not be extracted from DB entity'
+  //     );
+  //     return null;
+  //   }
+  //   return {
+  //     accountId: addressSs58ToString(accountId),
+  //     postId: postId.toString(),
+  //     reactionId: reactionId.toString(),
+  //     reactionKind
+  //   };
+  // }
+  // if (event.isV15) {
+  const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
+  return {
+    accountId: addressSs58ToString(accountId),
+    postId: postId.toString(),
+    reactionId: reactionId.toString(),
+    reactionKind: ReactionKind[reactionKind.__kind]
+  };
+  // }
   throw new UnknownVersionError(event.constructor.name);
 }
 
@@ -68,7 +68,7 @@ export async function postReactionDeleted(
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: ['account', 'post', 'post.createdByAccount', 'post.space']
+    relations: { account: true, post: { createdByAccount: true, space: true } }
   });
 
   if (!reaction) {

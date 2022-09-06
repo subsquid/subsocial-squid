@@ -7,6 +7,6 @@ export async function spaceFollowed(ctx: EventHandlerContext): Promise<void> {
   printEventLog(ctx);
   const event = new SpaceFollowsSpaceFollowedEvent(ctx);
 
-  const [followerId, spaceId] = event.asV1;
+  const { follower: followerId, spaceId } = event.asV13;
   await handleEvent(addressSs58ToString(followerId), spaceId.toString(), ctx);
 }

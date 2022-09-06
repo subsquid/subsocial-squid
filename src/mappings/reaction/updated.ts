@@ -28,34 +28,34 @@ function getPostReactionUpdatedEvent(
 ): ReactionEvent | null {
   const event = new ReactionsPostReactionUpdatedEvent(ctx);
 
-  if (event.isV1) {
-    const [accountId, postId, reactionId] = event.asV1;
-    const reactionKind = getReactionKindFromCall(
-      'Reactions.PostReactionUpdated',
-      ctx
-    );
-    if (!reactionKind) {
-      new CommonCriticalError(
-        'reactionKind can not be extracted from extrinsic'
-      );
-      return null;
-    }
-    return {
-      accountId: addressSs58ToString(accountId),
-      postId: postId.toString(),
-      reactionId: reactionId.toString(),
-      reactionKind
-    };
-  }
-  if (event.isV15) {
-    const [accountId, postId, reactionId, reactionKind] = event.asV15;
-    return {
-      accountId: addressSs58ToString(accountId),
-      postId: postId.toString(),
-      reactionId: reactionId.toString(),
-      reactionKind: ReactionKind[reactionKind.__kind]
-    };
-  }
+  // if (event.isV1) {
+  //   const [accountId, postId, reactionId] = event.asV1;
+  //   const reactionKind = getReactionKindFromCall(
+  //     'Reactions.PostReactionUpdated',
+  //     ctx
+  //   );
+  //   if (!reactionKind) {
+  //     new CommonCriticalError(
+  //       'reactionKind can not be extracted from extrinsic'
+  //     );
+  //     return null;
+  //   }
+  //   return {
+  //     accountId: addressSs58ToString(accountId),
+  //     postId: postId.toString(),
+  //     reactionId: reactionId.toString(),
+  //     reactionKind
+  //   };
+  // }
+  // if (event.isV15) {
+  const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
+  return {
+    accountId: addressSs58ToString(accountId),
+    postId: postId.toString(),
+    reactionId: reactionId.toString(),
+    reactionKind: ReactionKind[reactionKind.__kind]
+  };
+  // }
   throw new UnknownVersionError(event.constructor.name);
 }
 
@@ -72,7 +72,7 @@ export async function postReactionUpdated(
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: ['post', 'post.createdByAccount', 'post.space', 'account']
+    relations: { post: { createdByAccount: true, space: true }, account: true }
   });
 
   if (!reaction) {

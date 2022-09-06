@@ -1,4 +1,4 @@
-import { ProfileFollowsAccountUnfollowedEvent } from '../../types/generated/events';
+import { AccountFollowsAccountUnfollowedEvent } from '../../types/generated/events';
 import { addressSs58ToString, printEventLog } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import { handleEvent } from './common';
@@ -8,9 +8,9 @@ export async function accountUnfollowed(
 ): Promise<void> {
   printEventLog(ctx);
 
-  const event = new ProfileFollowsAccountUnfollowedEvent(ctx);
+  const event = new AccountFollowsAccountUnfollowedEvent(ctx);
 
-  const [followerId, followingId] = event.asV1;
+  const { follower: followerId, account: followingId } = event.asV13;
 
   await handleEvent(
     addressSs58ToString(followerId),
