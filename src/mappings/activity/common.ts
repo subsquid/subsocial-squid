@@ -33,7 +33,11 @@ export const setActivity = async ({
 }): Promise<Activity | null> => {
   const { indexInBlock, name: eventName } = ctx.event;
   const { height: blockNumber, timestamp } = ctx.block;
-  const eventNameDecorated = decorateEventName(eventName);
+  const eventNameDecorated =
+    EventName[
+      syntheticEventName ||
+        (decorateEventName(eventName) as keyof typeof EventName)
+    ];
 
   const accountInst =
     account instanceof Account ? account : await ensureAccount(account, ctx);
@@ -41,14 +45,14 @@ export const setActivity = async ({
   let activity = new Activity();
   activity.id = getActivityEntityId(
     blockNumber.toString(),
-    indexInBlock.toString()
+    indexInBlock.toString(),
+    eventNameDecorated
   );
   activity.account = accountInst;
   activity.blockNumber = BigInt(blockNumber.toString());
   activity.eventIndex = indexInBlock;
-  activity.event =
-    syntheticEventName ||
-    EventName[eventNameDecorated as keyof typeof EventName];
+  activity.event = EventName[eventNameDecorated as keyof typeof EventName];
+
   activity.date = new Date(timestamp);
   activity.aggregated = false;
   activity.aggCount = BigInt(0);

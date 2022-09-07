@@ -3,8 +3,10 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
 import * as ss58 from '@subsquid/ss58';
+import md5 from 'md5';
 import { EventHandlerContext } from './contexts';
 import { eventLogsTrace } from '../env';
+import { EventName } from '../model';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -20,15 +22,16 @@ export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
  * format "PalletName.EventName".
  * @param rawEventName
  */
-export const decorateEventName = (rawEventName: string) => {
+export const decorateEventName = (rawEventName: string): string => {
   return rawEventName.split('.')[1];
 };
 
 export const getActivityEntityId = (
   blockNumber: string,
-  indexInBlock: string
+  indexInBlock: string,
+  eventName: string | EventName
 ): string => {
-  return `${blockNumber}-${indexInBlock}`;
+  return `${blockNumber}-${indexInBlock}-${md5(eventName)}`;
 };
 
 export const getNotificationEntityId = (
