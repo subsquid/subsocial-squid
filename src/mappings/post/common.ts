@@ -164,17 +164,20 @@ export const ensurePost = async ({
   let space = null;
   if (!postStruct.isComment) {
     const spaceId = getNewPostSpaceIdFromCall(ctx);
+    console.log('!isComment ::: getNewPostSpaceIdFromCall spaceId - ', spaceId);
     if (spaceId) {
       space = await ctx.store.get(Space, {
         where: { id: spaceId },
         relations: { createdByAccount: true, ownerAccount: true }
       });
+      console.log('space - ', space);
     }
   } else if (postStruct.isComment) {
     const { rootPostId } = asCommentStruct(postStruct);
     const rootSpacePost = await ctx.store.get(Post, {
       where: { id: rootPostId },
       relations: {
+        ownedByAccount: true,
         createdByAccount: true,
         space: { createdByAccount: true, ownerAccount: true }
       }
@@ -183,6 +186,7 @@ export const ensurePost = async ({
       new EntityProvideFailWarning(Post, rootPostId, ctx);
       throw new CommonCriticalError();
     }
+    console.log('isComment ::: rootSpacePost.space ', rootSpacePost.space);
     space = rootSpacePost.space;
   }
 

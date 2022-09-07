@@ -27,7 +27,7 @@ export class MissingDbRecord {
 
 export class EntityProvideFailWarning {
   constructor(entity: DbEntity, entityId: string, ctx: EventHandlerContext) {
-    const msg = `WARNING ::: Entity ${entity.name} (id: ${entityId}) can not be provided at block ${ctx.block.height}, method "${ctx.event.name}"`;
+    const msg = `WARNING ::: Entity ${entity.name} (id: ${entityId}) can not be provided at block ${ctx.block.height}[e# - ${ctx.event.indexInBlock}], method "${ctx.event.name}"`;
     if (warningLogsTrace === 'true') {
       console.trace(msg);
     } else {
