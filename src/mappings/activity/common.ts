@@ -19,7 +19,8 @@ export const setActivity = async ({
   post,
   spacePrev,
   reaction,
-  followingAccount
+  followingAccount,
+  syntheticEventName
 }: {
   account: Account | string;
   ctx: EventHandlerContext;
@@ -28,6 +29,7 @@ export const setActivity = async ({
   post?: Post;
   reaction?: Reaction;
   followingAccount?: Account;
+  syntheticEventName?: EventName;
 }): Promise<Activity | null> => {
   const { indexInBlock, name: eventName } = ctx.event;
   const { height: blockNumber, timestamp } = ctx.block;
@@ -50,13 +52,9 @@ export const setActivity = async ({
   activity.aggCount = BigInt(0);
 
   /**
-   * ProfileCreated
    * ProfileUpdated
    */
-  if (
-    eventNameDecorated === EventName.ProfileCreated ||
-    eventNameDecorated === EventName.ProfileUpdated
-  ) {
+  if (eventNameDecorated === EventName.ProfileUpdated) {
     activity = await insertActivityData.insertActivityForAccountCreatedUpdated({
       activity
     });
@@ -85,6 +83,7 @@ export const setActivity = async ({
   if (
     (eventNameDecorated === EventName.PostCreated ||
       eventNameDecorated === EventName.PostUpdated) &&
+    !syntheticEventName &&
     post
   )
     activity = await insertActivityData.insertActivityForPostCreated({
@@ -110,9 +109,9 @@ export const setActivity = async ({
   /**
    * PostShared
    */
-  if (eventNameDecorated === EventName.PostShared && post) {
+  if (syntheticEventName === EventName.PostShared && post) {
     activity = await insertActivityData.insertActivityForPostShared({
-      eventName: eventNameDecorated,
+      eventName: EventName.PostShared,
       post,
       activity,
       ctx

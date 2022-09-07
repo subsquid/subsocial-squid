@@ -49,6 +49,11 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
     // }
 
     await ctx.store.save<Account>(account);
+
+    if (accountSpace) {
+      accountSpace.profileSpace = account;
+      await ctx.store.save<Space>(accountSpace);
+    }
   }
 
   await setActivity({

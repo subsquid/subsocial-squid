@@ -13,7 +13,6 @@ enum EventName {
   SpaceUnfollowed
   AccountFollowed
   AccountUnfollowed
-  ProfileCreated
   ProfileUpdated
 }
 
@@ -34,14 +33,7 @@ enum Status {
 
 type Account @entity {
   id: ID!
-#  reputation: Int
-#  hasProfile: Boolean @index
-#  name: String
-#  avatar: String
-#  about: String
   profileSpace: Space
-#  createdAtBlock: BigInt
-#  createdAtTime: DateTime
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
   followersCount: Int!
@@ -71,6 +63,7 @@ type Post @entity  {
   isComment: Boolean! @index
   hidden: Boolean! @index
 
+  ownedByAccount: Account!
   createdByAccount: Account!
   createdAtBlock: BigInt
   createdAtTime: DateTime @index
@@ -96,6 +89,7 @@ type Post @entity  {
   title: String
   content: String
   slug: String
+  body: String
   summary: String
   image: String
   canonical: String
@@ -120,6 +114,7 @@ type Space @entity {
   id: ID!
   createdByAccount: Account!
   ownerAccount: Account!
+  profileSpace: Account
 
   createdAtBlock: BigInt
   createdAtTime: DateTime @index
@@ -132,11 +127,15 @@ type Space @entity {
   publicPostsCount: Int! @index
   hiddenPostsCount: Int!
 
+  hidden: Boolean! @index
   content: String
   name: String
   image: String
+  about: String
   summary: String
+  email: String
   tagsOriginal: String
+  linksOriginal: String
 
   followersCount: Int! @index
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")

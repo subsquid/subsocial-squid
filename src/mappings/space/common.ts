@@ -65,6 +65,7 @@ export const ensureSpace = async ({
     spaceInst.createdOnDay = getDateWithoutTime(
       new Date(spaceStruct.createdAtTime)
     );
+    spaceInst.hidden = spaceStruct.hidden;
   }
   const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
 
@@ -78,9 +79,12 @@ export const ensureSpace = async ({
 
   if (spaceContent) {
     spaceInst.name = spaceContent.name;
-    spaceInst.summary = spaceContent.about;
+    spaceInst.email = spaceContent.email;
+    spaceInst.about = spaceContent.about;
+    spaceInst.summary = spaceContent.summary;
     spaceInst.image = spaceContent.image;
-    spaceInst.tagsOriginal = spaceContent.tags?.join(',');
+    spaceInst.tagsOriginal = (spaceContent.tags || []).join(',');
+    spaceInst.linksOriginal = (spaceContent.links || []).join(',');
   }
 
   if (createIfNotExists) await ctx.store.save<Space>(spaceInst);

@@ -13,7 +13,6 @@ import {
   spaceUpdated,
   spaceFollowed,
   spaceUnfollowed,
-  accountCreated,
   accountUpdated,
   accountFollowed,
   accountUnfollowed
@@ -46,7 +45,6 @@ processor.addEventHandler('Reactions.PostReactionCreated', postReactionCreated);
 processor.addEventHandler('Reactions.PostReactionUpdated', postReactionUpdated);
 processor.addEventHandler('Reactions.PostReactionDeleted', postReactionDeleted);
 
-// processor.addEventHandler('Profiles.ProfileCreated', accountCreated); // TODO must be reimplemented
 processor.addEventHandler('Profiles.ProfileUpdated', accountUpdated);
 
 processor.addEventHandler('SpaceFollows.SpaceFollowed', spaceFollowed);

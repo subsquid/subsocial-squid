@@ -25,7 +25,7 @@ export function getNewPostSpaceIdFromCall(
   ctx: EventHandlerContext
 ): string | null {
   assert(ctx.event.call);
-  let spaceId = null;
+  let spaceId: string | null = null;
 
   try {
     const call = new PostsCreatePostCall({
@@ -33,19 +33,14 @@ export function getNewPostSpaceIdFromCall(
       call: ctx.event.call
     });
     if (call.isV13) {
-      spaceId = call.asV13.spaceIdOpt;
+      spaceId = call.asV13.spaceIdOpt ? call.asV13.spaceIdOpt.toString() : null;
     }
   } catch (e) {
-    const callData = ctx.event.call.args.calls.find(
-      (callItem: { __kind: string; value: any }) =>
-        callItem.__kind === 'Posts' &&
-        callItem.value &&
-        callItem.value.__kind === 'create_post'
-    );
-    if (!callData) return null;
-    spaceId = callData.value.spaceIdOpt
-      ? callData.value.spaceIdOpt.toString()
-      : null;
+    const callArgs = ctx.event.call.args as {
+      spaceIdOpt?: bigint;
+      [k: string]: unknown;
+    };
+    spaceId = callArgs.spaceIdOpt ? callArgs.spaceIdOpt.toString() : null;
   }
   return spaceId ? spaceId.toString() : null;
 }
@@ -201,6 +196,10 @@ export const ensurePost = async ({
   post.id = postId.toString();
   post.isComment = postStruct.isComment;
   post.hidden = postStruct.hidden;
+  post.ownedByAccount =
+    postStruct && postStruct.ownerId
+      ? await ensureAccount(postStruct.ownerId, ctx)
+      : accountInst;
   post.createdByAccount = accountInst;
   post.createdAtBlock = BigInt(postStruct.createdAtBlock.toString());
   post.createdAtTime = new Date(postStruct.createdAtTime);
@@ -248,15 +247,15 @@ export const ensurePost = async ({
       break;
 
     case PostKind.SharedPost:
-      //@ts-ignore
-      const { sharedPostId } = asSharedPostStruct(postStruct);
-      post.sharedPost = await ctx.store.get(Post, sharedPostId);
+      const { originalPostId } = asSharedPostStruct(postStruct);
+      post.sharedPost = await ctx.store.get(Post, originalPostId);
       break;
   }
 
   if (postContent) {
     post.title = postContent.title;
     post.image = postContent.image;
+    post.body = postContent.body;
     post.summary = postContent.summary;
     post.slug = null;
     post.tagsOriginal = postContent.tags?.join(',');

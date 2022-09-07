@@ -10,7 +10,6 @@ export {
   spaceUpdated,
   spaceFollowed,
   spaceUnfollowed,
-  accountCreated,
   accountUpdated,
   accountFollowed,
   accountUnfollowed

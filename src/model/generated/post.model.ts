@@ -38,6 +38,10 @@ export class Post {
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: true})
+  ownedByAccount!: Account
+
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: true})
   createdByAccount!: Account
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
@@ -108,6 +112,9 @@ export class Post {
 
   @Column_("text", {nullable: true})
   slug!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  body!: string | undefined | null
 
   @Column_("text", {nullable: true})
   summary!: string | undefined | null

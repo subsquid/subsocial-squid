@@ -21,6 +21,10 @@ export class Space {
   @ManyToOne_(() => Account, {nullable: true})
   ownerAccount!: Account
 
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: true})
+  profileSpace!: Account | undefined | null
+
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
   createdAtBlock!: bigint | undefined | null
 
@@ -50,6 +54,10 @@ export class Space {
   @Column_("int4", {nullable: false})
   hiddenPostsCount!: number
 
+  @Index_()
+  @Column_("bool", {nullable: false})
+  hidden!: boolean
+
   @Column_("text", {nullable: true})
   content!: string | undefined | null
 
@@ -60,10 +68,19 @@ export class Space {
   image!: string | undefined | null
 
   @Column_("text", {nullable: true})
+  about!: string | undefined | null
+
+  @Column_("text", {nullable: true})
   summary!: string | undefined | null
 
   @Column_("text", {nullable: true})
+  email!: string | undefined | null
+
+  @Column_("text", {nullable: true})
   tagsOriginal!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  linksOriginal!: string | undefined | null
 
   @Index_()
   @Column_("int4", {nullable: false})
