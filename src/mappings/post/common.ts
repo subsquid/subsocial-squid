@@ -35,7 +35,9 @@ export function getNewPostSpaceIdFromCall(
     if (call.isV13) {
       spaceId = call.asV13.spaceIdOpt ? call.asV13.spaceIdOpt.toString() : null;
     }
+    console.log('try - ', spaceId);
   } catch (e) {
+    console.log('catch - ', ctx.event.call.args);
     const callArgs = ctx.event.call.args as {
       spaceIdOpt?: bigint;
       [k: string]: unknown;
@@ -170,7 +172,6 @@ export const ensurePost = async ({
         where: { id: spaceId },
         relations: { createdByAccount: true, ownerAccount: true }
       });
-      console.log('space - ', space);
     }
   } else if (postStruct.isComment) {
     const { rootPostId } = asCommentStruct(postStruct);
