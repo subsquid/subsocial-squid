@@ -248,7 +248,16 @@ export const ensurePost = async ({
 
     case PostKind.SharedPost:
       const { originalPostId } = asSharedPostStruct(postStruct);
-      post.sharedPost = await ctx.store.get(Post, originalPostId);
+      post.sharedPost = await ctx.store.get(Post, {
+        where: { id: originalPostId },
+        relations: {
+          createdByAccount: true,
+          ownedByAccount: true,
+          rootPost: { createdByAccount: true },
+          parentPost: { createdByAccount: true },
+          space: { ownerAccount: true, createdByAccount: true }
+        }
+      });
       break;
   }
 
