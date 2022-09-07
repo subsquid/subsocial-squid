@@ -46,7 +46,9 @@ export const setActivity = async ({
   activity.account = accountInst;
   activity.blockNumber = BigInt(blockNumber.toString());
   activity.eventIndex = indexInBlock;
-  activity.event = EventName[eventNameDecorated as keyof typeof EventName];
+  activity.event =
+    syntheticEventName ||
+    EventName[eventNameDecorated as keyof typeof EventName];
   activity.date = new Date(timestamp);
   activity.aggregated = false;
   activity.aggCount = BigInt(0);

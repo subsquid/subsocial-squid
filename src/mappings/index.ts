@@ -1,7 +1,6 @@
 export {
   postCreated,
   postUpdated,
-  postShared,
   postMoved,
   postReactionCreated,
   postReactionUpdated,

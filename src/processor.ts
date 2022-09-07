@@ -4,7 +4,6 @@ import * as envConfig from './env';
 import {
   postCreated,
   postUpdated,
-  postShared,
   postMoved,
   postReactionCreated,
   postReactionUpdated,
@@ -35,7 +34,6 @@ processor.setDataSource({
 
 processor.addEventHandler('Posts.PostCreated', postCreated);
 processor.addEventHandler('Posts.PostUpdated', postUpdated);
-// processor.addEventHandler('Posts.PostShared', postShared); // TODO must be reimplemented
 processor.addEventHandler('Posts.PostMoved', postMoved);
 
 processor.addEventHandler('Spaces.SpaceCreated', spaceCreated);
