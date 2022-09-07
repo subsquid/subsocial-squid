@@ -35,9 +35,7 @@ export function getNewPostSpaceIdFromCall(
     if (call.isV13) {
       spaceId = call.asV13.spaceIdOpt ? call.asV13.spaceIdOpt.toString() : null;
     }
-    console.log('try - ', spaceId);
   } catch (e) {
-    console.log('catch - ', ctx.event.call.args);
     const callArgs = ctx.event.call.args as {
       spaceIdOpt?: bigint;
       [k: string]: unknown;
@@ -166,7 +164,6 @@ export const ensurePost = async ({
   let space = null;
   if (!postStruct.isComment) {
     const spaceId = getNewPostSpaceIdFromCall(ctx);
-    console.log('!isComment ::: getNewPostSpaceIdFromCall spaceId - ', spaceId);
     if (spaceId) {
       space = await ctx.store.get(Space, {
         where: { id: spaceId },
@@ -187,14 +184,13 @@ export const ensurePost = async ({
       new EntityProvideFailWarning(Post, rootPostId, ctx);
       throw new CommonCriticalError();
     }
-    console.log('isComment ::: rootSpacePost.space ', rootSpacePost.space);
     space = rootSpacePost.space;
   }
 
-  if (!space) {
-    new EntityProvideFailWarning(Space, 'unknown', ctx);
-    throw new CommonCriticalError();
-  }
+  // if (!space) {
+  //   new EntityProvideFailWarning(Space, 'unknown', ctx);
+  //   throw new CommonCriticalError();
+  // }
 
   const post = new Post();
 
