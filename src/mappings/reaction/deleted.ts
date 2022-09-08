@@ -1,10 +1,21 @@
-import { ReactionKind, Status, Post, Reaction, Activity } from '../../model';
+import {
+  ReactionKind,
+  Status,
+  Post,
+  Reaction,
+  Activity,
+  EventName
+} from '../../model';
 import { ReactionsPostReactionDeletedEvent } from '../../types/generated/events';
 
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { ensureAccount } from '../account';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
+import {
+  addressSs58ToString,
+  getSyntheticEventName,
+  printEventLog
+} from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
@@ -24,26 +35,6 @@ async function getPostReactionDeletedEvent(
   ctx: EventHandlerContext
 ): Promise<ReactionEvent | null> {
   const event = new ReactionsPostReactionDeletedEvent(ctx);
-  // if (event.isV1) {
-  //   const [accountId, postId, reactionId] = event.asV1;
-  //   const reactionKind = await getReactionKindFromSquidDb(
-  //     reactionId.toString(),
-  //     ctx
-  //   );
-  //   if (!reactionKind) {
-  //     new CommonCriticalError(
-  //       'reactionKind can not be extracted from DB entity'
-  //     );
-  //     return null;
-  //   }
-  //   return {
-  //     accountId: addressSs58ToString(accountId),
-  //     postId: postId.toString(),
-  //     reactionId: reactionId.toString(),
-  //     reactionKind
-  //   };
-  // }
-  // if (event.isV15) {
   const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
   return {
     accountId: addressSs58ToString(accountId),
@@ -51,7 +42,6 @@ async function getPostReactionDeletedEvent(
     reactionId: reactionId.toString(),
     reactionKind: ReactionKind[reactionKind.__kind]
   };
-  // }
   throw new UnknownVersionError(event.constructor.name);
 }
 
@@ -74,7 +64,6 @@ export async function postReactionDeleted(
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     throw new CommonCriticalError();
-    return;
   }
 
   const { kind: deletedReactionKind, post: deletedReactionPost } = reaction;
@@ -92,6 +81,10 @@ export async function postReactionDeleted(
   await ctx.store.save<Post>(deletedReactionPost);
 
   const activity = await setActivity({
+    syntheticEventName: getSyntheticEventName(
+      EventName.PostReactionCreated,
+      deletedReactionPost
+    ),
     account: accountInst,
     post: deletedReactionPost,
     reaction,
@@ -101,7 +94,6 @@ export async function postReactionDeleted(
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
     throw new CommonCriticalError();
-    return;
   }
   await addNotificationForAccount(
     deletedReactionPost.createdByAccount,

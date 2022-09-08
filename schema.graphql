@@ -1,12 +1,14 @@
 enum EventName {
   PostCreated
-  PostDeleted
+  PostDeleted # synthetic
   PostUpdated
-  PostShared
+  PostShared # synthetic
   PostMoved
+
   PostReactionCreated
   PostReactionUpdated
   PostReactionDeleted
+
   SpaceCreated
   SpaceUpdated
   SpaceFollowed
@@ -14,6 +16,22 @@ enum EventName {
   AccountFollowed
   AccountUnfollowed
   ProfileUpdated
+
+  CommentCreated # synthetic
+  CommentDeleted # synthetic
+  CommentUpdated # synthetic
+  CommentShared # synthetic
+  CommentReactionCreated # synthetic
+  CommentReactionUpdated # synthetic
+  CommentReactionDeleted # synthetic
+
+  CommentReplyCreated # synthetic
+  CommentReplyDeleted # synthetic
+  CommentReplyUpdated # synthetic
+  CommentReplyShared # synthetic
+  CommentReplyReactionCreated # synthetic
+  CommentReplyReactionUpdated # synthetic
+  CommentReplyReactionDeleted # synthetic
 }
 
 enum PostKind {

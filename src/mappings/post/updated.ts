@@ -1,7 +1,11 @@
 import { resolvePost } from '../../connection/resolvers/resolvePostData';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
+import {
+  addressSs58ToString,
+  getSyntheticEventName,
+  printEventLog
+} from '../../common/utils';
 import { PostId } from '@subsocial/types/substrate/interfaces';
-import { Post, Account } from '../../model';
+import { Post, Account, EventName } from '../../model';
 import { PostsPostUpdatedEvent } from '../../types/generated/events';
 import { ensureAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
@@ -78,6 +82,7 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   });
 
   await setActivity({
+    syntheticEventName: getSyntheticEventName(EventName.PostUpdated, post),
     account: addressSs58ToString(accountId),
     post,
     ctx

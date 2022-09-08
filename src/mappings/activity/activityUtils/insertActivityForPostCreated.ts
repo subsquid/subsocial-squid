@@ -1,4 +1,4 @@
-import { Post, Activity, EventName } from '../../../model';
+import { Post, Activity } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import {
   getAggregationCount,
@@ -6,7 +6,6 @@ import {
 } from './aggregationUtils';
 
 type InsertActivityForPostCreatedParams = {
-  eventName: EventName;
   post: Post;
   activity: Activity;
   ctx: EventHandlerContext;
@@ -15,7 +14,7 @@ type InsertActivityForPostCreatedParams = {
 export async function insertActivityForPostCreated(
   params: InsertActivityForPostCreatedParams
 ): Promise<Activity> {
-  const { activity, eventName, post, ctx } = params;
+  const { activity, post, ctx } = params;
 
   if (!post.isComment) {
     /**
@@ -38,14 +37,14 @@ export async function insertActivityForPostCreated(
     activity.aggregated = activity.account.id !== creator.id;
     activity.aggCount = BigInt(
       await getAggregationCount({
-        eventName,
+        eventName: activity.event,
         account: activity.account,
         post,
         ctx
       })
     );
     await updateAggregatedStatus({
-      eventName,
+      eventName: activity.event,
       post,
       ctx
     });

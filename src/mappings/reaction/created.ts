@@ -1,9 +1,13 @@
-import { ReactionKind, Post, Reaction, Activity } from '../../model';
+import { ReactionKind, Post, Reaction, Activity, EventName } from '../../model';
 import { ReactionsPostReactionCreatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { ensureAccount } from '../account';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
+import {
+  addressSs58ToString,
+  getSyntheticEventName,
+  printEventLog
+} from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
@@ -23,26 +27,6 @@ function getPostReactionCreatedEvent(
   ctx: EventHandlerContext
 ): ReactionEvent | null {
   const event = new ReactionsPostReactionCreatedEvent(ctx);
-
-  // if (event.isV1) {
-  //   const [accountId, postId, reactionId] = event.asV1;
-  //   const reactionKind = getReactionKindFromCall(
-  //     'Reactions.PostReactionCreated',
-  //     ctx
-  //   );
-  //   if (!reactionKind) {
-  //     new CommonCriticalError(
-  //       'reactionKind can not be extracted from extrinsic'
-  //     );
-  //     return null;
-  //   }
-  //   return {
-  //     accountId: addressSs58ToString(accountId),
-  //     postId: postId.toString(),
-  //     reactionId: reactionId.toString(),
-  //     reactionKind
-  //   };
-  // }
 
   const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
   return {
@@ -77,7 +61,6 @@ export async function postReactionCreated(
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     throw new CommonCriticalError();
-    return;
   }
 
   await ctx.store.save<Reaction>(reaction);
@@ -94,8 +77,12 @@ export async function postReactionCreated(
   await ctx.store.save<Post>(post);
 
   const activity = await setActivity({
-    account,
+    syntheticEventName: getSyntheticEventName(
+      EventName.PostReactionCreated,
+      post
+    ),
     reaction,
+    account,
     post,
     ctx
   });

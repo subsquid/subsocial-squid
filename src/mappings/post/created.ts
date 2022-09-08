@@ -1,5 +1,9 @@
-import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { Post, Activity, EventName } from '../../model';
+import {
+  addressSs58ToString,
+  getSyntheticEventName,
+  printEventLog
+} from '../../common/utils';
+import { Post, Activity, Account, EventName } from '../../model';
 import { PostsPostCreatedEvent } from '../../types/generated/events';
 import { ensureAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
@@ -33,12 +37,12 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   });
   if (!post) {
     new EntityProvideFailWarning(Post, postId.toString(), ctx);
-    return;
+    throw new CommonCriticalError();
   }
 
   await ctx.store.save<Post>(post);
 
-  if (post.sharedPost) await handlePostShare(post, ctx);
+  if (post.sharedPost) await handlePostShare(post, account, ctx);
 
   await updatePostsCountersInSpace({
     space: post.space || null,
@@ -53,6 +57,7 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
   await postFollowed(post, ctx);
 
   const activity = await setActivity({
+    syntheticEventName: getSyntheticEventName(EventName.PostCreated, post),
     account,
     post,
     ctx
@@ -67,36 +72,39 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
 
 async function handlePostShare(
   sharedPost: Post,
+  callerAccount: Account,
   ctx: EventHandlerContext
 ): Promise<void> {
   if (!sharedPost.sharedPost) return;
 
   const originPost = sharedPost.sharedPost;
-  const shareAccount = sharedPost.ownedByAccount;
 
   originPost.sharesCount += 1;
 
   await ctx.store.save<Post>(originPost);
 
   const activity = await setActivity({
-    account: shareAccount,
+    account: callerAccount,
     post: originPost,
-    syntheticEventName: EventName.PostShared,
+    syntheticEventName: getSyntheticEventName(EventName.PostShared, originPost),
     ctx
   });
 
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
     throw new CommonCriticalError();
-    return;
   }
 
   if (
     !originPost.isComment ||
     (originPost.isComment && !originPost.parentPost)
   ) {
-    await addNotificationForAccountFollowers(shareAccount, activity, ctx);
-    await addNotificationForAccount(shareAccount, activity, ctx);
+    await addNotificationForAccountFollowers(
+      originPost.ownedByAccount,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(callerAccount, activity, ctx);
   } else if (
     originPost.isComment &&
     originPost.parentPost &&

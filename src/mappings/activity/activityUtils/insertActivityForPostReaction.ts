@@ -4,7 +4,6 @@ import { updateAggregatedStatus } from './aggregationUtils';
 import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForPostReactionParams = {
-  eventName: EventName;
   post: Post;
   reaction: Reaction;
   activity: Activity;
@@ -14,9 +13,16 @@ type InsertActivityForPostReactionParams = {
 export async function insertActivityForPostReaction(
   params: InsertActivityForPostReactionParams
 ): Promise<Activity> {
-  const { eventName, activity, reaction, post, ctx } = params;
+  const { activity, reaction, post, ctx } = params;
+  const { event: eventName } = activity;
 
-  if (eventName !== EventName.PostReactionDeleted) activity.reaction = reaction;
+  if (
+    eventName !== EventName.PostReactionDeleted &&
+    eventName !== EventName.CommentReactionDeleted &&
+    eventName !== EventName.CommentReplyReactionDeleted
+  )
+    activity.reaction = reaction;
+
   activity.post = post;
   activity.space = post.rootPost ? post.rootPost.space : post.space;
 

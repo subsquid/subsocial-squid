@@ -1,5 +1,9 @@
-import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { Post, Space, Activity } from '../../model';
+import {
+  addressSs58ToString,
+  getSyntheticEventName,
+  printEventLog
+} from '../../common/utils';
+import { Post, Space, Activity, EventName } from '../../model';
 import { PostsPostMovedEvent } from '../../types/generated/events';
 import { ensureAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
@@ -18,18 +22,13 @@ import {
   getMovedPostSpaceIdFromCall,
   updateSpaceForPostChildren
 } from './common';
-import { postUnfollowed } from '../postCommentFollows';
+import { postFollowed, postUnfollowed } from '../postCommentFollows';
 
 export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostMovedEvent(ctx);
   printEventLog(ctx);
 
-  const {
-    account: accountId,
-    postId,
-    fromSpace: fromSpaceId,
-    toSpace: toSpaceId
-  } = event.asV13;
+  const { account: accountId, postId, toSpace: toSpaceId } = event.asV13; // fromSpace is ignored here
 
   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
 
@@ -61,8 +60,6 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
       ctx
     });
 
-  // const newSpaceId = getMovedPostSpaceIdFromCall(ctx);
-
   let newSpaceInst = null;
 
   if (toSpaceId && toSpaceId.toString() !== '0') {
@@ -83,7 +80,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   post.space = newSpaceInst;
 
   /**
-   * Update counters for new space
+   * Update counters for new space. Ignore if move to null space.
    */
   if (newSpaceInst)
     await updatePostsCountersInSpace({
@@ -95,21 +92,25 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   await ctx.store.save<Post>(post);
 
-  if (!newSpaceInst) await postUnfollowed(post, ctx);
+  if (!newSpaceInst) {
+    await postUnfollowed(post, ctx);
+  } else if (newSpaceInst && !prevSpaceInst) {
+    await postFollowed(post, ctx);
+  }
 
   await updateSpaceForPostChildren(post, newSpaceInst, ctx);
 
   const activity = await setActivity({
-    post,
+    syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
     spacePrev: prevSpaceInst,
     account,
+    post,
     ctx
   });
 
   if (!activity) {
     new EntityProvideFailWarning(Activity, 'new', ctx);
     throw new CommonCriticalError();
-    return;
   }
   await addPostToFeeds(post, activity, ctx);
   if (prevSpaceInst)

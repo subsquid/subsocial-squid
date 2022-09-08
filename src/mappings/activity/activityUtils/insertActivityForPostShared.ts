@@ -1,4 +1,4 @@
-import { Post, Activity, EventName } from '../../../model';
+import { Post, Activity } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
 import {
   getAggregationCount,
@@ -6,7 +6,6 @@ import {
 } from './aggregationUtils';
 
 type InsertActivityForPostSharedParams = {
-  eventName: EventName;
   post: Post;
   activity: Activity;
   ctx: EventHandlerContext;
@@ -15,7 +14,7 @@ type InsertActivityForPostSharedParams = {
 export async function insertActivityForPostShared(
   params: InsertActivityForPostSharedParams
 ): Promise<Activity> {
-  const { activity, post, eventName, ctx } = params;
+  const { activity, post, ctx } = params;
 
   activity.post = post;
   activity.space = post.space;
@@ -30,7 +29,7 @@ export async function insertActivityForPostShared(
   activity.aggregated = activity.account.id !== creator.id;
   activity.aggCount = BigInt(
     await getAggregationCount({
-      eventName,
+      eventName: activity.event,
       account: activity.account,
       post,
       ctx
@@ -38,7 +37,7 @@ export async function insertActivityForPostShared(
   );
 
   await updateAggregatedStatus({
-    eventName,
+    eventName: activity.event,
     post,
     ctx
   });

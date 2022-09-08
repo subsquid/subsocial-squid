@@ -1,5 +1,5 @@
-module.exports = class Data1662545690925 {
-  name = 'Data1662545690925'
+module.exports = class Data1662632982242 {
+  name = 'Data1662632982242'
 
   async up(db) {
     await db.query(`CREATE TABLE "post_followers" ("id" character varying NOT NULL, "follower_account_id" character varying, "following_post_id" character varying, CONSTRAINT "PK_ced73560f09ff759cf0d7590c8d" PRIMARY KEY ("id"))`)
@@ -44,7 +44,7 @@ module.exports = class Data1662545690925 {
     await db.query(`CREATE TABLE "account_followers" ("id" character varying NOT NULL, "follower_account_id" character varying, "following_account_id" character varying, CONSTRAINT "PK_dade5b6e74b543ca2ea018b5a5a" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_7bb4dcd7984d41c97348ceb69a" ON "account_followers" ("follower_account_id") `)
     await db.query(`CREATE INDEX "IDX_9130c3e03dd8405027b2855e18" ON "account_followers" ("following_account_id") `)
-    await db.query(`CREATE TABLE "activity" ("id" character varying NOT NULL, "block_number" numeric NOT NULL, "event_index" integer NOT NULL, "event" character varying(19) NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL, "aggregated" boolean, "agg_count" numeric NOT NULL, "account_id" character varying, "following_account_id" character varying, "space_id" character varying, "space_prev_id" character varying, "post_id" character varying, "reaction_id" character varying, CONSTRAINT "PK_24625a1d6b1b089c8ae206fe467" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "activity" ("id" character varying NOT NULL, "block_number" numeric NOT NULL, "event_index" integer NOT NULL, "event" character varying(27) NOT NULL, "date" TIMESTAMP WITH TIME ZONE NOT NULL, "aggregated" boolean, "agg_count" numeric NOT NULL, "account_id" character varying, "following_account_id" character varying, "space_id" character varying, "space_prev_id" character varying, "post_id" character varying, "reaction_id" character varying, CONSTRAINT "PK_24625a1d6b1b089c8ae206fe467" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_96c7c848eec1feba0bc66b4519" ON "activity" ("account_id") `)
     await db.query(`CREATE INDEX "IDX_ac07bea02c85cc9e8a79cc3c2a" ON "activity" ("event") `)
     await db.query(`CREATE INDEX "IDX_2309bdad81af5f2780c902b358" ON "activity" ("following_account_id") `)

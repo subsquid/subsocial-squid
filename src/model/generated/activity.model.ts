@@ -26,7 +26,7 @@ export class Activity {
   eventIndex!: number
 
   @Index_()
-  @Column_("varchar", {length: 19, nullable: false})
+  @Column_("varchar", {length: 27, nullable: false})
   event!: EventName
 
   @Index_()

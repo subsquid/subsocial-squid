@@ -9,7 +9,6 @@ import {
 import { getActivityEntityId, decorateEventName } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
 import { ensureAccount } from '../account';
-import { EntityProvideFailWarning } from '../../common/errors';
 import * as insertActivityData from './activityUtils';
 
 export const setActivity = async ({
@@ -51,7 +50,7 @@ export const setActivity = async ({
   activity.account = accountInst;
   activity.blockNumber = BigInt(blockNumber.toString());
   activity.eventIndex = indexInBlock;
-  activity.event = EventName[eventNameDecorated as keyof typeof EventName];
+  activity.event = eventNameDecorated;
 
   activity.date = new Date(timestamp);
   activity.aggregated = false;
@@ -77,7 +76,6 @@ export const setActivity = async ({
   ) {
     activity =
       await insertActivityData.insertActivityForAccountFollowedUnfollowed({
-        eventName: eventNameDecorated,
         followingAccount,
         activity,
         ctx
@@ -85,15 +83,22 @@ export const setActivity = async ({
   }
   /**
    * PostCreated
+   * PostUpdated
+   * CommentCreated
+   * CommentUpdated
+   * CommentReplyCreated
+   * CommentReplyUpdated
    */
   if (
     (eventNameDecorated === EventName.PostCreated ||
-      eventNameDecorated === EventName.PostUpdated) &&
-    !syntheticEventName &&
+      eventNameDecorated === EventName.CommentCreated ||
+      eventNameDecorated === EventName.CommentReplyCreated ||
+      eventNameDecorated === EventName.PostUpdated ||
+      eventNameDecorated === EventName.CommentUpdated ||
+      eventNameDecorated === EventName.CommentReplyUpdated) &&
     post
   )
     activity = await insertActivityData.insertActivityForPostCreated({
-      eventName: eventNameDecorated,
       post,
       activity,
       ctx
@@ -104,8 +109,24 @@ export const setActivity = async ({
    */
   if (eventNameDecorated === EventName.PostMoved && post) {
     activity = await insertActivityData.insertActivityForPostMoved({
-      eventName: eventNameDecorated,
       spacePrev: spacePrev || null,
+      post,
+      activity,
+      ctx
+    });
+  }
+  /**
+   * PostDeleted
+   * CommentDeleted
+   * CommentReplyDeleted
+   */
+  if (
+    (eventNameDecorated === EventName.PostDeleted ||
+      eventNameDecorated === EventName.CommentDeleted ||
+      eventNameDecorated === EventName.CommentReplyDeleted) &&
+    post
+  ) {
+    activity = await insertActivityData.insertActivityForPostDeleted({
       post,
       activity,
       ctx
@@ -114,10 +135,16 @@ export const setActivity = async ({
 
   /**
    * PostShared
+   * CommentShared
+   * CommentReplyShared
    */
-  if (syntheticEventName === EventName.PostShared && post) {
+  if (
+    (eventNameDecorated === EventName.PostShared ||
+      eventNameDecorated === EventName.CommentShared ||
+      eventNameDecorated === EventName.CommentReplyShared) &&
+    post
+  ) {
     activity = await insertActivityData.insertActivityForPostShared({
-      eventName: EventName.PostShared,
       post,
       activity,
       ctx
@@ -131,13 +158,18 @@ export const setActivity = async ({
    */
   if (
     (eventNameDecorated === EventName.PostReactionCreated ||
+      eventNameDecorated === EventName.CommentReactionCreated ||
+      eventNameDecorated === EventName.CommentReplyReactionCreated ||
       eventNameDecorated === EventName.PostReactionDeleted ||
-      eventNameDecorated === EventName.PostReactionUpdated) &&
+      eventNameDecorated === EventName.CommentReactionDeleted ||
+      eventNameDecorated === EventName.CommentReplyReactionDeleted ||
+      eventNameDecorated === EventName.PostReactionUpdated ||
+      eventNameDecorated === EventName.CommentReactionUpdated ||
+      eventNameDecorated === EventName.CommentReplyReactionUpdated) &&
     post &&
     reaction
   ) {
     activity = await insertActivityData.insertActivityForPostReaction({
-      eventName: eventNameDecorated,
       post,
       reaction,
       activity,
@@ -155,7 +187,6 @@ export const setActivity = async ({
     space
   ) {
     activity = await insertActivityData.insertActivityForSpaceCreatedUpdated({
-      eventName: eventNameDecorated,
       space,
       activity,
       ctx
@@ -173,7 +204,6 @@ export const setActivity = async ({
   ) {
     activity =
       await insertActivityData.insertActivityForSpaceFollowedUnfollowed({
-        eventName: eventNameDecorated,
         space,
         activity,
         ctx
