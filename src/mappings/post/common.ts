@@ -187,11 +187,6 @@ export const ensurePost = async ({
     space = rootSpacePost.space;
   }
 
-  // if (!space) {
-  //   new EntityProvideFailWarning(Space, 'unknown', ctx);
-  //   throw new CommonCriticalError();
-  // }
-
   const post = new Post();
 
   post.id = postId.toString();
@@ -263,13 +258,15 @@ export const ensurePost = async ({
   }
 
   if (postContent) {
-    post.title = postContent.title;
-    post.image = postContent.image;
+    post.title = postContent.title ?? null;
+    post.image = postContent.image ?? null;
+    post.link = postContent.link ?? null;
+    post.format = postContent.format ?? null;
+    post.canonical = postContent.canonical ?? null;
     post.body = postContent.body;
     post.summary = postContent.summary;
     post.slug = null;
-    post.tagsOriginal = postContent.tags?.join(',');
-
+    post.tagsOriginal = postContent.tags?.join(',') ?? null;
     const { meta } = postContent;
 
     if (meta && !isEmptyArray(meta)) {

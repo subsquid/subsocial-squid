@@ -2,6 +2,7 @@ import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, M
 import * as marshal from "./marshal"
 import {Account} from "./account.model"
 import {Post} from "./post.model"
+import {SpacePermissions} from "./_spacePermissions"
 import {SpaceFollowers} from "./spaceFollowers.model"
 
 @Entity_()
@@ -81,6 +82,27 @@ export class Space {
 
   @Column_("text", {nullable: true})
   linksOriginal!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  format!: string | undefined | null
+
+  @Column_("bool", {nullable: true})
+  canFollowerCreatePosts!: boolean | undefined | null
+
+  @Column_("bool", {nullable: true})
+  canEveryoneCreatePosts!: boolean | undefined | null
+
+  @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : new SpacePermissions(undefined, obj)}, nullable: true})
+  nonePermissions!: SpacePermissions | undefined | null
+
+  @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : new SpacePermissions(undefined, obj)}, nullable: true})
+  everyonePermissions!: SpacePermissions | undefined | null
+
+  @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : new SpacePermissions(undefined, obj)}, nullable: true})
+  followerPermissions!: SpacePermissions | undefined | null
+
+  @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : new SpacePermissions(undefined, obj)}, nullable: true})
+  spaceOwnerPermissions!: SpacePermissions | undefined | null
 
   @Index_()
   @Column_("int4", {nullable: false})

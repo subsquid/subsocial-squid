@@ -21,8 +21,6 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
     // const accountData = await resolveAccount(accountIdString);
     const accountSpace = await ctx.store.get(Space, spaceId.toString());
 
-    console.log('accountUpdated - accountData - ', accountSpace);
-
     account.profileSpace = accountSpace;
 
     // if (!accountData || !accountData.struct) {

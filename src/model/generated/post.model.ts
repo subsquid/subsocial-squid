@@ -108,6 +108,15 @@ export class Post {
   title!: string | undefined | null
 
   @Column_("text", {nullable: true})
+  image!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  link!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  canonical!: string | undefined | null
+
+  @Column_("text", {nullable: true})
   content!: string | undefined | null
 
   @Column_("text", {nullable: true})
@@ -120,13 +129,13 @@ export class Post {
   summary!: string | undefined | null
 
   @Column_("text", {nullable: true})
-  image!: string | undefined | null
-
-  @Column_("text", {nullable: true})
-  canonical!: string | undefined | null
+  meta!: string | undefined | null
 
   @Column_("text", {nullable: true})
   tagsOriginal!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  format!: string | undefined | null
 
   @Column_("int4", {nullable: true})
   proposalIndex!: number | undefined | null

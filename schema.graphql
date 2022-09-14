@@ -105,15 +105,18 @@ type Post @entity  {
   #  score: Int
 
   title: String
+  image: String
+  link: String
+  canonical: String
   content: String
   slug: String
   body: String
   summary: String
-  image: String
-  canonical: String
+  meta: String
   tagsOriginal: String
+  format: String
 
-  proposalIndex: Int
+  proposalIndex: Int # postContent.meta[0]
 }
 
 type Reaction @entity {
@@ -154,6 +157,15 @@ type Space @entity {
   email: String
   tagsOriginal: String
   linksOriginal: String
+  format: String
+
+  canFollowerCreatePosts: Boolean
+  canEveryoneCreatePosts: Boolean
+
+  nonePermissions: SpacePermissions
+  everyonePermissions: SpacePermissions
+  followerPermissions: SpacePermissions
+  spaceOwnerPermissions: SpacePermissions
 
   followersCount: Int! @index
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
@@ -203,4 +215,38 @@ type NewsFeed @entity {
 type Notification @entity {
   account: Account!
   activity: Activity!
+}
+
+type SpacePermissions {
+  manageRoles: Boolean
+  representSpaceInternally: Boolean
+  representSpaceExternally: Boolean
+  updateSpace: Boolean
+  createSubspaces: Boolean
+  updateOwnSubspaces: Boolean
+  deleteOwnSubspaces: Boolean
+  hideOwnSubspaces: Boolean
+  updateAnySubspace: Boolean
+  deleteAnySubspace: Boolean
+  hideAnySubspace: Boolean
+  createPosts: Boolean
+  updateOwnPosts: Boolean
+  deleteOwnPosts: Boolean
+  hideOwnPosts: Boolean
+  updateAnyPost: Boolean
+  deleteAnyPost: Boolean
+  hideAnyPost: Boolean
+  createComments: Boolean
+  updateOwnComments: Boolean
+  deleteOwnComments: Boolean
+  hideOwnComments: Boolean
+  hideAnyComment: Boolean
+  upvote: Boolean
+  downvote: Boolean
+  share: Boolean
+  overrideSubspacePermissions: Boolean
+  overridePostPermissions: Boolean
+  suggestEntityStatus: Boolean
+  updateEntityStatus: Boolean
+  updateSpaceSettings: Boolean
 }

@@ -42,3 +42,10 @@ export enum PostFollowingUnfollowingCustomEvents {
   PostFollowed = 'PostFollowed',
   PostUnfollowed = 'PostUnfollowed'
 }
+
+export enum SpacePermissionRoot {
+  nonePermissions = 'nonePermissions',
+  everyonePermissions = 'everyonePermissions',
+  followerPermissions = 'followerPermissions',
+  spaceOwnerPermissions = 'spaceOwnerPermissions'
+}
