@@ -48,17 +48,23 @@ export const addPostToFeeds = async (
       relations: { followerAccount: true }
     });
 
-    spaceFollowers.forEach(({ followerAccount }) => {
-      const id = getNewsFeedEntityId(followerAccount.id, activity.id);
-      feedItemsMap.set(
-        id,
-        new NewsFeed({
-          account: followerAccount,
+    spaceFollowers
+      .filter(
+        (follower) =>
+          follower.followerAccount.id !== post.ownedByAccount.id &&
+          follower.followerAccount.id !== post.createdByAccount.id
+      )
+      .forEach(({ followerAccount }) => {
+        const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+        feedItemsMap.set(
           id,
-          activity
-        })
-      );
-    });
+          new NewsFeed({
+            account: followerAccount,
+            id,
+            activity
+          })
+        );
+      });
   }
 
   await ctx.store.save([...feedItemsMap.values()]);
