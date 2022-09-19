@@ -52,7 +52,7 @@ export async function postReactionUpdated(
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
     relations: {
-      post: { ownedByAccount: true, createdByAccount: true, space: true },
+      post: { ownedByAccount: true, space: true },
       account: true
     }
   });
@@ -95,9 +95,5 @@ export async function postReactionUpdated(
     throw new CommonCriticalError();
     return;
   }
-  await addNotificationForAccount(
-    reaction.post.ownedByAccount,
-    activity,
-    ctx
-  );
+  await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
 }

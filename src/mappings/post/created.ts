@@ -111,15 +111,15 @@ async function handlePostShare(
     originPost.rootPost
   ) {
     /**
-     * Notifications should not be added for creator followers if post is reply
+     * Notifications should not be added for owner followers if post is reply
      */
     await addNotificationForAccount(
-      originPost.rootPost.createdByAccount,
+      originPost.rootPost.ownedByAccount,
       activity,
       ctx
     );
     await addNotificationForAccount(
-      originPost.parentPost.createdByAccount,
+      originPost.parentPost.ownedByAccount,
       activity,
       ctx
     );

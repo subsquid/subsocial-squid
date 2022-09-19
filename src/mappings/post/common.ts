@@ -153,8 +153,6 @@ export const ensurePost = async ({
 
   const postData = await resolvePost(new BN(postId.toString(), 10));
 
-  console.log('postData  - ', postData);
-
   if (!postData || !postData.post || !postData.post.struct) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
     throw new CommonCriticalError();
@@ -177,7 +175,6 @@ export const ensurePost = async ({
       where: { id: rootPostId },
       relations: {
         ownedByAccount: true,
-        createdByAccount: true,
         space: { createdByAccount: true, ownerAccount: true }
       }
     });
@@ -231,11 +228,11 @@ export const ensurePost = async ({
 
       post.rootPost = await ctx.store.get(Post, {
         where: { id: rootPostId },
-        relations: { ownedByAccount: true, createdByAccount: true, space: true }
+        relations: { ownedByAccount: true, space: true }
       });
       post.parentPost = await ctx.store.get(Post, {
         where: { id: parentId },
-        relations: { ownedByAccount: true, createdByAccount: true, space: true }
+        relations: { ownedByAccount: true, space: true }
       });
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
@@ -248,10 +245,9 @@ export const ensurePost = async ({
       post.sharedPost = await ctx.store.get(Post, {
         where: { id: originalPostId },
         relations: {
-          createdByAccount: true,
           ownedByAccount: true,
-          rootPost: { createdByAccount: true, ownedByAccount: true },
-          parentPost: { createdByAccount: true, ownedByAccount: true },
+          rootPost: { ownedByAccount: true },
+          parentPost: { ownedByAccount: true },
           space: { ownerAccount: true, createdByAccount: true }
         }
       });

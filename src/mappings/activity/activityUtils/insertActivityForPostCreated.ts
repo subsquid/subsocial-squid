@@ -28,13 +28,13 @@ export async function insertActivityForPostCreated(
     /**
      * Post Comment / Comment Reply
      */
-    const creator = post.parentPost
-      ? post.parentPost.createdByAccount
-      : post.rootPost.createdByAccount; // Creator of either root post or parent comment
+    const owner = post.parentPost
+      ? post.parentPost.ownedByAccount
+      : post.rootPost.ownedByAccount; // Owner of either root post or parent comment
 
     activity.post = post;
     activity.space = post.rootPost.space;
-    activity.aggregated = activity.account.id !== creator.id;
+    activity.aggregated = activity.account.id !== owner.id;
     activity.aggCount = BigInt(
       await getAggregationCount({
         eventName: activity.event,

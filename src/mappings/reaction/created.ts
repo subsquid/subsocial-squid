@@ -92,9 +92,5 @@ export async function postReactionCreated(
     throw new CommonCriticalError();
     return;
   }
-  await addNotificationForAccount(
-    reaction.post.createdByAccount,
-    activity,
-    ctx
-  );
+  await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
 }

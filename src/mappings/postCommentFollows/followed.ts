@@ -12,13 +12,13 @@ export async function postFollowed(
 
   await processPostFollowingUnfollowingRelations(
     post,
-    post.createdByAccount,
+    post.ownedByAccount,
     PostFollowingUnfollowingCustomEvents.PostFollowed,
     ctx
   );
 
   const postUpdated = post;
-  const accountUpdated = post.createdByAccount;
+  const accountUpdated = post.ownedByAccount;
   postUpdated.followersCount += 1;
   accountUpdated.followingPostsCount += 1;
 

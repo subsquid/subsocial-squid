@@ -35,10 +35,9 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
   const post = await ctx.store.get(Post, {
     where: { id: postId.toString() },
     relations: {
-      createdByAccount: true,
       ownedByAccount: true,
-      rootPost: { createdByAccount: true, ownedByAccount: true },
-      parentPost: { createdByAccount: true, ownedByAccount: true },
+      rootPost: { ownedByAccount: true },
+      parentPost: { ownedByAccount: true },
       space: { createdByAccount: true, ownerAccount: true }
     }
   });

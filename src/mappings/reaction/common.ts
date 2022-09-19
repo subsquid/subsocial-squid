@@ -72,7 +72,9 @@ export async function ensureReaction({
 }): Promise<Reaction | null> {
   const existingReaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: { post: { createdByAccount: true, space: true } }
+    relations: {
+      post: { ownedByAccount: true, space: true }
+    }
   });
   if (existingReaction) return existingReaction;
 

@@ -60,7 +60,7 @@ export async function postReactionDeleted(
     where: { id: reactionId },
     relations: {
       account: true,
-      post: { ownedByAccount: true, createdByAccount: true, space: true }
+      post: { ownedByAccount: true, space: true }
     }
   });
 
@@ -99,7 +99,7 @@ export async function postReactionDeleted(
     throw new CommonCriticalError();
   }
   await addNotificationForAccount(
-    deletedReactionPost.createdByAccount,
+    deletedReactionPost.ownedByAccount,
     activity,
     ctx
   );

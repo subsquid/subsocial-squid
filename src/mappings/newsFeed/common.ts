@@ -26,7 +26,7 @@ export const addPostToFeeds = async (
   const feedItemsMap: Map<string, NewsFeed> = new Map();
 
   const accountFollowers = await ctx.store.find(AccountFollowers, {
-    where: { followingAccount: { id: post.createdByAccount.id } },
+    where: { followingAccount: { id: post.ownedByAccount.id } },
     relations: { followerAccount: true }
   });
 
@@ -50,9 +50,7 @@ export const addPostToFeeds = async (
 
     spaceFollowers
       .filter(
-        (follower) =>
-          follower.followerAccount.id !== post.ownedByAccount.id &&
-          follower.followerAccount.id !== post.createdByAccount.id
+        (follower) => follower.followerAccount.id !== post.ownedByAccount.id
       )
       .forEach(({ followerAccount }) => {
         const id = getNewsFeedEntityId(followerAccount.id, activity.id);

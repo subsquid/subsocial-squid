@@ -19,14 +19,14 @@ export async function insertActivityForPostShared(
   activity.post = post;
   activity.space = post.space;
 
-  let creator = post.createdByAccount; // Regular Post
+  let owner = post.ownedByAccount; // Regular Post
   if (post.rootPost) {
-    creator = post.rootPost.createdByAccount; // Comment Post
+    owner = post.rootPost.ownedByAccount; // Comment Post
   } else if (post.parentPost) {
-    creator = post.parentPost.createdByAccount; // Reply Post
+    owner = post.parentPost.ownedByAccount; // Reply Post
   }
 
-  activity.aggregated = activity.account.id !== creator.id;
+  activity.aggregated = activity.account.id !== owner.id;
   activity.aggCount = BigInt(
     await getAggregationCount({
       eventName: activity.event,

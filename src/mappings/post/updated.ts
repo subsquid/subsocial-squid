@@ -27,10 +27,9 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const post = await ctx.store.get(Post, {
     where: { id: postId.toString() },
     relations: {
-      createdByAccount: true,
       ownedByAccount: true,
-      rootPost: { createdByAccount: true, ownedByAccount: true },
-      parentPost: { createdByAccount: true, ownedByAccount: true },
+      rootPost: { ownedByAccount: true },
+      parentPost: { ownedByAccount: true },
       space: { ownerAccount: true, createdByAccount: true }
     }
   });
@@ -52,13 +51,10 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
 
   if (post.updatedAtTime === postStruct.updatedAtTime) return;
 
-  const createdByAccount = await ensureAccount(
-    postStruct.createdByAccount,
-    ctx
-  );
+  const ownedByAccount = await ensureAccount(postStruct.ownerId, ctx);
 
   post.hidden = postStruct.hidden;
-  post.createdByAccount = createdByAccount;
+  post.ownedByAccount = ownedByAccount;
   post.content = postStruct.contentId;
   post.updatedAtTime = postStruct.updatedAtTime
     ? new Date(postStruct.updatedAtTime)
