@@ -17,34 +17,18 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
 
   const account = await ensureAccount(accountIdString, ctx);
 
-  if (spaceId && !account.profileSpace) {
-    // const accountData = await resolveAccount(accountIdString);
+  account.updatedAtTime = new Date(ctx.block.timestamp);
+  account.updatedAtBlock = BigInt(ctx.block.height.toString());
+
+  if (
+    (spaceId && !account.profileSpace) ||
+    (spaceId &&
+      account.profileSpace &&
+      account.profileSpace.id !== spaceId.toString())
+  ) {
     const accountSpace = await ctx.store.get(Space, spaceId.toString());
 
     account.profileSpace = accountSpace;
-
-    // if (!accountData || !accountData.struct) {
-    //   new MissingSubsocialApiEntity('ProfileData', ctx);
-    //   return;
-    // }
-    // const { struct: accountStruct, content: accountContent = null } =
-    //   accountData;
-
-    // if (
-    //   accountStruct &&
-    //   accountStruct.createdAtBlock &&
-    //   accountStruct.createdAtTime
-    // ) {
-    //   account.createdAtBlock = BigInt(accountStruct.createdAtBlock);
-    //   account.createdAtTime = new Date(accountStruct.createdAtTime);
-    //   account.reputation = accountStruct.reputation;
-    // }
-    //
-    // if (accountContent) {
-    //   account.name = accountContent.name;
-    //   account.avatar = accountContent.avatar;
-    //   account.about = accountContent.about;
-    // }
 
     await ctx.store.save<Account>(account);
 
@@ -52,6 +36,8 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
       accountSpace.profileSpace = account;
       await ctx.store.save<Space>(accountSpace);
     }
+  } else {
+    await ctx.store.save<Account>(account);
   }
 
   await setActivity({

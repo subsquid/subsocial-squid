@@ -1,4 +1,5 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
+import * as marshal from "./marshal"
 import {Space} from "./space.model"
 import {AccountFollowers} from "./accountFollowers.model"
 import {Post} from "./post.model"
@@ -62,4 +63,10 @@ export class Account {
 
   @OneToMany_(() => Reaction, e => e.account)
   reactions!: Reaction[]
+
+  @Column_("timestamp with time zone", {nullable: true})
+  updatedAtTime!: Date | undefined | null
+
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
+  updatedAtBlock!: bigint | undefined | null
 }

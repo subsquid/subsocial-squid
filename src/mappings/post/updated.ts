@@ -17,6 +17,7 @@ import {
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import { SpaceCountersAction } from '../../common/types';
+import { isEmptyArray } from '@subsocial/utils';
 
 export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new PostsPostUpdatedEvent(ctx);
@@ -61,11 +62,20 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
     : null;
 
   if (postContent) {
-    post.title = postContent.title;
-    post.image = postContent.image;
+    post.title = postContent.title ?? null;
+    post.image = postContent.image ?? null;
+    post.link = postContent.link ?? null;
+    post.format = postContent.format ?? null;
+    post.canonical = postContent.canonical ?? null;
+    post.body = postContent.body;
     post.summary = postContent.summary;
     post.slug = null;
-    post.tagsOriginal = postContent.tags?.join(',');
+    post.tagsOriginal = postContent.tags?.join(',') ?? null;
+
+    const { meta } = postContent;
+    if (meta && !isEmptyArray(meta)) {
+      post.proposalIndex = meta[0].proposalIndex;
+    }
   }
 
   await ctx.store.save<Post>(post);

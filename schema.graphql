@@ -71,6 +71,9 @@ type Account @entity {
   notifications: [Notification]! @derivedFrom(field: "account")
   activities: [Activity]! @derivedFrom(field: "account")
   reactions: [Reaction]! @derivedFrom(field: "account")
+
+  updatedAtTime: DateTime
+  updatedAtBlock: BigInt
 }
 
 type Post @entity  {
