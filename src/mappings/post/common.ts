@@ -116,8 +116,7 @@ export const updateSpaceForPostChildren = async (
       }
     ],
     relations: {
-      createdByAccount: true,
-      space: { createdByAccount: true, ownerAccount: true }
+      space: true
     }
   });
 
@@ -153,6 +152,8 @@ export const ensurePost = async ({
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const postData = await resolvePost(new BN(postId.toString(), 10));
+
+  console.log('postData  - ', postData);
 
   if (!postData || !postData.post || !postData.post.struct) {
     new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
@@ -230,11 +231,11 @@ export const ensurePost = async ({
 
       post.rootPost = await ctx.store.get(Post, {
         where: { id: rootPostId },
-        relations: { createdByAccount: true, space: true }
+        relations: { ownedByAccount: true, createdByAccount: true, space: true }
       });
       post.parentPost = await ctx.store.get(Post, {
         where: { id: parentId },
-        relations: { createdByAccount: true, space: true }
+        relations: { ownedByAccount: true, createdByAccount: true, space: true }
       });
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
@@ -249,8 +250,8 @@ export const ensurePost = async ({
         relations: {
           createdByAccount: true,
           ownedByAccount: true,
-          rootPost: { createdByAccount: true },
-          parentPost: { createdByAccount: true },
+          rootPost: { createdByAccount: true, ownedByAccount: true },
+          parentPost: { createdByAccount: true, ownedByAccount: true },
           space: { ownerAccount: true, createdByAccount: true }
         }
       });

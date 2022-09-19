@@ -51,7 +51,10 @@ export async function postReactionUpdated(
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: { post: { createdByAccount: true, space: true }, account: true }
+    relations: {
+      post: { ownedByAccount: true, createdByAccount: true, space: true },
+      account: true
+    }
   });
 
   if (!reaction) {
@@ -93,7 +96,7 @@ export async function postReactionUpdated(
     return;
   }
   await addNotificationForAccount(
-    reaction.post.createdByAccount,
+    reaction.post.ownedByAccount,
     activity,
     ctx
   );

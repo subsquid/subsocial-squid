@@ -58,7 +58,10 @@ export async function postReactionDeleted(
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: { account: true, post: { createdByAccount: true, space: true } }
+    relations: {
+      account: true,
+      post: { ownedByAccount: true, createdByAccount: true, space: true }
+    }
   });
 
   if (!reaction) {

@@ -28,8 +28,9 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
     where: { id: postId.toString() },
     relations: {
       createdByAccount: true,
-      rootPost: { createdByAccount: true },
-      parentPost: { createdByAccount: true },
+      ownedByAccount: true,
+      rootPost: { createdByAccount: true, ownedByAccount: true },
+      parentPost: { createdByAccount: true, ownedByAccount: true },
       space: { ownerAccount: true, createdByAccount: true }
     }
   });

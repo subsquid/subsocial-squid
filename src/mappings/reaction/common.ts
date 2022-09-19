@@ -80,8 +80,7 @@ export async function ensureReaction({
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const postInst = await ctx.store.get(Post, {
-    where: { id: postId },
-    relations: { createdByAccount: true, space: true }
+    where: { id: postId }
   });
 
   if (!postInst) {
