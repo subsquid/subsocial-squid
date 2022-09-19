@@ -36,7 +36,7 @@ export const ensureSpace = async ({
       ? space
       : await ctx.store.get(Space, {
           where: { id: space },
-          relations: { createdByAccount: true, ownerAccount: true }
+          relations: { ownedByAccount: true }
         });
 
   if (spaceInst) return spaceInst;
@@ -71,7 +71,7 @@ export const ensureSpace = async ({
   }
   const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
 
-  spaceInst.ownerAccount = ownerAccount;
+  spaceInst.ownedByAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;
 
   spaceInst.postsCount = 0; // Initial value for counter

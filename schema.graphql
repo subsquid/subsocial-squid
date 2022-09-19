@@ -63,7 +63,7 @@ type Account @entity {
   followingPostsCount: Int!
 
   spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
-  spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
+  spacesOwned: [Space!] @derivedFrom(field: "ownedByAccount")
   spacesFollowed: [SpaceFollowers!] @derivedFrom(field: "followerAccount")
   followingSpacesCount: Int!
 
@@ -134,7 +134,7 @@ type Reaction @entity {
 type Space @entity {
   id: ID!
   createdByAccount: Account!
-  ownerAccount: Account!
+  ownedByAccount: Account!
   profileSpace: Account
 
   createdAtBlock: BigInt

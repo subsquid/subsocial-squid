@@ -42,7 +42,7 @@ export class Account {
   @OneToMany_(() => Space, e => e.createdByAccount)
   spacesCreated!: Space[]
 
-  @OneToMany_(() => Space, e => e.ownerAccount)
+  @OneToMany_(() => Space, e => e.ownedByAccount)
   spacesOwned!: Space[]
 
   @OneToMany_(() => SpaceFollowers, e => e.followerAccount)

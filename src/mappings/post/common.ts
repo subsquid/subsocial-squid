@@ -166,7 +166,7 @@ export const ensurePost = async ({
     if (spaceId) {
       space = await ctx.store.get(Space, {
         where: { id: spaceId },
-        relations: { createdByAccount: true, ownerAccount: true }
+        relations: { ownedByAccount: true }
       });
     }
   } else if (postStruct.isComment) {
@@ -175,7 +175,7 @@ export const ensurePost = async ({
       where: { id: rootPostId },
       relations: {
         ownedByAccount: true,
-        space: { createdByAccount: true, ownerAccount: true }
+        space: { ownedByAccount: true }
       }
     });
     if (!rootSpacePost) {
@@ -248,7 +248,7 @@ export const ensurePost = async ({
           ownedByAccount: true,
           rootPost: { ownedByAccount: true },
           parentPost: { ownedByAccount: true },
-          space: { ownerAccount: true, createdByAccount: true }
+          space: { ownedByAccount: true }
         }
       });
       break;

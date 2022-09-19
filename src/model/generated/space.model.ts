@@ -20,7 +20,7 @@ export class Space {
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: true})
-  ownerAccount!: Account
+  ownedByAccount!: Account
 
   @Index_()
   @ManyToOne_(() => Account, {nullable: true})

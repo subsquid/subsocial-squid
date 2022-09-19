@@ -38,7 +38,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
       ownedByAccount: true,
       rootPost: { ownedByAccount: true },
       parentPost: { ownedByAccount: true },
-      space: { createdByAccount: true, ownerAccount: true }
+      space: { ownedByAccount: true }
     }
   });
   if (!post) {
@@ -67,7 +67,7 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
       where: {
         id: toSpaceId.toString()
       },
-      relations: { ownerAccount: true, createdByAccount: true }
+      relations: { ownedByAccount: true }
     });
 
     if (!newSpaceInst) {

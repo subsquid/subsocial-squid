@@ -30,7 +30,7 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
       ownedByAccount: true,
       rootPost: { ownedByAccount: true },
       parentPost: { ownedByAccount: true },
-      space: { ownerAccount: true, createdByAccount: true }
+      space: { ownedByAccount: true }
     }
   });
   if (!post) {
