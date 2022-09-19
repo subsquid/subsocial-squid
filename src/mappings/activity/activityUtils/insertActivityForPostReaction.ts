@@ -24,7 +24,7 @@ export async function insertActivityForPostReaction(
     activity.reaction = reaction;
 
   activity.post = post;
-  activity.space = post.rootPost ? post.rootPost.space : post.space;
+  activity.space = post.space;
 
   const aggCountNum = post.upvotesCount + post.downvotesCount - 1;
 

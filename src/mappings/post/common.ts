@@ -139,12 +139,15 @@ export const ensurePost = async ({
   createIfNotExists?: boolean;
   relations?: FindOptionsRelations<Post>;
 }): Promise<Post | null> => {
-  let existingPost = await ctx.store.get(Post, postId);
-  if (relations)
+  let existingPost = null;
+  if (!relations) {
+    existingPost = await ctx.store.get(Post, postId);
+  } else {
     existingPost = await ctx.store.get(Post, {
       where: { id: postId },
       relations
     });
+  }
 
   if (existingPost) return existingPost;
 
