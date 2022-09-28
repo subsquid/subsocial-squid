@@ -12,6 +12,7 @@
     "processor:start": "node -r dotenv/config lib/processor.js",
     "processor:docker-run": "bash scripts/docker-run.sh",
     "query-node:start": "squid-graphql-server",
+    "query-node:start-with-cache": "squid-graphql-server --dumb-cache in-memory --dumb-cache-max-age 5000 --dumb-cache-ttl 5000 --dumb-cache-size 200",
     "lint": "npm run lint:prod -- --fix",
     "lint:prod": "eslint . --ext .ts --ignore-path .gitignore --max-warnings 0"
   },
@@ -21,7 +22,7 @@
     "@subsocial/utils": "^0.6.11",
     "@subsquid/archive-registry": "^1.0.12",
     "@subsquid/cli": "^1.2.0",
-    "@subsquid/graphql-server": "^2.1.0",
+    "@subsquid/graphql-server": "^3.2.0",
     "@subsquid/ss58": "^0.1.1",
     "@subsquid/substrate-processor": "^1.7.0",
     "@subsquid/typeorm-migration": "^0.1.2",
