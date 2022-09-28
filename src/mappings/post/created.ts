@@ -104,7 +104,7 @@ async function handlePostShare(
       activity,
       ctx
     );
-    await addNotificationForAccount(callerAccount, activity, ctx);
+    await addNotificationForAccount(originPost.ownedByAccount, activity, ctx);
   } else if (
     originPost.isComment &&
     originPost.parentPost &&
