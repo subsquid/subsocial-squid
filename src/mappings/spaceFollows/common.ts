@@ -33,7 +33,7 @@ export async function handleEvent(
 
   const space = await ctx.store.get(Space, {
     where: { id: spaceId },
-    relations: ['ownerAccount', 'createdByAccount']
+    relations: { ownedByAccount: true }
   });
   if (!space) {
     new EntityProvideFailWarning(Space, spaceId, ctx);
@@ -52,7 +52,7 @@ export async function handleEvent(
   }
 
   if (eventNameDecorated === EventName.SpaceFollowed) {
-    await addNotificationForAccount(space.ownerAccount, activity, ctx);
+    await addNotificationForAccount(space.ownedByAccount, activity, ctx);
     followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
   } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
     await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);

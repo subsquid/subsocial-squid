@@ -4,7 +4,6 @@ import { updateAggregatedStatus } from './aggregationUtils';
 import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForPostReactionParams = {
-  eventName: EventName;
   post: Post;
   reaction: Reaction;
   activity: Activity;
@@ -14,22 +13,29 @@ type InsertActivityForPostReactionParams = {
 export async function insertActivityForPostReaction(
   params: InsertActivityForPostReactionParams
 ): Promise<Activity> {
-  const { eventName, activity, reaction, post, ctx } = params;
+  const { activity, reaction, post, ctx } = params;
+  const { event: eventName } = activity;
 
-  if (eventName !== EventName.PostReactionDeleted) activity.reaction = reaction;
+  if (
+    eventName !== EventName.PostReactionDeleted &&
+    eventName !== EventName.CommentReactionDeleted &&
+    eventName !== EventName.CommentReplyReactionDeleted
+  )
+    activity.reaction = reaction;
+
   activity.post = post;
-  activity.space = post.rootPost ? post.rootPost.space : post.space;
+  activity.space = post.space;
 
   const aggCountNum = post.upvotesCount + post.downvotesCount - 1;
 
-  let creator = post.createdByAccount; // Regular Post
+  let owner = post.ownedByAccount; // Regular Post
   if (post.rootPost) {
-    creator = post.rootPost.createdByAccount; // Comment Post
+    owner = post.rootPost.ownedByAccount; // Comment Post
   } else if (post.parentPost) {
-    creator = post.parentPost.createdByAccount; // Reply Post
+    owner = post.parentPost.ownedByAccount; // Reply Post
   }
 
-  activity.aggregated = activity.account.id !== creator.id;
+  activity.aggregated = activity.account.id !== owner.id;
   activity.aggCount = BigInt(ensurePositiveOrZeroValue(aggCountNum));
 
   await updateAggregatedStatus({

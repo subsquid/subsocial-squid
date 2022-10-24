@@ -37,7 +37,11 @@ export class Post {
   hidden!: boolean
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
+  ownedByAccount!: Account
+
+  @Index_()
+  @ManyToOne_(() => Account, {nullable: true})
   createdByAccount!: Account
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
@@ -104,22 +108,34 @@ export class Post {
   title!: string | undefined | null
 
   @Column_("text", {nullable: true})
+  image!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  link!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  canonical!: string | undefined | null
+
+  @Column_("text", {nullable: true})
   content!: string | undefined | null
 
   @Column_("text", {nullable: true})
   slug!: string | undefined | null
 
   @Column_("text", {nullable: true})
+  body!: string | undefined | null
+
+  @Column_("text", {nullable: true})
   summary!: string | undefined | null
 
   @Column_("text", {nullable: true})
-  image!: string | undefined | null
-
-  @Column_("text", {nullable: true})
-  canonical!: string | undefined | null
+  meta!: string | undefined | null
 
   @Column_("text", {nullable: true})
   tagsOriginal!: string | undefined | null
+
+  @Column_("text", {nullable: true})
+  format!: string | undefined | null
 
   @Column_("int4", {nullable: true})
   proposalIndex!: number | undefined | null

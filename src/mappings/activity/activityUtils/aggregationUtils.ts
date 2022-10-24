@@ -1,3 +1,4 @@
+import assert from 'assert';
 import { Not } from 'typeorm';
 import { FindManyOptions } from '@subsquid/typeorm-store/src/store';
 import { Account, Space, Post, Activity, EventName } from '../../../model';
@@ -25,12 +26,15 @@ export async function getAggregationCount(
   const findResult = await ctx.store.find(Activity, {
     where: {
       event: eventName,
-      post,
+      post: { id: post.id },
       account: {
         id: Not(account.id)
       }
     },
-    relations: ['account']
+    relations: {
+      account: true,
+      post: true
+    }
   });
 
   const uniqueIds = findResult
@@ -63,7 +67,7 @@ export async function updateAggregatedStatus(
           parentPost: post.parentPost
         }
       },
-      relations: ['account', 'post', 'space', 'reaction']
+      relations: { account: true, post: true, space: true, reaction: true }
     };
   }
   if (space) {
@@ -72,7 +76,7 @@ export async function updateAggregatedStatus(
         event,
         space
       },
-      relations: ['account', 'space', 'spacePrev']
+      relations: { account: true, space: true, spacePrev: true }
     };
   }
   if (followingAccount) {
@@ -81,7 +85,7 @@ export async function updateAggregatedStatus(
         event,
         followingAccount
       },
-      relations: ['account', 'followingAccount']
+      relations: { account: true, followingAccount: true }
     };
   }
   if (!findOptions) return;

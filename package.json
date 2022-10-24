@@ -1,5 +1,5 @@
 {
-  "name": "kusama-balances",
+  "name": "subsocial",
   "private": true,
   "scripts": {
     "build": "rm -rf lib && tsc",
@@ -12,20 +12,21 @@
     "processor:start": "node -r dotenv/config lib/processor.js",
     "processor:docker-run": "bash scripts/docker-run.sh",
     "query-node:start": "squid-graphql-server",
+    "query-node:start-with-cache": "squid-graphql-server --dumb-cache in-memory --dumb-cache-max-age 5000 --dumb-cache-ttl 5000 --dumb-cache-size 200",
     "lint": "npm run lint:prod -- --fix",
     "lint:prod": "eslint . --ext .ts --ignore-path .gitignore --max-warnings 0"
   },
   "dependencies": {
-    "@subsocial/api": "^0.6.11",
+    "@subsocial/api": "0.6.12-parachain.9",
     "@subsocial/types": "^0.6.11",
     "@subsocial/utils": "^0.6.11",
-    "@subsquid/archive-registry": "^0.0.6",
+    "@subsquid/archive-registry": "^1.0.12",
     "@subsquid/cli": "^1.2.0",
-    "@subsquid/graphql-server": "^1.0.0",
-    "@subsquid/ss58": "^0.0.2",
-    "@subsquid/substrate-processor": "^1.1.0",
-    "@subsquid/typeorm-migration": "^0.0.1",
-    "@subsquid/typeorm-store": "^0.0.1",
+    "@subsquid/graphql-server": "^3.2.0",
+    "@subsquid/ss58": "^0.1.1",
+    "@subsquid/substrate-processor": "^1.7.0",
+    "@subsquid/typeorm-migration": "^0.1.2",
+    "@subsquid/typeorm-store": "^0.1.2",
     "@subsquid/util-internal-hex": "^0.0.0",
     "@types/lodash.uniq": "^4.5.7",
     "bn.js": "^5.2.1",
@@ -33,18 +34,23 @@
     "dayjs": "^1.11.2",
     "dotenv": "^16.0.0",
     "inflected": "^2.1.0",
+    "ipfs-core": "^0.13.0",
+    "ipfs-http-client": "^55.0.0",
     "lodash.uniq": "^4.5.0",
+    "md5": "^2.3.0",
+    "node-fetch": "^2.6.7",
     "p-throttle": "^5.0.0",
     "pg": "^8.7.3",
     "tslib": "^2.4.0",
-    "typeorm": "^0.2.41",
+    "typeorm": "^0.3.9",
     "yesql": "^5.0.0"
   },
   "devDependencies": {
-    "@subsquid/substrate-metadata-explorer": "^1.0.1",
-    "@subsquid/substrate-typegen": "^1.0.1",
-    "@subsquid/typeorm-codegen": "^0.0.1",
-    "@types/node": "^16.11.27",
+    "@subsquid/substrate-metadata-explorer": "^1.0.6",
+    "@subsquid/substrate-typegen": "^1.2.2",
+    "@subsquid/typeorm-codegen": "^0.1.1",
+    "@types/md5": "^2.3.2",
+    "@types/node": "^16.11.56",
     "@types/pg": "^8.6.5",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "chokidar-cli": "^3.0.0",
@@ -56,6 +62,9 @@
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-type-graphql": "^0.3.2",
     "prettier": "^2.6.2",
-    "typescript": "~4.6.2"
+    "typescript": "~4.8.2"
+  },
+  "resolutions": {
+    "native-fetch": "4.0.2"
   }
 }

@@ -16,7 +16,7 @@ export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
   const event = new SpacesSpaceUpdatedEvent(ctx);
   printEventLog(ctx);
 
-  const [accountId, spaceId] = event.asV1;
+  const { account: accountId, spaceId } = event.asV13;
 
   const space = await ensureSpace({
     space: spaceId.toString(),
@@ -34,7 +34,7 @@ export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
     throw new CommonCriticalError();
   }
 
-  const { struct: spaceStruct } = spaceDataSSApi;
+  const { struct: spaceStruct, content: spaceContent } = spaceDataSSApi;
 
   if (
     spaceStruct.updatedAtTime &&
@@ -48,6 +48,16 @@ export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
   space.updatedAtBlock = spaceStruct.updatedAtBlock
     ? BigInt(spaceStruct.updatedAtBlock)
     : BigInt(ctx.block.height.toString());
+
+  if (spaceContent) {
+    space.name = spaceContent.name;
+    space.email = spaceContent.email;
+    space.about = spaceContent.about;
+    space.summary = spaceContent.summary;
+    space.image = spaceContent.image;
+    space.tagsOriginal = (spaceContent.tags || []).join(',');
+    space.linksOriginal = (spaceContent.links || []).join(',');
+  }
 
   await ctx.store.save<Space>(space);
 

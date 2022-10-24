@@ -1,20 +1,37 @@
 enum EventName {
   PostCreated
-  PostDeleted
+  PostDeleted # synthetic
   PostUpdated
-  PostShared
+  PostShared # synthetic
   PostMoved
+
   PostReactionCreated
   PostReactionUpdated
   PostReactionDeleted
+
   SpaceCreated
   SpaceUpdated
   SpaceFollowed
   SpaceUnfollowed
   AccountFollowed
   AccountUnfollowed
-  ProfileCreated
   ProfileUpdated
+
+  CommentCreated # synthetic
+  CommentDeleted # synthetic
+  CommentUpdated # synthetic
+  CommentShared # synthetic
+  CommentReactionCreated # synthetic
+  CommentReactionUpdated # synthetic
+  CommentReactionDeleted # synthetic
+
+  CommentReplyCreated # synthetic
+  CommentReplyDeleted # synthetic
+  CommentReplyUpdated # synthetic
+  CommentReplyShared # synthetic
+  CommentReplyReactionCreated # synthetic
+  CommentReplyReactionUpdated # synthetic
+  CommentReplyReactionDeleted # synthetic
 }
 
 enum PostKind {
@@ -34,13 +51,7 @@ enum Status {
 
 type Account @entity {
   id: ID!
-  reputation: Int
-  hasProfile: Boolean @index
-  name: String
-  avatar: String
-  about: String
-  createdAtBlock: BigInt
-  createdAtTime: DateTime
+  profileSpace: Space
 
   followers: [AccountFollowers]! @derivedFrom(field: "followingAccount")
   followersCount: Int!
@@ -52,7 +63,7 @@ type Account @entity {
   followingPostsCount: Int!
 
   spacesCreated: [Space!] @derivedFrom(field: "createdByAccount")
-  spacesOwned: [Space!] @derivedFrom(field: "ownerAccount")
+  spacesOwned: [Space!] @derivedFrom(field: "ownedByAccount")
   spacesFollowed: [SpaceFollowers!] @derivedFrom(field: "followerAccount")
   followingSpacesCount: Int!
 
@@ -60,6 +71,9 @@ type Account @entity {
   notifications: [Notification]! @derivedFrom(field: "account")
   activities: [Activity]! @derivedFrom(field: "account")
   reactions: [Reaction]! @derivedFrom(field: "account")
+
+  updatedAtTime: DateTime
+  updatedAtBlock: BigInt
 }
 
 type Post @entity  {
@@ -70,6 +84,7 @@ type Post @entity  {
   isComment: Boolean! @index
   hidden: Boolean! @index
 
+  ownedByAccount: Account!
   createdByAccount: Account!
   createdAtBlock: BigInt
   createdAtTime: DateTime @index
@@ -93,14 +108,18 @@ type Post @entity  {
   #  score: Int
 
   title: String
+  image: String
+  link: String
+  canonical: String
   content: String
   slug: String
+  body: String
   summary: String
-  image: String
-  canonical: String
+  meta: String
   tagsOriginal: String
+  format: String
 
-  proposalIndex: Int
+  proposalIndex: Int # postContent.meta[0]
 }
 
 type Reaction @entity {
@@ -118,7 +137,8 @@ type Reaction @entity {
 type Space @entity {
   id: ID!
   createdByAccount: Account!
-  ownerAccount: Account!
+  ownedByAccount: Account!
+  profileSpace: Account
 
   createdAtBlock: BigInt
   createdAtTime: DateTime @index
@@ -131,11 +151,24 @@ type Space @entity {
   publicPostsCount: Int! @index
   hiddenPostsCount: Int!
 
+  hidden: Boolean! @index
   content: String
   name: String
   image: String
+  about: String
   summary: String
+  email: String
   tagsOriginal: String
+  linksOriginal: String
+  format: String
+
+  canFollowerCreatePosts: Boolean
+  canEveryoneCreatePosts: Boolean
+
+  nonePermissions: SpacePermissions
+  everyonePermissions: SpacePermissions
+  followerPermissions: SpacePermissions
+  spaceOwnerPermissions: SpacePermissions
 
   followersCount: Int! @index
   followers: [SpaceFollowers]! @derivedFrom(field: "followingSpace")
@@ -185,4 +218,38 @@ type NewsFeed @entity {
 type Notification @entity {
   account: Account!
   activity: Activity!
+}
+
+type SpacePermissions {
+  manageRoles: Boolean
+  representSpaceInternally: Boolean
+  representSpaceExternally: Boolean
+  updateSpace: Boolean
+  createSubspaces: Boolean
+  updateOwnSubspaces: Boolean
+  deleteOwnSubspaces: Boolean
+  hideOwnSubspaces: Boolean
+  updateAnySubspace: Boolean
+  deleteAnySubspace: Boolean
+  hideAnySubspace: Boolean
+  createPosts: Boolean
+  updateOwnPosts: Boolean
+  deleteOwnPosts: Boolean
+  hideOwnPosts: Boolean
+  updateAnyPost: Boolean
+  deleteAnyPost: Boolean
+  hideAnyPost: Boolean
+  createComments: Boolean
+  updateOwnComments: Boolean
+  deleteOwnComments: Boolean
+  hideOwnComments: Boolean
+  hideAnyComment: Boolean
+  upvote: Boolean
+  downvote: Boolean
+  share: Boolean
+  overrideSubspacePermissions: Boolean
+  overridePostPermissions: Boolean
+  suggestEntityStatus: Boolean
+  updateEntityStatus: Boolean
+  updateSpaceSettings: Boolean
 }

@@ -25,12 +25,6 @@ codegen:
 typegen:
 	@npx squid-substrate-typegen ./typegen/typegen.json
 
-explore:
-	@npx squid-substrate-metadata-explorer \
-		--chain wss://arch.subsocial.network \
-		--out ./typegen/versions.jsonl
-
-
 up:
 	@docker-compose up -d
 

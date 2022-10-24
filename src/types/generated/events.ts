@@ -1,8 +1,52 @@
 import assert from 'assert'
 import {Chain, ChainContext, EventContext, Event, Result} from './support'
-import * as v1 from './v1'
-import * as v9 from './v9'
-import * as v15 from './v15'
+import * as v13 from './v13'
+
+export class AccountFollowsAccountFollowedEvent {
+  private readonly _chain: Chain
+  private readonly event: Event
+
+  constructor(ctx: EventContext)
+  constructor(ctx: ChainContext, event: Event)
+  constructor(ctx: EventContext, event?: Event) {
+    event = event || ctx.event
+    assert(event.name === 'AccountFollows.AccountFollowed')
+    this._chain = ctx._chain
+    this.event = event
+  }
+
+  get isV13(): boolean {
+    return this._chain.getEventHash('AccountFollows.AccountFollowed') === '58dcd964d7fecf10fd85a4b5f5055a33d6cd8c1d0a60f35895e4b2d02f69670d'
+  }
+
+  get asV13(): {follower: Uint8Array, account: Uint8Array} {
+    assert(this.isV13)
+    return this._chain.decodeEvent(this.event)
+  }
+}
+
+export class AccountFollowsAccountUnfollowedEvent {
+  private readonly _chain: Chain
+  private readonly event: Event
+
+  constructor(ctx: EventContext)
+  constructor(ctx: ChainContext, event: Event)
+  constructor(ctx: EventContext, event?: Event) {
+    event = event || ctx.event
+    assert(event.name === 'AccountFollows.AccountUnfollowed')
+    this._chain = ctx._chain
+    this.event = event
+  }
+
+  get isV13(): boolean {
+    return this._chain.getEventHash('AccountFollows.AccountUnfollowed') === '58dcd964d7fecf10fd85a4b5f5055a33d6cd8c1d0a60f35895e4b2d02f69670d'
+  }
+
+  get asV13(): {follower: Uint8Array, account: Uint8Array} {
+    assert(this.isV13)
+    return this._chain.decodeEvent(this.event)
+  }
+}
 
 export class PostsPostCreatedEvent {
   private readonly _chain: Chain
@@ -17,35 +61,12 @@ export class PostsPostCreatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Posts.PostCreated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Posts.PostCreated') === 'c15c37af42f4d900025837e5f4326117b28dd922aa079cae41b57e9886b55782'
   }
 
-  get asV1(): [v1.AccountId, v1.PostId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-}
-
-export class PostsPostDeletedEvent {
-  private readonly _chain: Chain
-  private readonly event: Event
-
-  constructor(ctx: EventContext)
-  constructor(ctx: ChainContext, event: Event)
-  constructor(ctx: EventContext, event?: Event) {
-    event = event || ctx.event
-    assert(event.name === 'Posts.PostDeleted')
-    this._chain = ctx._chain
-    this.event = event
-  }
-
-  get isV1(): boolean {
-    return this._chain.getEventHash('Posts.PostDeleted') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
-  }
-
-  get asV1(): [v1.AccountId, v1.PostId] {
-    assert(this.isV1)
+  get asV13(): {account: Uint8Array, postId: bigint} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -63,35 +84,12 @@ export class PostsPostMovedEvent {
     this.event = event
   }
 
-  get isV9(): boolean {
-    return this._chain.getEventHash('Posts.PostMoved') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Posts.PostMoved') === '31342df9d009b9f3d0c9938b7c12d2c992b23b06de6edcd05215dd3e88f36a6a'
   }
 
-  get asV9(): [v9.AccountId, v9.PostId] {
-    assert(this.isV9)
-    return this._chain.decodeEvent(this.event)
-  }
-}
-
-export class PostsPostSharedEvent {
-  private readonly _chain: Chain
-  private readonly event: Event
-
-  constructor(ctx: EventContext)
-  constructor(ctx: ChainContext, event: Event)
-  constructor(ctx: EventContext, event?: Event) {
-    event = event || ctx.event
-    assert(event.name === 'Posts.PostShared')
-    this._chain = ctx._chain
-    this.event = event
-  }
-
-  get isV1(): boolean {
-    return this._chain.getEventHash('Posts.PostShared') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
-  }
-
-  get asV1(): [v1.AccountId, v1.PostId] {
-    assert(this.isV1)
+  get asV13(): {account: Uint8Array, postId: bigint, fromSpace: (bigint | undefined), toSpace: (bigint | undefined)} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -109,81 +107,12 @@ export class PostsPostUpdatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Posts.PostUpdated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Posts.PostUpdated') === 'c15c37af42f4d900025837e5f4326117b28dd922aa079cae41b57e9886b55782'
   }
 
-  get asV1(): [v1.AccountId, v1.PostId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-}
-
-export class ProfileFollowsAccountFollowedEvent {
-  private readonly _chain: Chain
-  private readonly event: Event
-
-  constructor(ctx: EventContext)
-  constructor(ctx: ChainContext, event: Event)
-  constructor(ctx: EventContext, event?: Event) {
-    event = event || ctx.event
-    assert(event.name === 'ProfileFollows.AccountFollowed')
-    this._chain = ctx._chain
-    this.event = event
-  }
-
-  get isV1(): boolean {
-    return this._chain.getEventHash('ProfileFollows.AccountFollowed') === 'e54ae910805a8a9413af1a7f5885a5d0ba5f4e105175cd6b0ce2a8702ddf1861'
-  }
-
-  get asV1(): [v1.AccountId, v1.AccountId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-}
-
-export class ProfileFollowsAccountUnfollowedEvent {
-  private readonly _chain: Chain
-  private readonly event: Event
-
-  constructor(ctx: EventContext)
-  constructor(ctx: ChainContext, event: Event)
-  constructor(ctx: EventContext, event?: Event) {
-    event = event || ctx.event
-    assert(event.name === 'ProfileFollows.AccountUnfollowed')
-    this._chain = ctx._chain
-    this.event = event
-  }
-
-  get isV1(): boolean {
-    return this._chain.getEventHash('ProfileFollows.AccountUnfollowed') === 'e54ae910805a8a9413af1a7f5885a5d0ba5f4e105175cd6b0ce2a8702ddf1861'
-  }
-
-  get asV1(): [v1.AccountId, v1.AccountId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-}
-
-export class ProfilesProfileCreatedEvent {
-  private readonly _chain: Chain
-  private readonly event: Event
-
-  constructor(ctx: EventContext)
-  constructor(ctx: ChainContext, event: Event)
-  constructor(ctx: EventContext, event?: Event) {
-    event = event || ctx.event
-    assert(event.name === 'Profiles.ProfileCreated')
-    this._chain = ctx._chain
-    this.event = event
-  }
-
-  get isV1(): boolean {
-    return this._chain.getEventHash('Profiles.ProfileCreated') === '21ea0c8f2488eafafdea1de92b54cd17d8b1caff525e37616abf0ff93f11531d'
-  }
-
-  get asV1(): v1.AccountId {
-    assert(this.isV1)
+  get asV13(): {account: Uint8Array, postId: bigint} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -201,12 +130,18 @@ export class ProfilesProfileUpdatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Profiles.ProfileUpdated') === '21ea0c8f2488eafafdea1de92b54cd17d8b1caff525e37616abf0ff93f11531d'
+  /**
+   * Profile's space id was updated for this account.
+   */
+  get isV13(): boolean {
+    return this._chain.getEventHash('Profiles.ProfileUpdated') === 'd940f4b0c5de1ed174d22549ad330a36ea0aad9b808f016f5aaace9c80ce6441'
   }
 
-  get asV1(): v1.AccountId {
-    assert(this.isV1)
+  /**
+   * Profile's space id was updated for this account.
+   */
+  get asV13(): {account: Uint8Array, spaceId: (bigint | undefined)} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -224,21 +159,12 @@ export class ReactionsPostReactionCreatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Reactions.PostReactionCreated') === '5ecf574fedb0dd818c5b40ec149d9c842d218107d35c4018d00cc169f56e1267'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Reactions.PostReactionCreated') === 'd60054aecf68a376c704208df2db21ba58faec163ee7165b476481136322cee8'
   }
 
-  get asV1(): [v1.AccountId, v1.PostId, v1.ReactionId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-
-  get isV15(): boolean {
-    return this._chain.getEventHash('Reactions.PostReactionCreated') === 'ca26d2ea071b219e270b1a6e49302db57fadc150e90c604899be4c3c166995ae'
-  }
-
-  get asV15(): [v15.AccountId, v15.PostId, v15.ReactionId, v15.ReactionKind] {
-    assert(this.isV15)
+  get asV13(): {account: Uint8Array, postId: bigint, reactionId: bigint, reactionKind: v13.ReactionKind} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -256,21 +182,12 @@ export class ReactionsPostReactionDeletedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Reactions.PostReactionDeleted') === '5ecf574fedb0dd818c5b40ec149d9c842d218107d35c4018d00cc169f56e1267'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Reactions.PostReactionDeleted') === 'd60054aecf68a376c704208df2db21ba58faec163ee7165b476481136322cee8'
   }
 
-  get asV1(): [v1.AccountId, v1.PostId, v1.ReactionId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-
-  get isV15(): boolean {
-    return this._chain.getEventHash('Reactions.PostReactionDeleted') === 'ca26d2ea071b219e270b1a6e49302db57fadc150e90c604899be4c3c166995ae'
-  }
-
-  get asV15(): [v15.AccountId, v15.PostId, v15.ReactionId, v15.ReactionKind] {
-    assert(this.isV15)
+  get asV13(): {account: Uint8Array, postId: bigint, reactionId: bigint, reactionKind: v13.ReactionKind} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -288,21 +205,12 @@ export class ReactionsPostReactionUpdatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Reactions.PostReactionUpdated') === '5ecf574fedb0dd818c5b40ec149d9c842d218107d35c4018d00cc169f56e1267'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Reactions.PostReactionUpdated') === 'd60054aecf68a376c704208df2db21ba58faec163ee7165b476481136322cee8'
   }
 
-  get asV1(): [v1.AccountId, v1.PostId, v1.ReactionId] {
-    assert(this.isV1)
-    return this._chain.decodeEvent(this.event)
-  }
-
-  get isV15(): boolean {
-    return this._chain.getEventHash('Reactions.PostReactionUpdated') === 'ca26d2ea071b219e270b1a6e49302db57fadc150e90c604899be4c3c166995ae'
-  }
-
-  get asV15(): [v15.AccountId, v15.PostId, v15.ReactionId, v15.ReactionKind] {
-    assert(this.isV15)
+  get asV13(): {account: Uint8Array, postId: bigint, reactionId: bigint, reactionKind: v13.ReactionKind} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -320,12 +228,12 @@ export class SpaceFollowsSpaceFollowedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('SpaceFollows.SpaceFollowed') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('SpaceFollows.SpaceFollowed') === '39e28a03c48825c8d41a5f418096625711ab9709891a6cabc9f50fec5f113023'
   }
 
-  get asV1(): [v1.AccountId, v1.SpaceId] {
-    assert(this.isV1)
+  get asV13(): {follower: Uint8Array, spaceId: bigint} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -343,12 +251,12 @@ export class SpaceFollowsSpaceUnfollowedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('SpaceFollows.SpaceUnfollowed') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('SpaceFollows.SpaceUnfollowed') === '39e28a03c48825c8d41a5f418096625711ab9709891a6cabc9f50fec5f113023'
   }
 
-  get asV1(): [v1.AccountId, v1.SpaceId] {
-    assert(this.isV1)
+  get asV13(): {follower: Uint8Array, spaceId: bigint} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -366,12 +274,12 @@ export class SpacesSpaceCreatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Spaces.SpaceCreated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Spaces.SpaceCreated') === '3598290eeb909bc34636d196da89829d37d0fa0ae5899f72908d4977aa03a0b7'
   }
 
-  get asV1(): [v1.AccountId, v1.SpaceId] {
-    assert(this.isV1)
+  get asV13(): {account: Uint8Array, spaceId: bigint} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }
@@ -389,12 +297,12 @@ export class SpacesSpaceUpdatedEvent {
     this.event = event
   }
 
-  get isV1(): boolean {
-    return this._chain.getEventHash('Spaces.SpaceUpdated') === 'fb1b6c83a547837ce9f07d7b623e71a4fec6cea1d51d01009d24c5a20e53d816'
+  get isV13(): boolean {
+    return this._chain.getEventHash('Spaces.SpaceUpdated') === '3598290eeb909bc34636d196da89829d37d0fa0ae5899f72908d4977aa03a0b7'
   }
 
-  get asV1(): [v1.AccountId, v1.SpaceId] {
-    assert(this.isV1)
+  get asV13(): {account: Uint8Array, spaceId: bigint} {
+    assert(this.isV13)
     return this._chain.decodeEvent(this.event)
   }
 }

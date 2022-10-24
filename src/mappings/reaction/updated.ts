@@ -1,4 +1,4 @@
-import { ReactionKind, Post, Reaction, Activity } from '../../model';
+import { ReactionKind, Post, Reaction, Activity, EventName } from '../../model';
 import { ReactionsPostReactionUpdatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
@@ -6,6 +6,7 @@ import { ensureAccount } from '../account';
 import {
   addressSs58ToString,
   ensurePositiveOrZeroValue,
+  getSyntheticEventName,
   printEventLog
 } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
@@ -27,35 +28,13 @@ function getPostReactionUpdatedEvent(
   ctx: EventHandlerContext
 ): ReactionEvent | null {
   const event = new ReactionsPostReactionUpdatedEvent(ctx);
-
-  if (event.isV1) {
-    const [accountId, postId, reactionId] = event.asV1;
-    const reactionKind = getReactionKindFromCall(
-      'Reactions.PostReactionUpdated',
-      ctx
-    );
-    if (!reactionKind) {
-      new CommonCriticalError(
-        'reactionKind can not be extracted from extrinsic'
-      );
-      return null;
-    }
-    return {
-      accountId: addressSs58ToString(accountId),
-      postId: postId.toString(),
-      reactionId: reactionId.toString(),
-      reactionKind
-    };
-  }
-  if (event.isV15) {
-    const [accountId, postId, reactionId, reactionKind] = event.asV15;
-    return {
-      accountId: addressSs58ToString(accountId),
-      postId: postId.toString(),
-      reactionId: reactionId.toString(),
-      reactionKind: ReactionKind[reactionKind.__kind]
-    };
-  }
+  const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
+  return {
+    accountId: addressSs58ToString(accountId),
+    postId: postId.toString(),
+    reactionId: reactionId.toString(),
+    reactionKind: ReactionKind[reactionKind.__kind]
+  };
   throw new UnknownVersionError(event.constructor.name);
 }
 
@@ -66,19 +45,21 @@ export async function postReactionUpdated(
   const event = getPostReactionUpdatedEvent(ctx);
   if (!event) return;
 
-  const { accountId, postId, reactionId, reactionKind } = event;
+  const { accountId, reactionId, reactionKind } = event;
 
   const account = await ensureAccount(accountId, ctx);
 
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
-    relations: ['post', 'post.createdByAccount', 'post.space', 'account']
+    relations: {
+      post: { ownedByAccount: true, space: true },
+      account: true
+    }
   });
 
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     throw new CommonCriticalError();
-    return;
   }
 
   reaction.kind = reactionKind as unknown as ReactionKind;
@@ -99,6 +80,10 @@ export async function postReactionUpdated(
   await ctx.store.save<Post>(post);
 
   const activity = await setActivity({
+    syntheticEventName: getSyntheticEventName(
+      EventName.PostReactionCreated,
+      post
+    ),
     account,
     reaction,
     post,
@@ -110,9 +95,5 @@ export async function postReactionUpdated(
     throw new CommonCriticalError();
     return;
   }
-  await addNotificationForAccount(
-    reaction.post.createdByAccount,
-    activity,
-    ctx
-  );
+  await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
 }

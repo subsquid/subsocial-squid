@@ -1,7 +1,6 @@
 export {
   postCreated,
   postUpdated,
-  postShared,
   postMoved,
   postReactionCreated,
   postReactionUpdated,
@@ -10,7 +9,6 @@ export {
   spaceUpdated,
   spaceFollowed,
   spaceUnfollowed,
-  accountCreated,
   accountUpdated,
   accountFollowed,
   accountUnfollowed

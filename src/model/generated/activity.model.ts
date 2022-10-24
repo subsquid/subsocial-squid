@@ -16,7 +16,7 @@ export class Activity {
   id!: string
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   account!: Account
 
   @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
@@ -26,7 +26,7 @@ export class Activity {
   eventIndex!: number
 
   @Index_()
-  @Column_("varchar", {length: 19, nullable: false})
+  @Column_("varchar", {length: 27, nullable: false})
   event!: EventName
 
   @Index_()

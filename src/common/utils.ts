@@ -3,8 +3,10 @@ import localizedFormat from 'dayjs/plugin/localizedFormat';
 dayjs.extend(localizedFormat);
 
 import * as ss58 from '@subsquid/ss58';
+import md5 from 'md5';
 import { EventHandlerContext } from './contexts';
 import { eventLogsTrace } from '../env';
+import { EventName, PostKind, Post } from '../model';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -20,15 +22,16 @@ export const validateEventHandlerInputs = (ctx: EventHandlerContext) => {
  * format "PalletName.EventName".
  * @param rawEventName
  */
-export const decorateEventName = (rawEventName: string) => {
+export const decorateEventName = (rawEventName: string): string => {
   return rawEventName.split('.')[1];
 };
 
 export const getActivityEntityId = (
   blockNumber: string,
-  indexInBlock: string
+  indexInBlock: string,
+  eventName: string | EventName
 ): string => {
-  return `${blockNumber}-${indexInBlock}`;
+  return `${blockNumber}-${indexInBlock}-${md5(eventName)}`;
 };
 
 export const getNotificationEntityId = (
@@ -93,4 +96,70 @@ export const printEventLog = (ctx: EventHandlerContext) => {
     console.log(
       `>>> method ::: ${name} ::: >>> blockNumber :::  ${height} ::: >>> indexInBlock [ ${indexInBlock} ]`
     );
+};
+
+export const getSyntheticEventName = (
+  originEvent: EventName,
+  post: Post
+): EventName => {
+  switch (originEvent) {
+    case EventName.PostCreated:
+      if (!post.rootPost) return EventName.PostCreated;
+      if (post.rootPost) return EventName.CommentCreated;
+      if (post.parentPost) return EventName.CommentReplyCreated;
+      break;
+
+    case EventName.PostShared:
+      if (!post.rootPost) return EventName.PostShared;
+      if (post.rootPost && !post.parentPost) return EventName.CommentShared;
+      if (post.rootPost && post.parentPost) return EventName.CommentReplyShared;
+      break;
+
+    case EventName.PostMoved:
+      /**
+       * Only RegularPost can be moved to another not "null" space
+       */
+      if (post.space) return EventName.PostMoved;
+
+      if (!post.rootPost) return EventName.PostDeleted;
+      if (post.rootPost && !post.parentPost) return EventName.CommentDeleted;
+      if (post.rootPost && post.parentPost)
+        return EventName.CommentReplyDeleted;
+      break;
+
+    case EventName.PostUpdated:
+      if (!post.rootPost) return EventName.PostUpdated;
+      if (post.rootPost && !post.parentPost) return EventName.CommentUpdated;
+      if (post.rootPost && post.parentPost)
+        return EventName.CommentReplyUpdated;
+      break;
+
+    case EventName.PostReactionCreated:
+      if (!post.rootPost) return EventName.PostReactionCreated;
+      if (post.rootPost && !post.parentPost)
+        return EventName.CommentReactionCreated;
+      if (post.rootPost && post.parentPost)
+        return EventName.CommentReplyReactionCreated;
+      break;
+
+    case EventName.PostReactionUpdated:
+      if (!post.rootPost) return EventName.PostReactionUpdated;
+      if (post.rootPost && !post.parentPost)
+        return EventName.CommentReactionUpdated;
+      if (post.rootPost && post.parentPost)
+        return EventName.CommentReplyReactionUpdated;
+      break;
+
+    case EventName.PostReactionDeleted:
+      if (!post.rootPost) return EventName.PostReactionDeleted;
+      if (post.rootPost && !post.parentPost)
+        return EventName.CommentReactionDeleted;
+      if (post.rootPost && post.parentPost)
+        return EventName.CommentReplyReactionDeleted;
+      break;
+
+    default:
+      return originEvent;
+  }
+  return originEvent;
 };

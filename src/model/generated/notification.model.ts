@@ -12,10 +12,10 @@ export class Notification {
   id!: string
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   account!: Account
 
   @Index_()
-  @ManyToOne_(() => Activity, {nullable: false})
+  @ManyToOne_(() => Activity, {nullable: true})
   activity!: Activity
 }

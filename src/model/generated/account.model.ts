@@ -1,8 +1,8 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
+import {Space} from "./space.model"
 import {AccountFollowers} from "./accountFollowers.model"
 import {Post} from "./post.model"
-import {Space} from "./space.model"
 import {SpaceFollowers} from "./spaceFollowers.model"
 import {NewsFeed} from "./newsFeed.model"
 import {Notification} from "./notification.model"
@@ -18,27 +18,9 @@ export class Account {
   @PrimaryColumn_()
   id!: string
 
-  @Column_("int4", {nullable: true})
-  reputation!: number | undefined | null
-
   @Index_()
-  @Column_("bool", {nullable: true})
-  hasProfile!: boolean | undefined | null
-
-  @Column_("text", {nullable: true})
-  name!: string | undefined | null
-
-  @Column_("text", {nullable: true})
-  avatar!: string | undefined | null
-
-  @Column_("text", {nullable: true})
-  about!: string | undefined | null
-
-  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
-  createdAtBlock!: bigint | undefined | null
-
-  @Column_("timestamp with time zone", {nullable: true})
-  createdAtTime!: Date | undefined | null
+  @ManyToOne_(() => Space, {nullable: true})
+  profileSpace!: Space | undefined | null
 
   @OneToMany_(() => AccountFollowers, e => e.followingAccount)
   followers!: AccountFollowers[]
@@ -61,7 +43,7 @@ export class Account {
   @OneToMany_(() => Space, e => e.createdByAccount)
   spacesCreated!: Space[]
 
-  @OneToMany_(() => Space, e => e.ownerAccount)
+  @OneToMany_(() => Space, e => e.ownedByAccount)
   spacesOwned!: Space[]
 
   @OneToMany_(() => SpaceFollowers, e => e.followerAccount)
@@ -81,4 +63,10 @@ export class Account {
 
   @OneToMany_(() => Reaction, e => e.account)
   reactions!: Reaction[]
+
+  @Column_("timestamp with time zone", {nullable: true})
+  updatedAtTime!: Date | undefined | null
+
+  @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
+  updatedAtBlock!: bigint | undefined | null
 }

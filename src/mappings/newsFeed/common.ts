@@ -26,8 +26,8 @@ export const addPostToFeeds = async (
   const feedItemsMap: Map<string, NewsFeed> = new Map();
 
   const accountFollowers = await ctx.store.find(AccountFollowers, {
-    where: { followingAccount: post.createdByAccount },
-    relations: ['followerAccount']
+    where: { followingAccount: { id: post.ownedByAccount.id } },
+    relations: { followerAccount: true }
   });
 
   accountFollowers.forEach(({ followerAccount }) => {
@@ -44,21 +44,25 @@ export const addPostToFeeds = async (
 
   if (post.space) {
     const spaceFollowers = await ctx.store.find(SpaceFollowers, {
-      where: { followingSpace: post.space },
-      relations: ['followerAccount']
+      where: { followingSpace: { id: post.space.id } },
+      relations: { followerAccount: true }
     });
 
-    spaceFollowers.forEach(({ followerAccount }) => {
-      const id = getNewsFeedEntityId(followerAccount.id, activity.id);
-      feedItemsMap.set(
-        id,
-        new NewsFeed({
-          account: followerAccount,
+    spaceFollowers
+      .filter(
+        (follower) => follower.followerAccount.id !== post.ownedByAccount.id
+      )
+      .forEach(({ followerAccount }) => {
+        const id = getNewsFeedEntityId(followerAccount.id, activity.id);
+        feedItemsMap.set(
           id,
-          activity
-        })
-      );
-    });
+          new NewsFeed({
+            account: followerAccount,
+            id,
+            activity
+          })
+        );
+      });
   }
 
   await ctx.store.save([...feedItemsMap.values()]);
@@ -72,21 +76,25 @@ export const deleteSpacePostsFromFeedForAccount = async (
   const relatedFeedItems = await ctx.store.find(NewsFeed, {
     where: [
       {
-        account,
+        account: { id: account.id },
         activity: {
-          space,
+          space: { id: space.id },
           event: EventName.PostCreated
         }
       },
       {
-        account,
+        account: { id: account.id },
         activity: {
-          space,
+          space: { id: space.id },
           event: EventName.PostMoved
         }
       }
     ],
-    relations: ['activity', 'activity.space']
+    relations: {
+      activity: {
+        space: true
+      }
+    }
   });
 
   await ctx.store.remove<NewsFeed>(relatedFeedItems);
@@ -98,16 +106,14 @@ export const deleteAccountPostsFromFeedForAccount = async (
   ctx: EventHandlerContext
 ): Promise<void> => {
   const feedsForDelete = await ctx.store.find(NewsFeed, {
-    where: [
-      {
-        account,
-        activity: {
-          account: publisherAccount,
-          event: EventName.PostCreated
-        }
+    where: {
+      account: { id: account.id },
+      activity: {
+        account: { id: publisherAccount.id },
+        event: EventName.PostCreated
       }
-    ],
-    relations: ['activity', 'activity.account']
+    },
+    relations: { activity: { account: true } }
   });
 
   await ctx.store.remove<NewsFeed>(feedsForDelete);

@@ -4,14 +4,16 @@ import {
   ensurePositiveOrZeroValue,
   getDateWithoutTime
 } from '../../common/utils';
-import { SpaceCountersAction } from '../../common/types';
-import { Space, Post } from '../../model';
+import { SpaceCountersAction, SpacePermissionRoot } from '../../common/types';
+import { Post, Space, SpacePermissions } from '../../model';
 import { ensureAccount } from '../account';
 import {
   CommonCriticalError,
   MissingSubsocialApiEntity
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
+import { SpaceStruct } from '@subsocial/types/dto';
+import { FlatSpacePermissionMap } from '@subsocial/types/substrate/rpc';
 
 /**
  * Provides Space data. Merges data from Squid DB and Subsocial API. If Space entity is not existing in Squid DB, new
@@ -34,13 +36,14 @@ export const ensureSpace = async ({
       ? space
       : await ctx.store.get(Space, {
           where: { id: space },
-          relations: ['createdByAccount', 'ownerAccount']
+          relations: { ownedByAccount: true }
         });
 
   if (spaceInst) return spaceInst;
   const spaceId = space instanceof Space ? space.id : space;
 
   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
+
   if (!spaceDataSSApi) {
     new MissingSubsocialApiEntity('SpaceData', ctx);
     new CommonCriticalError();
@@ -64,10 +67,11 @@ export const ensureSpace = async ({
     spaceInst.createdOnDay = getDateWithoutTime(
       new Date(spaceStruct.createdAtTime)
     );
+    spaceInst.hidden = spaceStruct.hidden;
   }
   const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
 
-  spaceInst.ownerAccount = ownerAccount;
+  spaceInst.ownedByAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;
 
   spaceInst.postsCount = 0; // Initial value for counter
@@ -75,17 +79,68 @@ export const ensureSpace = async ({
   spaceInst.publicPostsCount = 0; // Initial value for counter
   spaceInst.followersCount = 0; // Initial value for counter
 
+  spaceInst.canFollowerCreatePosts = spaceStruct.canFollowerCreatePosts;
+  spaceInst.canEveryoneCreatePosts = spaceStruct.canEveryoneCreatePosts;
+
+  spaceInst.nonePermissions = getSpacePermissions(
+    SpacePermissionRoot.nonePermissions,
+    spaceStruct
+  );
+  spaceInst.everyonePermissions = getSpacePermissions(
+    SpacePermissionRoot.everyonePermissions,
+    spaceStruct
+  );
+  spaceInst.followerPermissions = getSpacePermissions(
+    SpacePermissionRoot.followerPermissions,
+    spaceStruct
+  );
+  spaceInst.spaceOwnerPermissions = getSpacePermissions(
+    SpacePermissionRoot.spaceOwnerPermissions,
+    spaceStruct
+  );
+
   if (spaceContent) {
     spaceInst.name = spaceContent.name;
-    spaceInst.summary = spaceContent.about;
+    spaceInst.email = spaceContent.email;
+    spaceInst.about = spaceContent.about;
+    spaceInst.summary = spaceContent.summary;
     spaceInst.image = spaceContent.image;
-    spaceInst.tagsOriginal = spaceContent.tags?.join(',');
+    spaceInst.tagsOriginal = (spaceContent.tags || []).join(',');
+    spaceInst.linksOriginal = (spaceContent.links || []).join(',');
   }
 
   if (createIfNotExists) await ctx.store.save<Space>(spaceInst);
 
   return spaceInst;
 };
+
+function getSpacePermissions(
+  permissionRootName: SpacePermissionRoot,
+  spaceStruct: SpaceStruct
+): SpacePermissions | null {
+  if (
+    !spaceStruct ||
+    !(permissionRootName in spaceStruct) ||
+    Object.keys(spaceStruct[permissionRootName] as FlatSpacePermissionMap)
+      .length === 0
+  )
+    return null;
+
+  const spacePermissionsScope = spaceStruct[permissionRootName];
+  const newPermissionsScope = new SpacePermissions();
+
+  for (const permKey in spacePermissionsScope) {
+    const permKeyDecorated = (permKey.charAt(0).toLowerCase() +
+      permKey.slice(1)) as keyof SpacePermissions;
+
+    if (permKeyDecorated in newPermissionsScope)
+      //@ts-ignore
+      newPermissionsScope[permKeyDecorated] =
+        spacePermissionsScope[permKey as keyof FlatSpacePermissionMap];
+  }
+
+  return newPermissionsScope;
+}
 
 export async function updatePostsCountersInSpace({
   space,

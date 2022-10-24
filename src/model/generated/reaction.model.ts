@@ -15,11 +15,11 @@ export class Reaction {
   id!: string
 
   @Index_()
-  @ManyToOne_(() => Post, {nullable: false})
+  @ManyToOne_(() => Post, {nullable: true})
   post!: Post
 
   @Index_()
-  @ManyToOne_(() => Account, {nullable: false})
+  @ManyToOne_(() => Account, {nullable: true})
   account!: Account
 
   @Index_()
