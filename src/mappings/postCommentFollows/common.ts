@@ -1,21 +1,20 @@
 import { EventHandlerContext } from '../../common/contexts';
-import { Post, Account, PostFollowers, CommentFollowers } from '../../model';
+import { Post, Account, PostFollowers, CommentFollowers, EventName } from '../../model';
 import {
   ensurePositiveOrZeroValue,
   getPostFollowersEntityId
 } from '../../common/utils';
-import { PostFollowingUnfollowingCustomEvents } from '../../common/types';
 
 export const processPostFollowingUnfollowingRelations = async (
   post: Post,
   follower: Account,
-  followingEvent: PostFollowingUnfollowingCustomEvents,
+  followingEvent: EventName,
   ctx: EventHandlerContext
 ): Promise<void> => {
   const postFollowersEntityId = getPostFollowersEntityId(follower.id, post.id);
 
   switch (followingEvent) {
-    case PostFollowingUnfollowingCustomEvents.PostFollowed:
+    case EventName.PostFollowed:
       if (post.isComment) {
         const newCommentFollowersEnt = new CommentFollowers();
         newCommentFollowersEnt.id = postFollowersEntityId;
@@ -30,7 +29,7 @@ export const processPostFollowingUnfollowingRelations = async (
         await ctx.store.save<PostFollowers>(newPostFollowersEnt);
       }
       break;
-    case PostFollowingUnfollowingCustomEvents.PostUnfollowed:
+    case EventName.PostUnfollowed:
       let existingRelation = null;
       if (post.isComment) {
         existingRelation = await ctx.store.get(

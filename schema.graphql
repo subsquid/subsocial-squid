@@ -4,6 +4,8 @@ enum EventName {
   PostUpdated
   PostShared # synthetic
   PostMoved
+  PostFollowed # synthetic
+  PostUnfollowed # synthetic
 
   PostReactionCreated
   PostReactionUpdated

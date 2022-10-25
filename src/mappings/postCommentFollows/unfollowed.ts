@@ -1,8 +1,7 @@
 import { EventHandlerContext } from '../../common/contexts';
-import { Account, Post } from '../../model';
+import { Account, Post, EventName } from '../../model';
 import { ensurePositiveOrZeroValue, printEventLog } from '../../common/utils';
 import { processPostFollowingUnfollowingRelations } from './common';
-import { PostFollowingUnfollowingCustomEvents } from '../../common/types';
 
 export async function postUnfollowed(
   post: Post,
@@ -13,7 +12,7 @@ export async function postUnfollowed(
   await processPostFollowingUnfollowingRelations(
     post,
     post.ownedByAccount,
-    PostFollowingUnfollowingCustomEvents.PostUnfollowed,
+    EventName.PostUnfollowed,
     ctx
   );
 

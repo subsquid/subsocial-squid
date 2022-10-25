@@ -11,13 +11,6 @@ import {
   SpaceFollowers,
   Reaction
 } from '../model';
-import { SpaceContent, SpaceStruct } from '@subsocial/types/dto';
-
-export interface SpaceDataExtended {
-  space: Space;
-  struct: SpaceStruct;
-  content: SpaceContent | undefined;
-}
 
 export type DbEntity =
   | typeof Account
@@ -36,11 +29,6 @@ export enum SpaceCountersAction {
   PostAdded = 'PostAdded',
   PostUpdated = 'PostUpdated',
   PostDeleted = 'PostDeleted'
-}
-
-export enum PostFollowingUnfollowingCustomEvents {
-  PostFollowed = 'PostFollowed',
-  PostUnfollowed = 'PostUnfollowed'
 }
 
 export enum SpacePermissionRoot {
