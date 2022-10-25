@@ -19,7 +19,6 @@ import {
 import { EventHandlerContext } from '../../common/contexts';
 import { SpaceCountersAction } from '../../common/types';
 import {
-  getMovedPostSpaceIdFromCall,
   updateSpaceForPostChildren
 } from './common';
 import { postFollowed, postUnfollowed } from '../postCommentFollows';

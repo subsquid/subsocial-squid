@@ -45,45 +45,6 @@ export function getNewPostSpaceIdFromCall(
   return spaceId ? spaceId.toString() : null;
 }
 
-export function getMovedPostSpaceIdFromCall(
-  ctx: EventHandlerContext
-): string | null {
-  assert(ctx.event.call);
-  let newSpaceId = null;
-  //
-  // try {
-  //   const call = new PostsMovePostCall({
-  //     _chain: ctx._chain,
-  //     call: ctx.event.call
-  //   });
-  //   newSpaceId = call.asV9.newSpaceId;
-  //   /**
-  //    * For some reason if newSpaceId === 0 in extrinsic, "asV9" function returns
-  //    * "undefined" for this property. As result, we need go through such
-  //    * additional condition.
-  //    */
-  //   if (call.isV9 && call.asV9.postId && newSpaceId === undefined)
-  //     newSpaceId = '0';
-  // } catch (e) {
-  //   const callData = ctx.event.call.args.calls.find(
-  //     (callItem: { __kind: string; value: any }) =>
-  //       callItem.__kind === 'Posts' &&
-  //       callItem.value &&
-  //       callItem.value.__kind === 'move_post'
-  //   );
-  //
-  //   if (!callData) return null;
-  //   newSpaceId = callData.value.newSpaceId
-  //     ? callData.value.newSpaceId.toString()
-  //     : null;
-  // }
-  //
-  // return newSpaceId !== undefined && newSpaceId !== null
-  //   ? newSpaceId.toString()
-  //   : null;
-  return null;
-}
-
 const updatePostReplyCount = async (
   targetPost: Post,
   reply: Post,

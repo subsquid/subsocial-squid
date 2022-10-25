@@ -9,8 +9,8 @@ import {
   PostFollowers,
   CommentFollowers,
   SpaceFollowers,
-  Reaction
-} from '../model';
+  Reaction, ReactionKind, EventName
+} from "../model";
 
 export type DbEntity =
   | typeof Account
@@ -37,3 +37,58 @@ export enum SpacePermissionRoot {
   followerPermissions = 'followerPermissions',
   spaceOwnerPermissions = 'spaceOwnerPermissions'
 }
+
+interface EventData {
+  id: string; // Event ID
+  blockNumber: number;
+  timestamp: Date;
+}
+
+export interface PostCreatedUpdatedData extends EventData {
+  accountId: string;
+  postId: string;
+}
+
+export interface PostMovedData extends EventData {
+  accountId: string;
+  postId: string;
+  spaceId: string | null;
+}
+
+export interface SpaceCreatedUpdatedData extends EventData {
+  accountId: string;
+  spaceId: string;
+}
+
+export interface PostReactionData extends EventData {
+  accountId: string;
+  postId: string;
+  reactionId: string;
+  reactionKind: ReactionKind;
+}
+
+export interface AccountUpdatedData extends EventData {
+  accountId: string;
+  spaceId: string | null;
+}
+
+export interface AccountFollowedUnfollowedData extends EventData {
+  followerId: string;
+  followingId: string;
+}
+
+export interface SpaceFollowedUnfollowedData extends EventData {
+  followerId: string;
+  spaceId: string;
+}
+
+export type ParsedEventsData =
+  | PostCreatedUpdatedData
+  | PostMovedData
+  | SpaceCreatedUpdatedData
+  | PostReactionData
+  | AccountUpdatedData
+  | AccountFollowedUnfollowedData
+  | SpaceFollowedUnfollowedData;
+
+export type ParsedEventsDataMap = Map<EventName, Set<ParsedEventsData>>;
