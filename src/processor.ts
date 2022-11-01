@@ -10,8 +10,9 @@ import { Store, TypeormDatabase } from '@subsquid/processor-tools';
 import * as envConfig from './env';
 import {
   getParsedEventsData,
-  initialProcessingEntityRelations
+  processEntityRelationsByStorageData
 } from './common/eventsData';
+import { Post, Account, Space, Reaction } from './model';
 
 import {
   postCreated,
@@ -28,17 +29,19 @@ import {
   accountFollowed,
   accountUnfollowed
 } from './mappings';
+import { StorageDataManager } from './storage/storageDataManager';
+import { EntityRelationsManager } from './common/entityRelationsManager';
 
 const processor = new SubstrateBatchProcessor()
   .setBatchSize(envConfig.batchSize)
   .setDataSource({
-    archive: lookupArchive('subsocial' as KnownArchives, {
+    archive: lookupArchive('subsocial-parachain' as KnownArchives, {
       release: 'FireSquid'
     }),
     chain: envConfig.chainNode
   })
+  .setBlockRange({ from: 1093431 })
   .setTypesBundle('subsocial')
-  .includeAllBlocks()
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true } }
   } as const)
@@ -88,12 +91,86 @@ export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
 
 processor.run(new TypeormDatabase(), async (ctx) => {
+  const entityRelationsManager = EntityRelationsManager.getInstance(ctx);
+
+  entityRelationsManager.setEntityRelationsForFetch(Post, [
+    { entityClass: Account, propName: 'ownedByAccount' },
+    {
+      entityClass: Post,
+      propName: 'rootPost',
+      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+    },
+    {
+      entityClass: Post,
+      propName: 'parentPost',
+      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+    },
+    {
+      entityClass: Space,
+      propName: 'space',
+      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+    }
+  ]);
+
+  entityRelationsManager.setEntityRelationsForFetch(Space, [
+    { entityClass: Account, propName: 'ownedByAccount' }
+  ]);
+  entityRelationsManager.setEntityRelationsForFetch(Account, [
+    { entityClass: Space, propName: 'profileSpace' }
+  ]);
+  entityRelationsManager.setEntityRelationsForFetch(Reaction, [
+    { entityClass: Account, propName: 'account' },
+    {
+      entityClass: Post,
+      propName: 'post',
+      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+    }
+  ]);
+
+  /**
+   * Collect data from all tracked events (postId, accountId, spaceId, etc.) and
+   * add IDs to load queue.
+   */
   const parsedEvents = getParsedEventsData(ctx);
+  let idsForLoadPrev = new Map(
+    [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
+  );
+  /**
+   * Load entities from DB to the cache by collected IDs from events
+   */
   await ctx.store.load();
 
-  await initialProcessingEntityRelations(parsedEvents, ctx);
+  /**
+   * Load all necessary relations for all loaded entities in the previous load
+   * by "idsForLoadPrev" and generated relations stack.
+   */
+  await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 
+  /**
+   * Load data from chain storage for required entities by collected IDs in
+   * events. We need this for posts and spaces on "create" and "update" events
+   * as we need get actual detailed data from the chain. In appropriate events
+   * parameters we can get only IDs.
+   */
+  await StorageDataManager.getInstance(ctx).fetchStorageDataByEventsData(
+    parsedEvents
+  );
+
+  /**
+   * Add to load queue IDs from storage data (e.g. "post.struct.parentId")
+   */
+  await processEntityRelationsByStorageData(parsedEvents, ctx);
+
+  idsForLoadPrev = new Map(
+    [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
+  );
   await ctx.store.load();
+
+  /**
+   * Load all necessary relations for all loaded entities in the previous load
+   * by "idsForLoadPrev" and generated relations stack.
+   */
+  await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 });
 
 // processor.addEventHandler('Posts.PostCreated', postCreated);

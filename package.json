@@ -17,7 +17,7 @@
     "lint:prod": "eslint . --ext .ts --ignore-path .gitignore --max-warnings 0"
   },
   "dependencies": {
-    "@subsocial/api": "0.6.12-parachain.9",
+    "@subsocial/api": "^0.7.7",
     "@subsocial/types": "^0.6.11",
     "@subsocial/utils": "^0.6.11",
     "@subsquid/archive-registry": "^1.0.14",
@@ -50,6 +50,7 @@
     "@subsquid/substrate-metadata-explorer": "^1.0.6",
     "@subsquid/substrate-typegen": "^1.4.1",
     "@subsquid/typeorm-codegen": "^0.2.1",
+    "@types/blake2b": "^2.1.0",
     "@types/md5": "^2.3.2",
     "@types/node": "^16.11.56",
     "@types/pg": "^8.6.5",

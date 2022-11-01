@@ -1,3 +1,5 @@
+import { Block } from '../processor';
+
 import {
   Space,
   Account,
@@ -9,8 +11,11 @@ import {
   PostFollowers,
   CommentFollowers,
   SpaceFollowers,
-  Reaction, ReactionKind, EventName
-} from "../model";
+  Reaction,
+  ReactionKind,
+  EventName
+} from '../model';
+import { PostWithAllDetails, PostData, PostStruct } from '@subsocial/types/dto';
 
 export type DbEntity =
   | typeof Account
@@ -42,6 +47,7 @@ interface EventData {
   id: string; // Event ID
   blockNumber: number;
   timestamp: Date;
+  block: Block;
 }
 
 export interface PostCreatedUpdatedData extends EventData {
@@ -92,3 +98,12 @@ export type ParsedEventsData =
   | SpaceFollowedUnfollowedData;
 
 export type ParsedEventsDataMap = Map<EventName, Set<ParsedEventsData>>;
+
+export type PostWithDetails = Omit<PostWithAllDetails, 'post'> & {
+  post: Omit<PostData, 'struct'> & {
+    struct: PostStruct & {
+      rootPostId: string;
+      parentId: string;
+    };
+  };
+};
