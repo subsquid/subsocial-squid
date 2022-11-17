@@ -1,5 +1,8 @@
 import BN from 'bn.js';
-import { resolveSpace } from '../../connection/resolvers/resolveSpaceData';
+import {
+  resolveSpace,
+  resolveSpaceHandle
+} from '../../connection/resolvers/resolveSpaceData';
 import {
   ensurePositiveOrZeroValue,
   getDateWithoutTime
@@ -51,6 +54,9 @@ export const ensureSpace = async ({
   }
 
   const { struct: spaceStruct, content: spaceContent } = spaceDataSSApi;
+  const spaceHandle =
+    (await resolveSpaceHandle(new BN(spaceId, 10), spaceStruct.ownerId)) ??
+    null;
 
   if (!spaceInst) {
     spaceInst = new Space();
@@ -73,6 +79,7 @@ export const ensureSpace = async ({
 
   spaceInst.ownedByAccount = ownerAccount;
   spaceInst.content = spaceStruct.contentId;
+  spaceInst.handle = spaceHandle;
 
   spaceInst.postsCount = 0; // Initial value for counter
   spaceInst.hiddenPostsCount = 0; // Initial value for counter

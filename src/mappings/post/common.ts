@@ -6,7 +6,7 @@ import BN from 'bn.js';
 import {
   asCommentStruct,
   asSharedPostStruct
-} from '@subsocial/api/flat-subsocial/flatteners';
+} from '@subsocial/api/subsocial/flatteners/utils';
 import { ensureAccount } from '../account';
 import {
   CommonCriticalError,

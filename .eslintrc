@@ -27,6 +27,8 @@
     "no-restricted-syntax": "off",
     // airbnb disallows for-of async-await iteration which is very questionable
     "no-await-in-loop": "off",
+    "import/order": "off",
+    "no-new": "off",
     "import/no-extraneous-dependencies": "off",
     // conveinient for class getters
     "no-underscore-dangle": "off",

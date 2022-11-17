@@ -161,6 +161,7 @@ type Space @entity {
   tagsOriginal: String
   linksOriginal: String
   format: String
+  handle: String
 
   canFollowerCreatePosts: Boolean
   canEveryoneCreatePosts: Boolean

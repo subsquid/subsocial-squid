@@ -17,7 +17,7 @@
     "lint:prod": "eslint . --ext .ts --ignore-path .gitignore --max-warnings 0"
   },
   "dependencies": {
-    "@subsocial/api": "0.6.12-parachain.9",
+    "@subsocial/api": "0.7.7",
     "@subsocial/types": "^0.6.11",
     "@subsocial/utils": "^0.6.11",
     "@subsquid/archive-registry": "^1.0.12",
