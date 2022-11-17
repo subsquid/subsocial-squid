@@ -68,6 +68,26 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
     return;
   }
   await addPostToFeeds(post, activity, ctx);
+
+  if (post.sharedPost) return;
+
+  if (!post.isComment || (post.isComment && !post.parentPost)) {
+    await addNotificationForAccount(post.ownedByAccount, activity, ctx);
+  } else if (post.isComment && post.parentPost && post.rootPost) {
+    /**
+     * Notifications should not be added for owner followers if post is reply
+     */
+    await addNotificationForAccount(
+      post.rootPost.ownedByAccount,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(
+      post.parentPost.ownedByAccount,
+      activity,
+      ctx
+    );
+  }
 }
 
 async function handlePostShare(
