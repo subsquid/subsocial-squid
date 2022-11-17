@@ -60,7 +60,16 @@ export async function postReactionDeleted(
     where: { id: reactionId },
     relations: {
       account: true,
-      post: { ownedByAccount: true, space: true }
+      post: {
+        ownedByAccount: true,
+        space: true,
+        parentPost: {
+          ownedByAccount: true
+        },
+        rootPost: {
+          ownedByAccount: true
+        }
+      }
     }
   });
 

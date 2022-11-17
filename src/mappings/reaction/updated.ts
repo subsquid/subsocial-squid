@@ -52,7 +52,16 @@ export async function postReactionUpdated(
   const reaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
     relations: {
-      post: { ownedByAccount: true, space: true },
+      post: {
+        ownedByAccount: true,
+        space: true,
+        parentPost: {
+          ownedByAccount: true
+        },
+        rootPost: {
+          ownedByAccount: true
+        }
+      },
       account: true
     }
   });
