@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 export const ipfsReadOnlyNodeUrl =
-  process.env.IPFS_READ_ONLY_NODE_URL || 'https://app.subsocial.network/ipfs';
+  process.env.IPFS_READ_ONLY_NODE_URL || 'https://ipfs.subsocial.network';
 
 export const batchSize = process.env.BATCH_SIZE
   ? parseInt(process.env.BATCH_SIZE)
