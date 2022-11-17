@@ -33,14 +33,13 @@ import { StorageDataManager } from './storage/storageDataManager';
 import { EntityRelationsManager } from './common/entityRelationsManager';
 
 const processor = new SubstrateBatchProcessor()
-  .setBatchSize(envConfig.batchSize)
   .setDataSource({
     archive: lookupArchive('subsocial-parachain' as KnownArchives, {
       release: 'FireSquid'
     }),
     chain: envConfig.chainNode
   })
-  .setBlockRange({ from: 1093431 })
+  // .setBlockRange({ from: 1093431 })
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true } }
