@@ -266,7 +266,12 @@ export const ensurePost = async ({
     post.body = postContent.body;
     post.summary = postContent.summary;
     post.slug = null;
-    post.tagsOriginal = postContent.tags ? postContent.tags?.join(',') : null;
+    if (postContent.tags) {
+      post.tagsOriginal = Array.isArray(postContent.tags)
+        ? postContent.tags.join(',')
+        : postContent.tags;
+    }
+
     const { meta } = postContent;
 
     if (meta && !isEmptyArray(meta)) {
