@@ -1,5 +1,10 @@
+<<<<<<<< HEAD:db/migrations/1667310990279-Data.js
 module.exports = class Data1667310990279 {
   name = 'Data1667310990279'
+========
+module.exports = class Data1668722743876 {
+  name = 'Data1668722743876'
+>>>>>>>> fix/fix-endpoint-handle-notifications:db/migrations/1668722743876-Data.js
 
   async up(db) {
     await db.query(`CREATE TABLE "post_followers" ("id" character varying NOT NULL, "follower_account_id" character varying, "following_post_id" character varying, CONSTRAINT "PK_ced73560f09ff759cf0d7590c8d" PRIMARY KEY ("id"))`)
@@ -33,7 +38,7 @@ module.exports = class Data1667310990279 {
     await db.query(`CREATE TABLE "space_followers" ("id" character varying NOT NULL, "follower_account_id" character varying, "following_space_id" character varying, CONSTRAINT "PK_ff33678164d2cd02e1127098295" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_b99731dad3b444d673552a12e2" ON "space_followers" ("follower_account_id") `)
     await db.query(`CREATE INDEX "IDX_0fc0101129e59985a769c8d124" ON "space_followers" ("following_space_id") `)
-    await db.query(`CREATE TABLE "space" ("id" character varying NOT NULL, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "updated_at_block" numeric, "posts_count" integer NOT NULL, "public_posts_count" integer NOT NULL, "hidden_posts_count" integer NOT NULL, "hidden" boolean NOT NULL, "content" text, "name" text, "image" text, "about" text, "summary" text, "email" text, "tags_original" text, "links_original" text, "format" text, "can_follower_create_posts" boolean, "can_everyone_create_posts" boolean, "none_permissions" jsonb, "everyone_permissions" jsonb, "follower_permissions" jsonb, "space_owner_permissions" jsonb, "followers_count" integer NOT NULL, "created_by_account_id" character varying, "owned_by_account_id" character varying, "profile_space_id" character varying, CONSTRAINT "PK_094f5ec727fe052956a11623640" PRIMARY KEY ("id"))`)
+    await db.query(`CREATE TABLE "space" ("id" character varying NOT NULL, "created_at_block" numeric, "created_at_time" TIMESTAMP WITH TIME ZONE, "created_on_day" TIMESTAMP WITH TIME ZONE, "updated_at_time" TIMESTAMP WITH TIME ZONE, "updated_at_block" numeric, "posts_count" integer NOT NULL, "public_posts_count" integer NOT NULL, "hidden_posts_count" integer NOT NULL, "hidden" boolean NOT NULL, "content" text, "name" text, "image" text, "about" text, "summary" text, "email" text, "tags_original" text, "links_original" text, "format" text, "handle" text, "can_follower_create_posts" boolean, "can_everyone_create_posts" boolean, "none_permissions" jsonb, "everyone_permissions" jsonb, "follower_permissions" jsonb, "space_owner_permissions" jsonb, "followers_count" integer NOT NULL, "created_by_account_id" character varying, "owned_by_account_id" character varying, "profile_space_id" character varying, CONSTRAINT "PK_094f5ec727fe052956a11623640" PRIMARY KEY ("id"))`)
     await db.query(`CREATE INDEX "IDX_af311c75ea1208213e4db8df49" ON "space" ("created_by_account_id") `)
     await db.query(`CREATE INDEX "IDX_1c5c2e3fd05bbd08b0d84788ec" ON "space" ("owned_by_account_id") `)
     await db.query(`CREATE INDEX "IDX_dc013b7d8430139bbf8e535461" ON "space" ("profile_space_id") `)

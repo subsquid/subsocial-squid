@@ -73,7 +73,16 @@ export async function ensureReaction({
   const existingReaction = await ctx.store.get(Reaction, {
     where: { id: reactionId },
     relations: {
-      post: { ownedByAccount: true, space: true }
+      post: {
+        ownedByAccount: true,
+        space: true,
+        parentPost: {
+          ownedByAccount: true
+        },
+        rootPost: {
+          ownedByAccount: true
+        }
+      }
     }
   });
   if (existingReaction) return existingReaction;
@@ -83,7 +92,16 @@ export async function ensureReaction({
 
   const postInst = await ctx.store.get(Post, {
     where: { id: postId },
-    relations: { ownedByAccount: true, space: true }
+    relations: {
+      ownedByAccount: true,
+      space: true,
+      parentPost: {
+        ownedByAccount: true
+      },
+      rootPost: {
+        ownedByAccount: true
+      }
+    }
   });
 
   if (!postInst) {

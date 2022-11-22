@@ -86,6 +86,9 @@ export class Space {
   @Column_("text", {nullable: true})
   format!: string | undefined | null
 
+  @Column_("text", {nullable: true})
+  handle!: string | undefined | null
+
   @Column_("bool", {nullable: true})
   canFollowerCreatePosts!: boolean | undefined | null
 

@@ -1,5 +1,5 @@
 import { resolveSubsocialApi } from '../subsocial';
-import { AnySpaceId } from '@subsocial/types';
+import { AnySpaceId, AnyAccountId } from '@subsocial/types';
 import { SpaceData } from '@subsocial/types/dto';
 
 export const resolveSpace = async (
@@ -7,8 +7,17 @@ export const resolveSpace = async (
 ): Promise<SpaceData | undefined> => {
   const subsocial = await resolveSubsocialApi();
   //@ts-ignore
-  return await subsocial.findSpace({ id });
+  return subsocial.findSpace({ id });
 };
+export const resolveSpaceHandle = async (
+  id: AnySpaceId,
+  ownerId: AnyAccountId
+): Promise<string | undefined> => {
+  const subsocial = await resolveSubsocialApi();
+  //@ts-ignore
+  return subsocial.blockchain.domainNameBySpaceId(ownerId, id);
+};
+
 //
 // export const resolveSpaceStruct = async (
 //   id: AnySpaceId
