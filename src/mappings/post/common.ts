@@ -167,20 +167,24 @@ export const ensurePost = async ({
   if (!postStruct.isComment) {
     const spaceId = getNewPostSpaceIdFromCall(ctx);
     if (spaceId) {
-      space = await ctx.store.get(Space, {
-        where: { id: spaceId },
-        relations: { ownedByAccount: true }
-      });
+      space = spaceId
+        ? await ctx.store.get(Space, {
+            where: { id: spaceId },
+            relations: { ownedByAccount: true }
+          })
+        : null;
     }
   } else if (postStruct.isComment) {
     const { rootPostId } = asCommentStruct(postStruct);
-    const rootSpacePost = await ctx.store.get(Post, {
-      where: { id: rootPostId },
-      relations: {
-        ownedByAccount: true,
-        space: { ownedByAccount: true }
-      }
-    });
+    const rootSpacePost = rootPostId
+      ? await ctx.store.get(Post, {
+          where: { id: rootPostId },
+          relations: {
+            ownedByAccount: true,
+            space: { ownedByAccount: true }
+          }
+        })
+      : null;
     if (!rootSpacePost) {
       new EntityProvideFailWarning(Post, rootPostId, ctx);
       throw new CommonCriticalError();
@@ -229,14 +233,18 @@ export const ensurePost = async ({
     case PostKind.Comment:
       const { rootPostId, parentId } = asCommentStruct(postStruct);
 
-      post.rootPost = await ctx.store.get(Post, {
-        where: { id: rootPostId },
-        relations: { ownedByAccount: true, space: true }
-      });
-      post.parentPost = await ctx.store.get(Post, {
-        where: { id: parentId },
-        relations: { ownedByAccount: true, space: true }
-      });
+      post.rootPost = rootPostId
+        ? await ctx.store.get(Post, {
+            where: { id: rootPostId },
+            relations: { ownedByAccount: true, space: true }
+          })
+        : null;
+      post.parentPost = parentId
+        ? await ctx.store.get(Post, {
+            where: { id: parentId },
+            relations: { ownedByAccount: true, space: true }
+          })
+        : null;
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
       if (post.parentPost)
@@ -245,15 +253,17 @@ export const ensurePost = async ({
 
     case PostKind.SharedPost:
       const { originalPostId } = asSharedPostStruct(postStruct);
-      post.sharedPost = await ctx.store.get(Post, {
-        where: { id: originalPostId },
-        relations: {
-          ownedByAccount: true,
-          rootPost: { ownedByAccount: true },
-          parentPost: { ownedByAccount: true },
-          space: { ownedByAccount: true }
-        }
-      });
+      post.sharedPost = originalPostId
+        ? await ctx.store.get(Post, {
+            where: { id: originalPostId },
+            relations: {
+              ownedByAccount: true,
+              rootPost: { ownedByAccount: true },
+              parentPost: { ownedByAccount: true },
+              space: { ownedByAccount: true }
+            }
+          })
+        : null;
       break;
   }
 
