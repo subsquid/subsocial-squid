@@ -22,11 +22,6 @@
     "AccountFollows.AccountFollowed",
     "AccountFollows.AccountUnfollowed"
   ],
-  "calls": [
-    "Reactions.create_post_reaction",
-    "Reactions.update_post_reaction",
-    "Posts.create_post",
-    "Posts.move_post"
-  ],
-  "storage": ["Posts.PostById", "Spaces.SpaceById"]
+  "calls": true,
+  "storage": true
 }

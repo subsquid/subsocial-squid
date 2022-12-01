@@ -1,6 +1,8 @@
-import { DbEntity } from './types';
+import { DbEntity, EventData } from './types';
 import { warningLogsTrace } from '../env';
 import { EventHandlerContext } from './contexts';
+import { Ctx } from '../processor';
+import { SubstrateEvent } from '@subsquid/substrate-processor';
 
 export class UnknownVersionError extends Error {
   constructor(name: string) {
@@ -26,23 +28,15 @@ export class MissingDbRecord {
 }
 
 export class EntityProvideFailWarning {
-  constructor(entity: DbEntity, entityId: string, ctx: EventHandlerContext) {
-    const msg = `WARNING ::: Entity ${entity.name} (id: ${entityId}) can not be provided at block ${ctx.block.height}[e# - ${ctx.event.indexInBlock}], method "${ctx.event.name}"`;
-    if (warningLogsTrace === 'true') {
-      console.trace(msg);
-    } else {
-      console.warn(msg);
-    }
+  constructor(entity: DbEntity, entityId: string, ctx: Ctx, event: EventData) {
+    const msg = `WARNING ::: Entity ${entity.name} (id: ${entityId}) can not be provided at block ${event.blockNumber}[e# - ${event.indexInBlock}], method "${event.name}"`;
+    ctx.log.warn(msg);
   }
 }
 
 export class MissingSubsocialApiEntity {
-  constructor(entityName: string, ctx: EventHandlerContext) {
-    const msg = `WARNING ::: Missing Subsocial API record for ${entityName} at block ${ctx.block.height}, method "${ctx.event.name}"`;
-    if (warningLogsTrace === 'true') {
-      console.trace(msg);
-    } else {
-      console.warn(msg);
-    }
+  constructor(entityName: string, ctx: Ctx, event: EventData) {
+    const msg = `WARNING ::: Missing Subsocial API record for ${entityName} at block ${event.blockNumber}, method "${event.name}"`;
+    ctx.log.warn(msg);
   }
 }

@@ -7,6 +7,7 @@ import md5 from 'md5';
 import { EventHandlerContext } from './contexts';
 import { eventLogsTrace } from '../env';
 import { EventName, PostKind, Post } from '../model';
+import { EventData } from './types';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -77,6 +78,11 @@ export const getSubsocialSs58Codec = (): ss58.Codec => {
 export const addressSs58ToString = (address: Uint8Array) => {
   const codecInst = getSubsocialSs58Codec();
   return codecInst.encode(address);
+};
+
+export const addressStringToSs58 = (address: string): Uint8Array => {
+  const codecInst = getSubsocialSs58Codec();
+  return codecInst.decode(address);
 };
 
 export const ensurePositiveOrZeroValue = (inputValue: number): number => {
@@ -164,4 +170,44 @@ export const getSyntheticEventName = (
   return originEvent;
 };
 
+export async function batchCaller<T>({
+  srcList,
+  handler,
+  batchSize = 100,
+  timeout = 0
+}: {
+  srcList: Array<T>;
+  handler: (batch: Array<T>) => Promise<void>;
+  batchSize?: number;
+  timeout?: number;
+}) {
+  const list = [...srcList];
+  const promises = [];
+  let delayIndex = 1;
 
+  while (srcList.length > 0) {
+    const batch = srcList.splice(0, batchSize);
+    console.log('delay - ', delayIndex * timeout);
+    promises.push(
+      new Promise<void>(async (res) => {
+        await new Promise<void>((waitRes) =>
+          setTimeout(async () => {
+            await handler(batch);
+            waitRes();
+          }, delayIndex * timeout)
+        );
+        res();
+      })
+    );
+    delayIndex++;
+  }
+  await Promise.all(promises);
+}
+
+export function getOrderedListByBlockNumber<T extends EventData>(
+  eventsList: Array<T>
+): Array<T> {
+  return eventsList.sort((a, b) =>
+    a.blockNumber < b.blockNumber ? -1 : b.blockNumber < a.blockNumber ? 1 : 0
+  );
+}

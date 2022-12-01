@@ -1,36 +1,31 @@
 import {
   EventName,
   ReactionKind,
+  PostKind,
   Post,
   Account,
   Space,
   Reaction
 } from '../model';
-import { Block, Ctx } from '../processor';
-import {
-  AccountFollowsAccountFollowedEvent,
-  AccountFollowsAccountUnfollowedEvent,
-  PostsPostCreatedEvent,
-  PostsPostMovedEvent,
-  PostsPostUpdatedEvent,
-  ProfilesProfileUpdatedEvent,
-  ReactionsPostReactionCreatedEvent,
-  ReactionsPostReactionDeletedEvent,
-  ReactionsPostReactionUpdatedEvent,
-  SpaceFollowsSpaceFollowedEvent,
-  SpaceFollowsSpaceUnfollowedEvent,
-  SpacesSpaceCreatedEvent,
-  SpacesSpaceUpdatedEvent
-} from '../types/generated/events';
+import { Block, Ctx, EventItem } from '../processor';
 import {
   ParsedEventsData,
   ParsedEventsDataMap,
   PostWithDetails,
-  PostCreatedUpdatedData
+  PostCreatedData,
+  PostUpdatedData,
+  EventId,
+  EventContext,
+  EventData
 } from './types';
-import { addressSs58ToString } from './utils';
-import { resolveSpacesData } from '../storage/space';
+import argsParsers from './argsParsers';
 import { StorageDataManager } from '../storage/storageDataManager';
+import {
+  SubstrateBlock,
+  SubstrateEvent,
+  EventHandlerContext,
+  SubstrateBatchProcessor
+} from '@subsquid/substrate-processor';
 
 export class ParsedEventsDataScope {
   private scope: ParsedEventsDataMap;
@@ -40,24 +35,37 @@ export class ParsedEventsDataScope {
   }
 
   set(section: EventName, value: ParsedEventsData): void {
-    this.scope.set(section, (this.scope.get(section) || new Set()).add(value));
+    this.scope.set(
+      section,
+      (this.scope.get(section) || new Map()).set(value.id, value)
+    );
   }
 
-  get<T>(section: EventName): Set<T> {
-    return (this.scope.get(section) as Set<T>) || new Set<T>();
+  get<T>(section: EventName): Map<EventId, T> {
+    return (
+      (this.scope.get(section) as Map<EventId, T>) || new Map<EventId, T>()
+    );
   }
 
-  entries(): IterableIterator<[EventName, Set<ParsedEventsData>]> {
+  getSectionByEventName<T>(section: EventName): Map<EventId, T> {
+    return (
+      (this.scope.get(section) as Map<EventId, T>) || new Map<EventId, T>()
+    );
+  }
+
+  entries(): IterableIterator<[EventName, Map<EventId, ParsedEventsData>]> {
     return this.scope.entries();
   }
 }
 
-function getEventMetadata(block: Block, eventId: string) {
+function getEventMetadata(block: Block, event: SubstrateEvent): EventData {
   return {
-    id: eventId,
+    id: event.id,
+    indexInBlock: event.indexInBlock,
+    name: event.name,
     blockNumber: block.header.height,
-    timestamp: new Date(block.header.timestamp),
-    block
+    blockHash: block.header.hash,
+    timestamp: new Date(block.header.timestamp)
   };
 }
 
@@ -66,268 +74,246 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
 
   for (let block of ctx.blocks) {
     for (let item of block.items) {
+      const eventItem = item as EventItem;
+      const eventHandlerContext = {
+        ...ctx,
+        block: block.header,
+        // @ts-ignore
+        event: eventItem.event as SubstrateEvent
+      } as EventContext;
+
       switch (item.name) {
         case 'Posts.PostCreated': {
-          const event = new PostsPostCreatedEvent(ctx, item.event);
-          const { account: accountId, postId } = event.asV13;
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const postIdDecoded = postId.toString();
+          const callData =
+            argsParsers.call.parsePostCreatedCallArgs(eventHandlerContext);
+          const eventData =
+            argsParsers.event.parsePostCreatedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.PostCreated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            postId: postIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...callData,
+            ...eventData
           });
 
-          ctx.store.deferredLoad(Post, postIdDecoded);
-          ctx.store.deferredLoad(Account, accountIdDecoded);
+          ctx.store.deferredLoad(Post, eventData.postId);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          if (callData.originalPost)
+            ctx.store.deferredLoad(Post, callData.originalPost);
+          if (callData.parentPostId)
+            ctx.store.deferredLoad(Post, callData.parentPostId);
+          if (callData.rootPostId)
+            ctx.store.deferredLoad(Post, callData.rootPostId);
           break;
         }
 
         case 'Posts.PostUpdated': {
-          const event = new PostsPostUpdatedEvent(ctx, item.event);
-          const { account: accountId, postId } = event.asV13;
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const postIdDecoded = postId.toString();
+          const callData =
+            argsParsers.call.parsePostUpdatedCallArgs(eventHandlerContext);
+          const eventData =
+            argsParsers.event.parsePostUpdatedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.PostUpdated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            postId: postIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
 
-          ctx.store.deferredLoad(Post, postIdDecoded);
-          ctx.store.deferredLoad(Account, accountIdDecoded);
+          ctx.store.deferredLoad(Post, eventData.postId);
+          ctx.store.deferredLoad(Account, eventData.accountId);
           break;
         }
 
         case 'Posts.PostMoved': {
-          const event = new PostsPostMovedEvent(ctx, item.event);
-          const {
-            account: accountId,
-            postId,
-            toSpace: toSpaceId
-          } = event.asV13; // fromSpace is ignored here
-
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const postIdDecoded = postId.toString();
-          const spaceIdDecoded = toSpaceId ? toSpaceId.toString() : null;
+          const callData =
+            argsParsers.call.parsePostMoveCallArgs(eventHandlerContext);
+          const eventData =
+            argsParsers.event.parsePostMovedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.PostMoved, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            postId: postIdDecoded,
-            spaceId: spaceIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
-          ctx.store.deferredLoad(Post, postIdDecoded);
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          if (spaceIdDecoded) ctx.store.deferredLoad(Space, spaceIdDecoded);
+          ctx.store.deferredLoad(Post, eventData.postId);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          if (eventData.fromSpace)
+            ctx.store.deferredLoad(Space, eventData.fromSpace);
+          if (callData.toSpace) ctx.store.deferredLoad(Space, callData.toSpace);
           break;
         }
 
         case 'Spaces.SpaceCreated': {
-          const event = new SpacesSpaceCreatedEvent(ctx, item.event);
-          const { account: accountId, spaceId } = event.asV13;
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const spaceIdDecoded = spaceId.toString();
+          const callData =
+            argsParsers.call.parseSpaceCreateCallArgs(eventHandlerContext);
+          const eventData =
+            argsParsers.event.parseSpaceCreatedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.SpaceCreated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            spaceId: spaceIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Space, spaceIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(Space, eventData.spaceId);
           break;
         }
 
         case 'Spaces.SpaceUpdated': {
-          const event = new SpacesSpaceUpdatedEvent(ctx, item.event);
-          const { account: accountId, spaceId } = event.asV13;
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const spaceIdDecoded = spaceId.toString();
+          const callData =
+            argsParsers.call.parseSpaceUpdateCallArgs(eventHandlerContext);
+          const eventData =
+            argsParsers.event.parseSpaceUpdatedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.SpaceUpdated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: addressSs58ToString(accountId),
-            spaceId: spaceId.toString()
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Space, spaceIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(Space, eventData.spaceId);
           break;
         }
 
         case 'Reactions.PostReactionCreated': {
-          const event = new ReactionsPostReactionCreatedEvent(ctx, item.event);
-          const {
-            account: accountId,
-            postId,
-            reactionId,
-            reactionKind
-          } = event.asV13;
-
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const postIdDecoded = postId.toString();
-          const reactionIdDecoded = reactionId.toString();
+          const callData =
+            argsParsers.call.parsePostReactionCreateCallArgs(
+              eventHandlerContext
+            );
+          const eventData =
+            argsParsers.event.parsePostReactionCreatedEventArgs(
+              eventHandlerContext
+            );
 
           parsedData.set(EventName.PostReactionCreated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            postId: postIdDecoded,
-            reactionId: reactionIdDecoded,
-            reactionKind: ReactionKind[reactionKind.__kind]
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
 
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Post, postIdDecoded);
-          ctx.store.deferredLoad(Reaction, reactionIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(Post, eventData.postId);
+          ctx.store.deferredLoad(Reaction, eventData.reactionId);
           break;
         }
 
         case 'Reactions.PostReactionUpdated': {
-          const event = new ReactionsPostReactionUpdatedEvent(ctx, item.event);
-          const {
-            account: accountId,
-            postId,
-            reactionId,
-            reactionKind
-          } = event.asV13;
-
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const postIdDecoded = postId.toString();
-          const reactionIdDecoded = reactionId.toString();
+          const callData =
+            argsParsers.call.parsePostReactionUpdateCallArgs(
+              eventHandlerContext
+            );
+          const eventData =
+            argsParsers.event.parsePostReactionUpdatedEventArgs(
+              eventHandlerContext
+            );
 
           parsedData.set(EventName.PostReactionUpdated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            postId: postIdDecoded,
-            reactionId: reactionIdDecoded,
-            reactionKind: ReactionKind[reactionKind.__kind]
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
 
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Post, postIdDecoded);
-          ctx.store.deferredLoad(Reaction, reactionIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(Post, eventData.postId);
+          ctx.store.deferredLoad(Reaction, eventData.reactionId);
           break;
         }
 
         case 'Reactions.PostReactionDeleted': {
-          const event = new ReactionsPostReactionDeletedEvent(ctx, item.event);
-          const {
-            account: accountId,
-            postId,
-            reactionId,
-            reactionKind
-          } = event.asV13;
-
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const postIdDecoded = postId.toString();
-          const reactionIdDecoded = reactionId.toString();
+          const callData =
+            argsParsers.call.parsePostReactionDeleteCallArgs(
+              eventHandlerContext
+            );
+          const eventData =
+            argsParsers.event.parsePostReactionDeletedEventArgs(
+              eventHandlerContext
+            );
 
           parsedData.set(EventName.PostReactionDeleted, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            postId: postIdDecoded,
-            reactionId: reactionIdDecoded,
-            reactionKind: ReactionKind[reactionKind.__kind]
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData,
+            ...callData
           });
 
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Post, postIdDecoded);
-          ctx.store.deferredLoad(Reaction, reactionIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(Post, eventData.postId);
+          ctx.store.deferredLoad(Reaction, eventData.reactionId);
           break;
         }
 
         case 'Profiles.ProfileUpdated': {
-          const event = new ProfilesProfileUpdatedEvent(ctx, item.event);
-          const { account: accountId, spaceId } = event.asV13;
-
-          const accountIdDecoded = addressSs58ToString(accountId);
-          const spaceIdDecoded = spaceId ? spaceId.toString() : null;
+          const eventData =
+            argsParsers.event.parseProfileUpdatedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.ProfileUpdated, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            spaceId: spaceIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData
           });
 
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          if (spaceIdDecoded) ctx.store.deferredLoad(Space, spaceIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.accountId);
+          if (eventData.spaceId)
+            ctx.store.deferredLoad(Space, eventData.spaceId);
           break;
         }
 
         case 'SpaceFollows.SpaceFollowed': {
-          const event = new SpaceFollowsSpaceFollowedEvent(ctx, item.event);
-          const { follower: followerId, spaceId } = event.asV13;
-
-          const accountIdDecoded = addressSs58ToString(followerId);
-          const spaceIdDecoded = spaceId.toString();
+          const eventData =
+            argsParsers.event.parseSpaceFollowedEventArgs(eventHandlerContext);
 
           parsedData.set(EventName.SpaceFollowed, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            spaceId: spaceIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData
           });
 
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Space, spaceIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.followerId);
+          ctx.store.deferredLoad(Space, eventData.spaceId);
           break;
         }
 
         case 'SpaceFollows.SpaceUnfollowed': {
-          const event = new SpaceFollowsSpaceUnfollowedEvent(ctx, item.event);
-          const { follower: followerId, spaceId } = event.asV13;
-
-          const accountIdDecoded = addressSs58ToString(followerId);
-          const spaceIdDecoded = spaceId.toString();
+          const eventData =
+            argsParsers.event.parseSpaceUnfollowedEventArgs(
+              eventHandlerContext
+            );
 
           parsedData.set(EventName.SpaceUnfollowed, {
-            ...getEventMetadata(block, item.event.id),
-            accountId: accountIdDecoded,
-            spaceId: spaceIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData
           });
 
-          ctx.store.deferredLoad(Account, accountIdDecoded);
-          ctx.store.deferredLoad(Space, spaceIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.followerId);
+          ctx.store.deferredLoad(Space, eventData.spaceId);
           break;
         }
 
         case 'AccountFollows.AccountFollowed': {
-          const event = new AccountFollowsAccountFollowedEvent(ctx, item.event);
-          const { follower: followerId, account: followingId } = event.asV13;
-
-          const followerIdDecoded = addressSs58ToString(followerId);
-          const followingIdDecoded = addressSs58ToString(followingId);
+          const eventData =
+            argsParsers.event.parseAccountFollowedEventArgs(
+              eventHandlerContext
+            );
 
           parsedData.set(EventName.AccountFollowed, {
-            ...getEventMetadata(block, item.event.id),
-            followerId: followerIdDecoded,
-            followingId: followingIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData
           });
 
-          ctx.store.deferredLoad(Account, followerIdDecoded);
-          ctx.store.deferredLoad(Account, followingIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.followerId);
+          ctx.store.deferredLoad(Account, eventData.accountId);
           break;
         }
 
         case 'AccountFollows.AccountUnfollowed': {
-          const event = new AccountFollowsAccountUnfollowedEvent(
-            ctx,
-            item.event
-          );
-          const { follower: followerId, account: followingId } = event.asV13;
-
-          const followerIdDecoded = addressSs58ToString(followerId);
-          const followingIdDecoded = addressSs58ToString(followingId);
+          const eventData =
+            argsParsers.event.parseAccountUnfollowedEventArgs(
+              eventHandlerContext
+            );
 
           parsedData.set(EventName.AccountUnfollowed, {
-            ...getEventMetadata(block, item.event.id),
-            followerId: followerIdDecoded,
-            followingId: followingIdDecoded
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData
           });
 
-          ctx.store.deferredLoad(Account, followerIdDecoded);
-          ctx.store.deferredLoad(Account, followingIdDecoded);
+          ctx.store.deferredLoad(Account, eventData.followerId);
+          ctx.store.deferredLoad(Account, eventData.accountId);
           break;
         }
         default:
@@ -347,11 +333,9 @@ export async function processEntityRelationsByStorageData(
   for (const [eventName, eventsData] of [...parsedEvents.entries()]) {
     switch (eventName) {
       case EventName.PostCreated: {
-        for (const event of [
-          ...eventsData.values()
-        ] as PostCreatedUpdatedData[]) {
+        for (const event of [...eventsData.values()] as PostCreatedData[]) {
           const storagePostData = storageManager
-            .getStorageData('post')
+            .getStorageDataForSection('post')
             .get(event.postId) as PostWithDetails | undefined;
 
           if (!storagePostData) continue;
@@ -370,11 +354,9 @@ export async function processEntityRelationsByStorageData(
         break;
       }
       case EventName.PostUpdated: {
-        for (const event of [
-          ...eventsData.values()
-        ] as PostCreatedUpdatedData[]) {
+        for (const event of [...eventsData.values()] as PostUpdatedData[]) {
           const storagePostData = storageManager
-            .getStorageData('post')
+            .getStorageDataForSection('post')
             .get(event.postId) as PostWithDetails | undefined;
 
           if (!storagePostData) continue;

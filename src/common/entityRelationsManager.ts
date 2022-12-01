@@ -144,8 +144,8 @@ export class EntityRelationsManager {
  *     space: [class Space]
  *    },
  *    [class Space] => { ownedByAccount: [class Account] }
- * },
- * Map(2) {
+ *  },
+ *  Map(2) {
  *   [class Post] => {
  *       ownedByAccount: [class Account],
  *       createdByAccount: [class Account]

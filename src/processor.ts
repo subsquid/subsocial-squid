@@ -3,9 +3,13 @@ import { lookupArchive, KnownArchives } from '@subsquid/archive-registry';
 import {
   BatchContext,
   BatchProcessorItem,
-  SubstrateBatchProcessor
+  SubstrateBatchProcessor,
+  SubstrateBlock
 } from '@subsquid/substrate-processor';
-import { BatchBlock } from '@subsquid/substrate-processor/src/processor/batchProcessor';
+import {
+  BatchBlock,
+  BatchProcessorEventItem
+} from '@subsquid/substrate-processor/src/processor/batchProcessor';
 import { Store, TypeormDatabase } from '@subsquid/processor-tools';
 import * as envConfig from './env';
 import {
@@ -32,53 +36,54 @@ import {
 import { StorageDataManager } from './storage/storageDataManager';
 import { EntityRelationsManager } from './common/entityRelationsManager';
 
-const processor = new SubstrateBatchProcessor()
+export const processor = new SubstrateBatchProcessor()
   .setDataSource({
     archive: lookupArchive('subsocial-parachain' as KnownArchives, {
       release: 'FireSquid'
     }),
     chain: envConfig.chainNode
   })
-  // .setBlockRange({ from: 1093431 })
+  // .setBlockRange({ from: 1093431 }) // PostCreated
+  .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Posts.PostUpdated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Posts.PostMoved', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Spaces.SpaceCreated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Spaces.SpaceUpdated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Reactions.PostReactionCreated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Reactions.PostReactionUpdated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Reactions.PostReactionDeleted', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('Profiles.ProfileUpdated', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('SpaceFollows.SpaceFollowed', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('SpaceFollows.SpaceUnfollowed', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('AccountFollows.AccountFollowed', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const)
   .addEvent('AccountFollows.AccountUnfollowed', {
-    data: { event: { args: true } }
+    data: { event: { args: true, call: true } }
   } as const);
 
 if (!envConfig.chainNode) {
@@ -86,6 +91,7 @@ if (!envConfig.chainNode) {
 }
 
 export type Item = BatchProcessorItem<typeof processor>;
+export type EventItem = BatchProcessorEventItem<typeof processor>;
 export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
 
@@ -155,21 +161,80 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     parsedEvents
   );
 
-  /**
-   * Add to load queue IDs from storage data (e.g. "post.struct.parentId")
-   */
-  await processEntityRelationsByStorageData(parsedEvents, ctx);
+  // /**
+  //  * Add to load queue IDs from storage data (e.g. "post.struct.parentId")
+  //  */
+  // await processEntityRelationsByStorageData(parsedEvents, ctx);
+  //
+  // idsForLoadPrev = new Map(
+  //   [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
+  // );
+  // await ctx.store.load();
+  //
+  // /**
+  //  * Load all necessary relations for all loaded entities in the previous load
+  //  * by "idsForLoadPrev" and generated relations stack.
+  //  */
+  // await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 
-  idsForLoadPrev = new Map(
-    [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
-  );
-  await ctx.store.load();
+  for (let block of ctx.blocks) {
+    for (let item of block.items) {
+      switch (item.name) {
+        case 'Posts.PostCreated': {
+          break;
+        }
 
-  /**
-   * Load all necessary relations for all loaded entities in the previous load
-   * by "idsForLoadPrev" and generated relations stack.
-   */
-  await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
+        case 'Posts.PostUpdated': {
+          break;
+        }
+
+        case 'Posts.PostMoved': {
+          break;
+        }
+
+        case 'Spaces.SpaceCreated': {
+          break;
+        }
+
+        case 'Spaces.SpaceUpdated': {
+          break;
+        }
+
+        case 'Reactions.PostReactionCreated': {
+          break;
+        }
+
+        case 'Reactions.PostReactionUpdated': {
+          break;
+        }
+
+        case 'Reactions.PostReactionDeleted': {
+          break;
+        }
+
+        case 'Profiles.ProfileUpdated': {
+          break;
+        }
+
+        case 'SpaceFollows.SpaceFollowed': {
+          break;
+        }
+
+        case 'SpaceFollows.SpaceUnfollowed': {
+          break;
+        }
+
+        case 'AccountFollows.AccountFollowed': {
+          break;
+        }
+
+        case 'AccountFollows.AccountUnfollowed': {
+          break;
+        }
+        default:
+      }
+    }
+  }
 });
 
 // processor.addEventHandler('Posts.PostCreated', postCreated);
