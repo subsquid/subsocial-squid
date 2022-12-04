@@ -185,16 +185,16 @@ export async function resolveSpacesHandleStorage(
   }
 }
 
-export async function resolveSpacesContentIPFS(
+export async function resolveSpacesContentIPFS<T>(
   spaceCids: [string, IpfsCid][]
-): Promise<Map<string, IpfsCommonContent> | undefined> {
+): Promise<Map<string, T> | undefined> {
   try {
     const resMap = new Map();
-    let tmpRes: ContentResult<IpfsCommonContent> = {};
+    let tmpRes: ContentResult<T> = {};
 
     await batchCaller({
       srcList: spaceCids.map((p) => p[1]),
-      batchSize: 100,
+      batchSize: 500,
       timeout: 7000,
       handler: async (cidsBatch) => {
         // @ts-ignore

@@ -48,6 +48,7 @@ export async function postReactionCreated(
 
   const { accountId, postId, reactionId, reactionKind } = event;
 
+  // @ts-ignore
   const account = await ensureAccount(accountId, ctx);
 
   const reaction = await ensureReaction({
@@ -59,6 +60,7 @@ export async function postReactionCreated(
   });
 
   if (!reaction) {
+    // @ts-ignore
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     throw new CommonCriticalError();
   }
@@ -88,6 +90,7 @@ export async function postReactionCreated(
   });
 
   if (!activity) {
+    // @ts-ignore
     new EntityProvideFailWarning(Activity, 'new', ctx);
     throw new CommonCriticalError();
     return;

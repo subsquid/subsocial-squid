@@ -54,6 +54,7 @@ export async function postReactionDeleted(
 
   const { accountId, reactionId } = event;
 
+  // @ts-ignore
   const accountInst = await ensureAccount(accountId, ctx);
 
   const reaction = await ctx.store.get(Reaction, {
@@ -74,6 +75,7 @@ export async function postReactionDeleted(
   });
 
   if (!reaction) {
+    // @ts-ignore
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     throw new CommonCriticalError();
   }
@@ -104,6 +106,7 @@ export async function postReactionDeleted(
   });
 
   if (!activity) {
+    // @ts-ignore
     new EntityProvideFailWarning(Activity, 'new', ctx);
     throw new CommonCriticalError();
   }

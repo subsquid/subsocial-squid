@@ -39,6 +39,7 @@ export const setActivity = async ({
     ];
 
   const accountInst =
+    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   let activity = new Activity();

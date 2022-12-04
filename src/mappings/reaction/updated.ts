@@ -47,6 +47,7 @@ export async function postReactionUpdated(
 
   const { accountId, reactionId, reactionKind } = event;
 
+  // @ts-ignore
   const account = await ensureAccount(accountId, ctx);
 
   const reaction = await ctx.store.get(Reaction, {
@@ -67,6 +68,7 @@ export async function postReactionUpdated(
   });
 
   if (!reaction) {
+    // @ts-ignore
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     throw new CommonCriticalError();
   }
@@ -100,9 +102,9 @@ export async function postReactionUpdated(
   });
 
   if (!activity) {
+    // @ts-ignore
     new EntityProvideFailWarning(Activity, 'new', ctx);
     throw new CommonCriticalError();
-    return;
   }
   await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
 }

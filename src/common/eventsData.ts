@@ -5,7 +5,10 @@ import {
   Post,
   Account,
   Space,
-  Reaction
+  Reaction,
+  SpaceFollowers,
+  CommentFollowers,
+  PostFollowers
 } from '../model';
 import { Block, Ctx, EventItem } from '../processor';
 import {
@@ -16,7 +19,9 @@ import {
   PostUpdatedData,
   EventId,
   EventContext,
-  EventData
+  EventData,
+  SpaceCreatedData,
+  SpaceUpdatedData
 } from './types';
 import argsParsers from './argsParsers';
 import { StorageDataManager } from '../storage/storageDataManager';
@@ -26,6 +31,17 @@ import {
   EventHandlerContext,
   SubstrateBatchProcessor
 } from '@subsquid/substrate-processor';
+import { getPostFollowersEntityId, getSpaceFollowersEntityId } from './utils';
+
+type EventDataType<T> = T extends EventName.SpaceCreated
+  ? SpaceCreatedData
+  : T extends EventName.SpaceUpdated
+  ? SpaceUpdatedData
+  : T extends EventName.PostCreated
+  ? PostCreatedData
+  : T extends EventName.PostUpdated
+  ? PostUpdatedData
+  : never;
 
 export class ParsedEventsDataScope {
   private scope: ParsedEventsDataMap;
@@ -47,9 +63,18 @@ export class ParsedEventsDataScope {
     );
   }
 
-  getSectionByEventName<T>(section: EventName): Map<EventId, T> {
+  // getSectionByEventName<T>(section: EventName): Map<EventId, T> {
+  //   return (
+  //     (this.scope.get(section) as Map<EventId, T>) || new Map<EventId, T>()
+  //   );
+  // }
+
+  getSectionByEventName<T extends EventName>(
+    section: T
+  ): Map<EventId, EventDataType<T>> {
     return (
-      (this.scope.get(section) as Map<EventId, T>) || new Map<EventId, T>()
+      (this.scope.get(section) as Map<EventId, EventDataType<T>>) ||
+      new Map<EventId, EventDataType<T>>()
     );
   }
 
@@ -95,14 +120,32 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData
           });
 
+          let ownerAccount = eventData.accountId;
           ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(Account, ownerAccount);
           if (callData.originalPost)
             ctx.store.deferredLoad(Post, callData.originalPost);
           if (callData.parentPostId)
             ctx.store.deferredLoad(Post, callData.parentPostId);
           if (callData.rootPostId)
             ctx.store.deferredLoad(Post, callData.rootPostId);
+          if (callData.spaceId) ctx.store.deferredLoad(Space, callData.spaceId);
+
+          if (callData.forced && callData.forcedData) {
+            if (callData.forcedData.account)
+              ctx.store.deferredLoad(Account, callData.forcedData.account);
+            if (callData.forcedData.owner) {
+              ctx.store.deferredLoad(Account, callData.forcedData.owner);
+              ownerAccount = callData.forcedData.owner;
+            }
+          }
+
+          const postFollowersEntityId = getPostFollowersEntityId(
+            ownerAccount,
+            eventData.postId
+          );
+          ctx.store.deferredLoad(CommentFollowers, postFollowersEntityId);
+          ctx.store.deferredLoad(PostFollowers, postFollowersEntityId);
           break;
         }
 
@@ -155,6 +198,10 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           });
           ctx.store.deferredLoad(Account, eventData.accountId);
           ctx.store.deferredLoad(Space, eventData.spaceId);
+          ctx.store.deferredLoad(
+            SpaceFollowers,
+            getSpaceFollowersEntityId(eventData.accountId, eventData.spaceId)
+          );
           break;
         }
 
@@ -266,6 +313,10 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
 
           ctx.store.deferredLoad(Account, eventData.followerId);
           ctx.store.deferredLoad(Space, eventData.spaceId);
+          ctx.store.deferredLoad(
+            SpaceFollowers,
+            getSpaceFollowersEntityId(eventData.followerId, eventData.spaceId)
+          );
           break;
         }
 
@@ -282,6 +333,10 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
 
           ctx.store.deferredLoad(Account, eventData.followerId);
           ctx.store.deferredLoad(Space, eventData.spaceId);
+          ctx.store.deferredLoad(
+            SpaceFollowers,
+            getSpaceFollowersEntityId(eventData.followerId, eventData.spaceId)
+          );
           break;
         }
 

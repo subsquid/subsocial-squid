@@ -16,6 +16,7 @@ export const addNotificationForAccount = async (
   ctx: EventHandlerContext
 ): Promise<Notification | null> => {
   const accountInst =
+    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const notification = new Notification();
@@ -34,6 +35,7 @@ export const addNotificationForAccountFollowers = async (
   ctx: EventHandlerContext
 ): Promise<void> => {
   const accountInst =
+    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
@@ -73,6 +75,7 @@ export const deleteAllNotificationsAboutSpace = async (
   ctx: EventHandlerContext
 ): Promise<void> => {
   const accountInst =
+    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const relatedNotifications = await ctx.store.find(Notification, {
@@ -96,10 +99,12 @@ export const deleteAllNotificationsAboutAccount = async (
   ctx: EventHandlerContext
 ): Promise<void> => {
   const accountInst =
+    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
   const followingAccountInst =
     followingAccount instanceof Account
       ? followingAccount
+      // @ts-ignore
       : await ensureAccount(followingAccount, ctx);
 
   const relatedNotifications = await ctx.store.find(Notification, {

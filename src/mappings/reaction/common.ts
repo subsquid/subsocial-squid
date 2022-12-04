@@ -49,6 +49,7 @@ export async function getReactionKindFromSquidDb(
 ): Promise<ReactionKind | null> {
   const reaction = await ctx.store.get(Reaction, reactionId);
   if (!reaction) {
+    // @ts-ignore
     new EntityProvideFailWarning(Reaction, reactionId, ctx);
     return null;
   }
@@ -88,6 +89,7 @@ export async function ensureReaction({
   if (existingReaction) return existingReaction;
 
   const accountInst =
+    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const postInst = await ctx.store.get(Post, {
@@ -105,6 +107,7 @@ export async function ensureReaction({
   });
 
   if (!postInst) {
+    // @ts-ignore
     new EntityProvideFailWarning(Post, postId, ctx);
     new CommonCriticalError();
     return null;

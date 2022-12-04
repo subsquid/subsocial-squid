@@ -3,28 +3,27 @@ import { ParsedEventsDataScope } from '../../common/eventsData';
 import { EventName } from '../../model';
 import { getOrderedListByBlockNumber } from '../../common/utils';
 import { SpaceCreatedData, SpaceUpdatedData } from '../../common/types';
-import { spaceCreated } from './created';
 
 export { updatePostsCountersInSpace } from './common';
-export { spaceCreated } from './created';
-export { spaceUpdated } from './updated';
+import { spaceCreated } from './created';
+import { spaceUpdated } from './updated';
 
-export async function handleSpace(
+export async function handleSpaces(
   ctx: Ctx,
   parsedEvents: ParsedEventsDataScope
 ) {
   const spaceCreatedEvents = [
-    ...parsedEvents
-      .getSectionByEventName<SpaceCreatedData>(EventName.SpaceCreated)
-      .values()
+    ...parsedEvents.getSectionByEventName(EventName.SpaceCreated).values()
   ];
   const spaceUpdatedEvents = [
-    ...parsedEvents
-      .getSectionByEventName<SpaceUpdatedData>(EventName.SpaceUpdated)
-      .values()
+    ...parsedEvents.getSectionByEventName(EventName.SpaceUpdated).values()
   ];
 
   for (const eventData of getOrderedListByBlockNumber(spaceCreatedEvents)) {
     await spaceCreated(ctx, eventData);
+  }
+
+  for (const eventData of getOrderedListByBlockNumber(spaceUpdatedEvents)) {
+    await spaceUpdated(ctx, eventData);
   }
 }

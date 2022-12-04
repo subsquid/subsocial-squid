@@ -1,7 +1,4 @@
 import { Account } from '../../model';
-// import { resolveAccount } from '../../connection/resolvers/resolveAccountData';
-import { MissingSubsocialApiEntity } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
 import { Ctx } from '../../processor';
 
 export async function ensureAccount(

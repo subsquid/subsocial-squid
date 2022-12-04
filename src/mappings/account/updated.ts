@@ -15,6 +15,7 @@ export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
 
   const accountIdString = addressSs58ToString(accountId);
 
+  // @ts-ignore
   const account = await ensureAccount(accountIdString, ctx);
 
   account.updatedAtTime = new Date(ctx.block.timestamp);

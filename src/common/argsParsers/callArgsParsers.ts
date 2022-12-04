@@ -30,42 +30,82 @@ import {
   getSpacePermissionsDecorated
 } from '../decorators';
 import * as v13 from '../../types/generated/v13';
+import { addressSs58ToString } from '../utils';
+
+function ensureSpaceId(srcVal: bigint | undefined) {
+  return srcVal !== null && srcVal !== undefined ? srcVal.toString() : srcVal;
+}
 
 export function parsePostCreatedCallArgs(
   ctx: EventContext
 ): CreatePostCallParsedData {
   let callInst: PostsCreatePostCall | PostsForceCreatePostCall | null = null;
-
-  switch (ctx.event.call!.name) {
-    case 'Posts.force_create_post':
-      callInst = new PostsForceCreatePostCall(ctx, ctx.event.call!);
-      break;
-    default:
-      callInst = new PostsCreatePostCall(ctx, ctx.event.call!);
-  }
-  if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
-
-  const { extension, content } = callInst.asV13;
-  const response: CreatePostCallParsedData = {
-    ...getContentSrcDecorated(content),
-    postKind: PostKind[extension.__kind],
+  let extensionData: v13.PostExtension | null = null;
+  let response: CreatePostCallParsedData = {
+    ipfsSrc: null,
+    otherSrc: null,
+    none: false,
+    forced: false,
+    forcedData: null,
+    spaceId: undefined,
+    postKind: PostKind.RegularPost,
     originalPost: null,
     parentPostId: null,
     rootPostId: null
   };
 
-  switch (extension.__kind) {
+  switch (ctx.event.call!.name) {
+    case 'Posts.force_create_post': {
+      callInst = new PostsForceCreatePostCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+
+      const { extension, content, spaceIdOpt, created, hidden, owner } =
+        callInst.asV13;
+      extensionData = extension;
+
+      response = {
+        ...response,
+        ...getContentSrcDecorated(content),
+        forced: true,
+        spaceId: ensureSpaceId(spaceIdOpt),
+        forcedData: {
+          account: addressSs58ToString(created.account),
+          block: created.block,
+          time: new Date(created.time.toString()),
+          owner: addressSs58ToString(owner),
+          hidden: hidden
+        }
+      };
+      break;
+    }
+    default: {
+      callInst = new PostsCreatePostCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+
+      const { extension, content, spaceIdOpt } = callInst.asV13;
+
+      extensionData = extension;
+      response = {
+        ...response,
+        ...getContentSrcDecorated(content),
+        spaceId: ensureSpaceId(spaceIdOpt)
+      };
+    }
+  }
+
+  response.postKind = PostKind[extensionData.__kind];
+  switch (extensionData.__kind) {
     case PostKind.Comment:
-      response.rootPostId = extension.value.rootPostId
-        ? extension.value.rootPostId.toString()
+      response.rootPostId = extensionData.value.rootPostId
+        ? extensionData.value.rootPostId.toString()
         : null;
       if (response.rootPostId)
-        response.parentPostId = extension.value.parentId
-          ? extension.value.parentId.toString()
+        response.parentPostId = extensionData.value.parentId
+          ? extensionData.value.parentId.toString()
           : null;
       break;
     case PostKind.SharedPost:
-      response.originalPost = extension.value.toString();
+      response.originalPost = extensionData.value.toString();
       break;
     default:
   }

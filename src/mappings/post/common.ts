@@ -1,8 +1,6 @@
-import { resolvePost } from '../../connection/resolvers/resolvePostData';
 import { getDateWithoutTime } from '../../common/utils';
 import { isEmptyArray } from '@subsocial/utils';
-import { Post, PostKind, Space, Account } from '../../model';
-import BN from 'bn.js';
+import { Post, PostKind, Space } from '../../model';
 import {
   asCommentStruct,
   asSharedPostStruct
@@ -15,40 +13,15 @@ import {
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import assert from 'assert';
-import {
-  PostsMovePostCall,
-  PostsCreatePostCall
-} from '../../types/generated/calls';
-import { FindOptionsRelations } from 'typeorm';
-
-export function getNewPostSpaceIdFromCall(
-  ctx: EventHandlerContext
-): string | null {
-  assert(ctx.event.call);
-  let spaceId: string | null = null;
-
-  try {
-    const call = new PostsCreatePostCall({
-      _chain: ctx._chain,
-      call: ctx.event.call
-    });
-    if (call.isV13) {
-      spaceId = call.asV13.spaceIdOpt ? call.asV13.spaceIdOpt.toString() : null;
-    }
-  } catch (e) {
-    const callArgs = ctx.event.call.args as {
-      spaceIdOpt?: bigint;
-      [k: string]: unknown;
-    };
-    spaceId = callArgs.spaceIdOpt ? callArgs.spaceIdOpt.toString() : null;
-  }
-  return spaceId ? spaceId.toString() : null;
-}
+import { PostsCreatePostCall } from '../../types/generated/calls';
+import { PostCreatedData } from '../../common/types';
+import { Ctx } from '../../processor';
+import { StorageDataManager } from '../../storage/storageDataManager';
 
 const updatePostReplyCount = async (
   targetPost: Post,
   reply: Post,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const targetPostUpdated = targetPost;
   targetPostUpdated.repliesCount += 1;
@@ -57,154 +30,133 @@ const updatePostReplyCount = async (
   } else {
     targetPostUpdated.publicRepliesCount += 1;
   }
-  await ctx.store.save<Post>(targetPostUpdated);
+  await ctx.store.deferredUpsert(targetPostUpdated);
 };
 
+/**
+ * @deprecated in Batch processor config
+ */
 export const updateSpaceForPostChildren = async (
   rootPost: Post,
   newSpace: Space | null,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ) => {
-  if (!rootPost.isComment) return;
-
-  const children = await ctx.store.find(Post, {
-    where: [
-      {
-        rootPost: { id: rootPost.id }
-      },
-      {
-        parentPost: { id: rootPost.id }
-      }
-    ],
-    relations: {
-      space: true
-    }
-  });
-
-  for (let i = 0; i <= children.length - 1; i++) {
-    children[i].space = newSpace;
-  }
-  await ctx.store.save<Post>(children);
+  // if (!rootPost.isComment) return;
+  //
+  // const children = await ctx.store.find(Post, {
+  //   where: [
+  //     {
+  //       rootPost: { id: rootPost.id }
+  //     },
+  //     {
+  //       parentPost: { id: rootPost.id }
+  //     }
+  //   ],
+  //   relations: {
+  //     space: true
+  //   }
+  // });
+  //
+  // for (let i = 0; i <= children.length - 1; i++) {
+  //   children[i].space = newSpace;
+  // }
+  // await ctx.store.save<Post>(children);
 };
 
 export const ensurePost = async ({
-  account,
   postId,
   ctx,
-  createIfNotExists,
-  relations
+  eventData
 }: {
-  account: Account | string;
   postId: string;
-  ctx: EventHandlerContext;
-  createIfNotExists?: boolean;
-  relations?: FindOptionsRelations<Post>;
+  ctx: Ctx;
+  eventData: PostCreatedData;
 }): Promise<Post | null> => {
-  let existingPost = null;
-  if (!relations) {
-    existingPost = await ctx.store.get(Post, postId);
-  } else {
-    existingPost = await ctx.store.get(Post, {
-      where: { id: postId },
-      relations
-    });
-  }
+  const createdByAccount = await ensureAccount(eventData.accountId, ctx);
 
-  if (existingPost) return existingPost;
+  const postStorageData = StorageDataManager.getInstance(
+    ctx
+  ).getStorageDataById('post', eventData.blockHash, postId);
 
-  const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
-
-  const postData = await resolvePost(new BN(postId.toString(), 10));
-
-  if (!postData || !postData.post || !postData.post.struct) {
-    new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
+  if (!postStorageData) {
+    new MissingSubsocialApiEntity('Post', ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  const { struct: postStruct, content: postContent = null } = postData.post;
-
   let space = null;
-  if (!postStruct.isComment) {
-    const spaceId = getNewPostSpaceIdFromCall(ctx);
-    if (spaceId) {
-      space = spaceId
-        ? await ctx.store.get(Space, {
-            where: { id: spaceId },
-            relations: { ownedByAccount: true }
-          })
-        : null;
+
+  if (eventData.postKind === PostKind.RegularPost) {
+    if (eventData.spaceId) {
+      space = await ctx.store.get(Space, eventData.spaceId, false);
     }
-  } else if (postStruct.isComment) {
-    const { rootPostId } = asCommentStruct(postStruct);
-    const rootSpacePost = rootPostId
-      ? await ctx.store.get(Post, {
-          where: { id: rootPostId },
-          relations: {
-            ownedByAccount: true,
-            space: { ownedByAccount: true }
-          }
-        })
-      : null;
-    if (!rootSpacePost) {
-      new EntityProvideFailWarning(Post, rootPostId, ctx);
-      throw new CommonCriticalError();
-    }
-    space = rootSpacePost.space;
   }
+  /**
+   * TODO We won't add space to child posts (comment/replies) to avoid redundant processing in root PostMoved event
+   */
+  // else if (eventData.postKind === PostKind.Comment) {
+  //   const rootSpacePost = eventData.rootPostId
+  //     ? await ctx.store.get(Post, eventData.rootPostId, false)
+  //     : null;
+  //
+  //   if (!rootSpacePost) {
+  //     new EntityProvideFailWarning(
+  //       Post,
+  //       eventData.rootPostId || 'n/a',
+  //       ctx,
+  //       eventData
+  //     );
+  //     throw new CommonCriticalError();
+  //   }
+  //   if (rootSpacePost.space && rootSpacePost.space.id)
+  //     space = await ctx.store.get(Space, rootSpacePost.space.id, false);
+  // }
+
+  const signerAccountInst = await ensureAccount(eventData.accountId, ctx);
 
   const post = new Post();
 
-  post.id = postId.toString();
-  post.isComment = postStruct.isComment;
-  post.hidden = postStruct.hidden;
-  post.ownedByAccount =
-    postStruct && postStruct.ownerId
-      ? await ensureAccount(postStruct.ownerId, ctx)
-      : accountInst;
-  post.createdByAccount = accountInst;
-  post.createdAtBlock = BigInt(postStruct.createdAtBlock.toString());
-  post.createdAtTime = new Date(postStruct.createdAtTime);
-  post.createdOnDay = getDateWithoutTime(new Date(postStruct.createdAtTime));
-  post.content = postStruct.contentId;
+  if (eventData.forced && eventData.forcedData) {
+    post.hidden = eventData.forcedData.hidden;
+    post.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx);
+    post.createdByAccount = await ensureAccount(
+      eventData.forcedData.account,
+      ctx
+    );
+    post.createdAtBlock = BigInt(eventData.forcedData.block.toString());
+    post.createdAtTime = new Date(eventData.forcedData.time);
+    post.createdOnDay = getDateWithoutTime(new Date(eventData.forcedData.time));
+  } else {
+    post.hidden = false;
+    post.ownedByAccount = signerAccountInst;
+    post.createdByAccount = signerAccountInst;
+    post.createdAtBlock = BigInt(eventData.blockNumber.toString());
+    post.createdAtTime = new Date(eventData.timestamp);
+    post.createdOnDay = getDateWithoutTime(new Date(eventData.timestamp));
+  }
 
-  post.repliesCount = 0;
   post.hiddenRepliesCount = 0;
   post.publicRepliesCount = 0;
-
+  post.repliesCount = 0;
   post.sharesCount = 0;
   post.upvotesCount = 0;
   post.downvotesCount = 0;
   post.reactionsCount = 0;
   post.followersCount = 0;
-  post.updatedAtTime = postStruct.updatedAtTime
-    ? new Date(postStruct.updatedAtTime)
-    : null;
-  post.space = space;
 
-  if (postStruct.isComment) {
-    post.kind = PostKind.Comment;
-  } else if (postStruct.isRegularPost) {
-    post.kind = PostKind.RegularPost;
-  } else if (postStruct.isSharedPost) {
-    post.kind = PostKind.SharedPost;
-  }
+  post.id = postId;
+  post.isComment = eventData.postKind === PostKind.Comment;
+  post.content = eventData.ipfsSrc;
+  post.updatedAtTime = null;
+  post.space = space;
+  post.kind = eventData.postKind;
 
   switch (post.kind) {
     case PostKind.Comment:
-      const { rootPostId, parentId } = asCommentStruct(postStruct);
-
-      post.rootPost = rootPostId
-        ? await ctx.store.get(Post, {
-            where: { id: rootPostId },
-            relations: { ownedByAccount: true, space: true }
-          })
+      post.rootPost = eventData.rootPostId
+        ? await ctx.store.get(Post, eventData.rootPostId, false)
         : null;
-      post.parentPost = parentId
-        ? await ctx.store.get(Post, {
-            where: { id: parentId },
-            relations: { ownedByAccount: true, space: true }
-          })
+      post.parentPost = eventData.parentPostId
+        ? await ctx.store.get(Post, eventData.parentPostId, false)
         : null;
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
@@ -213,44 +165,37 @@ export const ensurePost = async ({
       break;
 
     case PostKind.SharedPost:
-      const { originalPostId } = asSharedPostStruct(postStruct);
-      post.sharedPost = originalPostId
-        ? await ctx.store.get(Post, {
-            where: { id: originalPostId },
-            relations: {
-              ownedByAccount: true,
-              rootPost: { ownedByAccount: true },
-              parentPost: { ownedByAccount: true },
-              space: { ownedByAccount: true }
-            }
-          })
+      post.sharedPost = eventData.originalPost
+        ? await ctx.store.get(Post, eventData.originalPost, false)
         : null;
       break;
   }
 
-  if (postContent) {
-    post.title = postContent.title ?? null;
-    post.image = postContent.image ?? null;
-    post.link = postContent.link ?? null;
-    post.format = postContent.format ?? null;
-    post.canonical = postContent.canonical ?? null;
-    post.body = postContent.body;
-    post.summary = postContent.summary;
+  if (postStorageData.ipfsContent) {
+    post.title = postStorageData.ipfsContent.title ?? null;
+    post.image = postStorageData.ipfsContent.image ?? null;
+    post.link = postStorageData.ipfsContent.link ?? null;
+    // post.format = postStorageData.ipfsContent.format ?? null; // TODO check is it actual property
+    post.format = null;
+    post.canonical = postStorageData.ipfsContent.canonical ?? null;
+    post.body = postStorageData.ipfsContent.body;
+    post.summary = postStorageData.ipfsContent.summary;
     post.slug = null;
-    if (postContent.tags) {
-      post.tagsOriginal = Array.isArray(postContent.tags)
-        ? postContent.tags.join(',')
-        : postContent.tags;
+    if (postStorageData.ipfsContent.tags) {
+      post.tagsOriginal = Array.isArray(postStorageData.ipfsContent.tags)
+        ? postStorageData.ipfsContent.tags.join(',')
+        : postStorageData.ipfsContent.tags;
     }
 
-    const { meta } = postContent;
-
-    if (meta && !isEmptyArray(meta)) {
-      post.proposalIndex = meta[0].proposalIndex;
-    }
+    // TODO Implementation is needed
+    // const { meta } = postContent;
+    //
+    // if (meta && !isEmptyArray(meta)) {
+    //   post.proposalIndex = meta[0].proposalIndex;
+    // }
   }
 
-  if (createIfNotExists) await ctx.store.save<Post>(post);
+  ctx.store.deferredUpsert(post);
 
   return post;
 };

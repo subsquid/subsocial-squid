@@ -17,7 +17,9 @@ import {
   PostCreatedData,
   SpaceCreatedData,
   SpaceUpdatedData,
-  PostUpdatedData
+  PostUpdatedData,
+  IpfsPostContentSummarized,
+  IpfsSpaceContentSummarized
 } from '../common/types';
 import * as v7 from '../types/generated/v7';
 import { addressStringToSs58 } from '../common/utils';
@@ -181,13 +183,14 @@ export class StorageDataManager {
               { header: { hash: blockHash } }
             );
 
-            const spacesIpfsIpfsResp = await resolveSpacesContentIPFS(
-              idPairsList
-                .filter((d) => d[2] !== null)
-                .map((d) => {
-                  return [d[1].value.toString(), d[2]!];
-                })
-            );
+            const spacesIpfsIpfsResp =
+              await resolveSpacesContentIPFS<IpfsSpaceContentSummarized>(
+                idPairsList
+                  .filter((d) => d[2] !== null)
+                  .map((d) => {
+                    return [d[1].value.toString(), d[2]!];
+                  })
+              );
 
             this.ensureStorageDataCacheContainer(section, blockHash);
 
@@ -220,10 +223,11 @@ export class StorageDataManager {
           for (const [blockHash, idsPairs] of [...idsListByBlock.entries()]) {
             const idPairsList = [...idsPairs.values()];
 
-            const postsIpfsResp = await resolveSpacesContentIPFS(
-              // @ts-ignore
-              idPairsList.filter((d) => d[1] !== null)
-            );
+            const postsIpfsResp =
+              await resolveSpacesContentIPFS<IpfsPostContentSummarized>(
+                // @ts-ignore
+                idPairsList.filter((d) => d[1] !== null)
+              );
 
             this.ensureStorageDataCacheContainer(section, blockHash);
 

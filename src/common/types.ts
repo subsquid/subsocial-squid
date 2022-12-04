@@ -19,9 +19,16 @@ import {
 import { PostWithAllDetails, PostData, PostStruct } from '@subsocial/types/dto';
 import { Store } from '@subsquid/processor-tools';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
-import { SpacePermissionMap, SummarizedContent } from "@subsocial/api/types/dto";
-import { CommonContent } from "@subsocial/api/types";
-import { IpfsCommonContent, IpfsPostContent, IpfsSpaceContent } from "@subsocial/api/types/ipfs";
+import {
+  SpacePermissionMap,
+  SummarizedContent
+} from '@subsocial/api/types/dto';
+import { CommonContent } from '@subsocial/api/types';
+import {
+  IpfsCommonContent,
+  IpfsPostContent,
+  IpfsSpaceContent
+} from '@subsocial/api/types/ipfs';
 
 export type DbEntity =
   | typeof Account
@@ -72,22 +79,34 @@ export type ContentSrcDecorated = {
 };
 export type ContentDataIpfs = CommonContent;
 
+export type IpfsSpaceContentSummarized = IpfsSpaceContent & SummarizedContent;
+export type IpfsPostContentSummarized = IpfsPostContent & SummarizedContent;
+
 export type SpaceStorageData = {
   handle: string | null;
-  ipfsContent: IpfsSpaceContent & SummarizedContent | null;
+  ipfsContent: IpfsSpaceContentSummarized | null;
 };
 export type PostStorageData = {
-  ipfsContent: IpfsPostContent & SummarizedContent | null;
+  ipfsContent: IpfsPostContentSummarized | null;
 };
 
 /**
  * :::::: CREATE POST ::::::
  */
 export interface CreatePostCallParsedData extends ContentSrcDecorated {
+  forced: boolean;
+  forcedData: {
+    account: string;
+    block: number;
+    time: Date;
+    owner: string;
+    hidden: boolean;
+  } | null;
   postKind: PostKind;
   originalPost: string | null;
   parentPostId: string | null;
   rootPostId: string | null;
+  spaceId: string | null | undefined;
 }
 export interface CreatePostEventParsedData {
   accountId: string;

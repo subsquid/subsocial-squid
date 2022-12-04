@@ -231,7 +231,7 @@ export async function updatePostsCountersInSpace({
   post: Post;
   isPrevVisStateHidden?: boolean;
   action: SpaceCountersAction;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 }): Promise<void> {
   if (!space) return;
 
@@ -277,5 +277,5 @@ export async function updatePostsCountersInSpace({
       break;
   }
 
-  await ctx.store.save<Space>(spaceChanged);
+  await ctx.store.deferredUpsert(spaceChanged);
 }

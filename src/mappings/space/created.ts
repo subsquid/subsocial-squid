@@ -53,11 +53,12 @@ export async function spaceCreated(ctx: Ctx, eventData: SpaceCreatedData) {
     throw new CommonCriticalError();
   }
 
-  await processSpaceFollowingUnfollowingRelations(account, space, ctx);
+  await processSpaceFollowingUnfollowingRelations(account, space, ctx, eventData);
 
-  await setActivity({
-    account,
-    space,
-    ctx
-  });
+  // TODO Implement
+  // await setActivity({
+  //   account,
+  //   space,
+  //   ctx
+  // });
 }

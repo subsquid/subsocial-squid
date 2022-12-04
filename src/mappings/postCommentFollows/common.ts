@@ -1,32 +1,43 @@
 import { EventHandlerContext } from '../../common/contexts';
-import { Post, Account, PostFollowers, CommentFollowers, EventName } from '../../model';
+import {
+  Post,
+  Account,
+  PostFollowers,
+  CommentFollowers,
+  EventName
+} from '../../model';
 import {
   ensurePositiveOrZeroValue,
   getPostFollowersEntityId
 } from '../../common/utils';
+import { Ctx } from '../../processor';
 
 export const processPostFollowingUnfollowingRelations = async (
   post: Post,
   follower: Account,
   followingEvent: EventName,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const postFollowersEntityId = getPostFollowersEntityId(follower.id, post.id);
 
   switch (followingEvent) {
     case EventName.PostFollowed:
       if (post.isComment) {
-        const newCommentFollowersEnt = new CommentFollowers();
-        newCommentFollowersEnt.id = postFollowersEntityId;
-        newCommentFollowersEnt.followerAccount = follower;
-        newCommentFollowersEnt.followingComment = post;
-        await ctx.store.save<CommentFollowers>(newCommentFollowersEnt);
+        ctx.store.deferredUpsert(
+          new CommentFollowers({
+            id: postFollowersEntityId,
+            followerAccount: follower,
+            followingComment: post
+          })
+        );
       } else {
-        const newPostFollowersEnt = new PostFollowers();
-        newPostFollowersEnt.id = postFollowersEntityId;
-        newPostFollowersEnt.followerAccount = follower;
-        newPostFollowersEnt.followingPost = post;
-        await ctx.store.save<PostFollowers>(newPostFollowersEnt);
+        ctx.store.deferredUpsert(
+          new PostFollowers({
+            id: postFollowersEntityId,
+            followerAccount: follower,
+            followingPost: post
+          })
+        );
       }
       break;
     case EventName.PostUnfollowed:
@@ -34,17 +45,17 @@ export const processPostFollowingUnfollowingRelations = async (
       if (post.isComment) {
         existingRelation = await ctx.store.get(
           CommentFollowers,
-          postFollowersEntityId
+          postFollowersEntityId,
+          false
         );
-        if (existingRelation)
-          await ctx.store.remove<CommentFollowers>(existingRelation);
+        if (existingRelation) await ctx.store.deferredRemove(existingRelation);
       } else {
         existingRelation = await ctx.store.get(
           PostFollowers,
-          postFollowersEntityId
+          postFollowersEntityId,
+          false
         );
-        if (existingRelation)
-          await ctx.store.remove<PostFollowers>(existingRelation);
+        if (existingRelation) await ctx.store.deferredRemove(existingRelation);
       }
       break;
     default:

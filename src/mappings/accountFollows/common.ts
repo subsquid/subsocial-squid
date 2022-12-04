@@ -17,7 +17,9 @@ export async function handleEvent(
   followingId: string,
   ctx: EventHandlerContext
 ): Promise<void> {
+  // @ts-ignore
   const followerAccount = await ensureAccount(followerId, ctx);
+  // @ts-ignore
   const followingAccount = await ensureAccount(followingId, ctx);
 
   const activity = await setActivity({

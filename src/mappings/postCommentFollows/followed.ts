@@ -2,25 +2,29 @@ import { EventHandlerContext } from '../../common/contexts';
 import { Post, Account, EventName } from '../../model';
 import { printEventLog } from '../../common/utils';
 import { processPostFollowingUnfollowingRelations } from './common';
+import { PostCreatedData } from "../../common/types";
+import { Ctx } from '../../processor';
+import { ensureAccount } from "../account";
 
 export async function postFollowed(
   post: Post,
-  ctx: EventHandlerContext
+  ctx: Ctx,
 ): Promise<void> {
-  printEventLog(ctx);
+
+  const postUpdated = post;
+  const ownerAccount = await ensureAccount(post.ownedByAccount.id, ctx);
 
   await processPostFollowingUnfollowingRelations(
     post,
-    post.ownedByAccount,
+    ownerAccount,
     EventName.PostFollowed,
     ctx
   );
 
-  const postUpdated = post;
-  const accountUpdated = post.ownedByAccount;
-  postUpdated.followersCount += 1;
-  accountUpdated.followingPostsCount += 1;
 
-  await ctx.store.save<Post>(postUpdated);
-  await ctx.store.save<Account>(accountUpdated);
+  postUpdated.followersCount += 1;
+  ownerAccount.followingPostsCount += 1;
+
+  ctx.store.deferredUpsert(postUpdated);
+  ctx.store.deferredUpsert(ownerAccount);
 }

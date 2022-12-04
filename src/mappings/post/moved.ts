@@ -17,43 +17,35 @@ import {
   EntityProvideFailWarning
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
-import { SpaceCountersAction } from '../../common/types';
 import {
-  updateSpaceForPostChildren
-} from './common';
+  PostMovedData,
+  PostUpdatedData,
+  SpaceCountersAction
+} from '../../common/types';
+// import { updateSpaceForPostChildren } from './common';
 import { postFollowed, postUnfollowed } from '../postCommentFollows';
+import { Ctx } from '../../processor';
 
-export async function postMoved(ctx: EventHandlerContext): Promise<void> {
-  const event = new PostsPostMovedEvent(ctx);
-  printEventLog(ctx);
+export async function postMoved(
+  ctx: Ctx,
+  eventData: PostMovedData
+): Promise<void> {
+  const account = await ensureAccount(eventData.accountId, ctx);
 
-  const { account: accountId, postId, toSpace: toSpaceId } = event.asV13; // fromSpace is ignored here
+  const post = await ctx.store.get(Post, eventData.postId);
 
-  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
-
-  const post = await ctx.store.get(Post, {
-    where: { id: postId.toString() },
-    relations: {
-      ownedByAccount: true,
-      rootPost: { ownedByAccount: true },
-      parentPost: { ownedByAccount: true },
-      space: { ownedByAccount: true }
-    }
-  });
   if (!post) {
-    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
     throw new CommonCriticalError();
-    return;
   }
-  const prevSpaceInst = post.space || null;
 
   /**
    * Update counters for previous space. Will be skipped if post is restored
    * ("space" was null)
    */
-  if (prevSpaceInst)
+  if (eventData.fromSpace)
     await updatePostsCountersInSpace({
-      space: prevSpaceInst,
+      space: await ctx.store.get(Space, eventData.fromSpace, false),
       post,
       action: SpaceCountersAction.PostDeleted,
       ctx
@@ -61,18 +53,17 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   let newSpaceInst = null;
 
-  if (toSpaceId && toSpaceId.toString() !== '0') {
-    newSpaceInst = await ctx.store.get(Space, {
-      where: {
-        id: toSpaceId.toString()
-      },
-      relations: { ownedByAccount: true }
-    });
+  if (eventData.toSpace && eventData.toSpace !== '0') {
+    newSpaceInst = await ctx.store.get(Space, eventData.toSpace, false);
 
     if (!newSpaceInst) {
-      new EntityProvideFailWarning(Space, toSpaceId.toString() || 'null', ctx);
+      new EntityProvideFailWarning(
+        Space,
+        eventData.toSpace || 'null',
+        ctx,
+        eventData
+      );
       throw new CommonCriticalError();
-      return;
     }
   }
 
@@ -89,29 +80,33 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
       ctx
     });
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.deferredUpsert(post);
 
   if (!newSpaceInst) {
     await postUnfollowed(post, ctx);
-  } else if (newSpaceInst && !prevSpaceInst) {
+  } else if (newSpaceInst && !eventData.fromSpace) {
     await postFollowed(post, ctx);
   }
 
-  await updateSpaceForPostChildren(post, newSpaceInst, ctx);
+  // await updateSpaceForPostChildren(post, newSpaceInst, ctx);
 
-  const activity = await setActivity({
-    syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
-    spacePrev: prevSpaceInst,
-    account,
-    post,
-    ctx
-  });
+  // TODO add implementation
+  // const activity = await setActivity({
+  //   syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
+  //   spacePrev: prevSpaceInst,
+  //   account,
+  //   post,
+  //   ctx
+  // });
 
-  if (!activity) {
-    new EntityProvideFailWarning(Activity, 'new', ctx);
-    throw new CommonCriticalError();
-  }
-  await addPostToFeeds(post, activity, ctx);
-  if (prevSpaceInst)
-    await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
+  // if (!activity) {
+  //   // @ts-ignore
+  //   new EntityProvideFailWarning(Activity, 'new', ctx);
+  //   throw new CommonCriticalError();
+  // }
+
+  // await addPostToFeeds(post, activity, ctx);
+  //
+  // if (prevSpaceInst)
+  //   await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
 }

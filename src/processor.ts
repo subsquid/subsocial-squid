@@ -13,28 +13,30 @@ import {
 import { Store, TypeormDatabase } from '@subsquid/processor-tools';
 import * as envConfig from './env';
 import {
-  getParsedEventsData,
-  processEntityRelationsByStorageData
+  getParsedEventsData
+  // processEntityRelationsByStorageData
 } from './common/eventsData';
 import { Post, Account, Space, Reaction } from './model';
 
-import {
-  postCreated,
-  postUpdated,
-  postMoved,
-  postReactionCreated,
-  postReactionUpdated,
-  postReactionDeleted,
-  spaceCreated,
-  spaceUpdated,
-  spaceFollowed,
-  spaceUnfollowed,
-  accountUpdated,
-  accountFollowed,
-  accountUnfollowed
-} from './mappings';
+// import {
+//   postCreated,
+//   postUpdated,
+//   postMoved,
+//   postReactionCreated,
+//   postReactionUpdated,
+//   postReactionDeleted,
+//   spaceCreated,
+//   spaceUpdated,
+//   spaceFollowed,
+//   spaceUnfollowed,
+//   accountUpdated,
+//   accountFollowed,
+//   accountUnfollowed
+// } from './mappings';
 import { StorageDataManager } from './storage/storageDataManager';
 import { EntityRelationsManager } from './common/entityRelationsManager';
+import { handleSpaces } from './mappings/space';
+import { handlePosts } from './mappings/post';
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -177,64 +179,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   //  */
   // await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 
-  for (let block of ctx.blocks) {
-    for (let item of block.items) {
-      switch (item.name) {
-        case 'Posts.PostCreated': {
-          break;
-        }
-
-        case 'Posts.PostUpdated': {
-          break;
-        }
-
-        case 'Posts.PostMoved': {
-          break;
-        }
-
-        case 'Spaces.SpaceCreated': {
-          break;
-        }
-
-        case 'Spaces.SpaceUpdated': {
-          break;
-        }
-
-        case 'Reactions.PostReactionCreated': {
-          break;
-        }
-
-        case 'Reactions.PostReactionUpdated': {
-          break;
-        }
-
-        case 'Reactions.PostReactionDeleted': {
-          break;
-        }
-
-        case 'Profiles.ProfileUpdated': {
-          break;
-        }
-
-        case 'SpaceFollows.SpaceFollowed': {
-          break;
-        }
-
-        case 'SpaceFollows.SpaceUnfollowed': {
-          break;
-        }
-
-        case 'AccountFollows.AccountFollowed': {
-          break;
-        }
-
-        case 'AccountFollows.AccountUnfollowed': {
-          break;
-        }
-        default:
-      }
-    }
-  }
+  await handleSpaces(ctx, parsedEvents);
+  await handlePosts(ctx, parsedEvents);
 });
 
 // processor.addEventHandler('Posts.PostCreated', postCreated);
