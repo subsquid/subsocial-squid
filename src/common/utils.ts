@@ -187,7 +187,6 @@ export async function batchCaller<T>({
 
   while (srcList.length > 0) {
     const batch = srcList.splice(0, batchSize);
-    console.log('delay - ', delayIndex * timeout);
     promises.push(
       new Promise<void>(async (res) => {
         await new Promise<void>((waitRes) =>

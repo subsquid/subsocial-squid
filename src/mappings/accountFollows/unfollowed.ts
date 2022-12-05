@@ -1,20 +1,10 @@
-import { AccountFollowsAccountUnfollowedEvent } from '../../types/generated/events';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
 import { handleEvent } from './common';
+import { Ctx } from '../../processor';
+import { AccountUnfollowedData } from '../../common/types';
 
 export async function accountUnfollowed(
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: AccountUnfollowedData
 ): Promise<void> {
-  printEventLog(ctx);
-
-  const event = new AccountFollowsAccountUnfollowedEvent(ctx);
-
-  const { follower: followerId, account: followingId } = event.asV13;
-
-  await handleEvent(
-    addressSs58ToString(followerId),
-    addressSs58ToString(followingId),
-    ctx
-  );
+  await handleEvent(eventData.followerId, eventData.accountId, ctx, eventData);
 }

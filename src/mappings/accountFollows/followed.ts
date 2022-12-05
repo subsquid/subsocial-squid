@@ -1,18 +1,15 @@
 import { AccountFollowsAccountFollowedEvent } from '../../types/generated/events';
 import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
+import { Ctx } from '../../processor';
 import { handleEvent } from './common';
+import { AccountFollowedData, PostCreatedData } from "../../common/types";
 
-export async function accountFollowed(ctx: EventHandlerContext): Promise<void> {
-  printEventLog(ctx);
-  const event: AccountFollowsAccountFollowedEvent =
-    new AccountFollowsAccountFollowedEvent(ctx);
-
-  const { follower: followerId, account: followingId } = event.asV13;
+export async function accountFollowed(ctx: Ctx, eventData: AccountFollowedData): Promise<void> {
 
   await handleEvent(
-    addressSs58ToString(followerId),
-    addressSs58ToString(followingId),
-    ctx
+    eventData.followerId,
+    eventData.accountId,
+    ctx,
+    eventData
   );
 }

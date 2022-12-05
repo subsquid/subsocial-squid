@@ -37,6 +37,7 @@ import { StorageDataManager } from './storage/storageDataManager';
 import { EntityRelationsManager } from './common/entityRelationsManager';
 import { handleSpaces } from './mappings/space';
 import { handlePosts } from './mappings/post';
+import { handleAccountFollowing } from "./mappings/accountFollows";
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -181,6 +182,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 
   await handleSpaces(ctx, parsedEvents);
   await handlePosts(ctx, parsedEvents);
+  await handleAccountFollowing(ctx, parsedEvents);
 });
 
 // processor.addEventHandler('Posts.PostCreated', postCreated);

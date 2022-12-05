@@ -203,7 +203,7 @@ export async function resolveSpacesContentIPFS<T>(
           ...(await resolveSpaceIPFSContentByCid(cidsBatch))
         };
         await new Promise((res) => setTimeout(res, 2000));
-        console.log('FETCH FINISH ', Date.now());
+        // console.log('FETCH FINISH ', Date.now());
       }
     });
 

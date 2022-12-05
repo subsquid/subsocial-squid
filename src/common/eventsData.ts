@@ -8,7 +8,8 @@ import {
   Reaction,
   SpaceFollowers,
   CommentFollowers,
-  PostFollowers
+  PostFollowers,
+  AccountFollowers
 } from '../model';
 import { Block, Ctx, EventItem } from '../processor';
 import {
@@ -21,7 +22,10 @@ import {
   EventContext,
   EventData,
   SpaceCreatedData,
-  SpaceUpdatedData
+  SpaceUpdatedData,
+  PostMovedData,
+  AccountFollowedData,
+  AccountUnfollowedData
 } from './types';
 import argsParsers from './argsParsers';
 import { StorageDataManager } from '../storage/storageDataManager';
@@ -31,7 +35,11 @@ import {
   EventHandlerContext,
   SubstrateBatchProcessor
 } from '@subsquid/substrate-processor';
-import { getPostFollowersEntityId, getSpaceFollowersEntityId } from './utils';
+import {
+  getAccountFollowersEntityId,
+  getPostFollowersEntityId,
+  getSpaceFollowersEntityId
+} from './utils';
 
 type EventDataType<T> = T extends EventName.SpaceCreated
   ? SpaceCreatedData
@@ -41,6 +49,12 @@ type EventDataType<T> = T extends EventName.SpaceCreated
   ? PostCreatedData
   : T extends EventName.PostUpdated
   ? PostUpdatedData
+  : T extends EventName.PostMoved
+  ? PostMovedData
+  : T extends EventName.AccountFollowed
+  ? AccountFollowedData
+  : T extends EventName.AccountUnfollowed
+  ? AccountUnfollowedData
   : never;
 
 export class ParsedEventsDataScope {
@@ -350,9 +364,16 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...getEventMetadata(block, item.event as SubstrateEvent),
             ...eventData
           });
-
           ctx.store.deferredLoad(Account, eventData.followerId);
           ctx.store.deferredLoad(Account, eventData.accountId);
+          ctx.store.deferredLoad(
+            AccountFollowers,
+            getAccountFollowersEntityId(
+              eventData.followerId,
+              eventData.accountId
+            )
+          );
+
           break;
         }
 
