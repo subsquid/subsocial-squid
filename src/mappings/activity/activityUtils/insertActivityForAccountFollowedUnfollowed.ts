@@ -1,12 +1,12 @@
 import { Account, Activity } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Ctx } from '../../../processor';
 import { updateAggregatedStatus } from './aggregationUtils';
 import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForAccountFollowedUnfollowedParams = {
   followingAccount: Account;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForAccountFollowedUnfollowed(
@@ -20,11 +20,12 @@ export async function insertActivityForAccountFollowedUnfollowed(
     ensurePositiveOrZeroValue(followingAccount.followersCount - 1)
   );
 
-  await updateAggregatedStatus({
-    eventName: activity.event,
-    followingAccount,
-    ctx
-  });
+  // TODO - add implementation
+  // await updateAggregatedStatus({
+  //   eventName: activity.event,
+  //   followingAccount,
+  //   ctx
+  // });
 
   return activity;
 }

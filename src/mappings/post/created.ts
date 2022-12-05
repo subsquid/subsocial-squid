@@ -35,8 +35,7 @@ export async function postCreated(
     eventData
   });
   if (!post) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
     throw new CommonCriticalError();
   }
 
@@ -57,18 +56,18 @@ export async function postCreated(
    */
   await postFollowed(post, ctx);
 
-  // TODO add implementation
-  // const activity = await setActivity({
-  //   syntheticEventName: getSyntheticEventName(EventName.PostCreated, post),
-  //   account,
-  //   post,
-  //   ctx
-  // });
+  const activity = await setActivity({
+    syntheticEventName: getSyntheticEventName(EventName.PostCreated, post),
+    account,
+    post,
+    ctx,
+    eventData
+  });
 
-  // if (!activity) {
-  //   new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
-  //   return;
-  // }
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
+    return;
+  }
 
   // TODO add implementation
   // await addPostToFeeds(post, activity, ctx);
@@ -101,26 +100,36 @@ async function handlePostShare(
   ctx: Ctx,
   eventData: PostCreatedData
 ): Promise<void> {
-  if (!sharedPost.sharedPost) return;
+  if (!sharedPost.sharedPost || !sharedPost.sharedPost.id) return;
 
-  const originPost = sharedPost.sharedPost;
+  const originPost = await ctx.store.get(Post, sharedPost.sharedPost.id, false);
+
+  if (!originPost) {
+    new EntityProvideFailWarning(
+      Post,
+      sharedPost.sharedPost.id,
+      ctx,
+      eventData
+    );
+    throw new CommonCriticalError();
+  }
 
   originPost.sharesCount += 1;
 
   await ctx.store.deferredUpsert(originPost);
 
-  // TODO add implementation
-  // const activity = await setActivity({
-  //   account: callerAccount,
-  //   post: originPost,
-  //   syntheticEventName: getSyntheticEventName(EventName.PostShared, originPost),
-  //   ctx
-  // });
+  const activity = await setActivity({
+    account: callerAccount,
+    post: originPost,
+    syntheticEventName: getSyntheticEventName(EventName.PostShared, originPost),
+    ctx,
+    eventData
+  });
 
-  // if (!activity) {
-  //   new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
-  //   throw new CommonCriticalError();
-  // }
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
+    throw new CommonCriticalError();
+  }
 
   // TODO add implementation
   // if (

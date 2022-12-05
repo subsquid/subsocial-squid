@@ -1,14 +1,15 @@
-import { Post, Activity } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Post, Activity, Space } from '../../../model';
+import { Ctx } from '../../../processor';
 import {
   getAggregationCount,
   updateAggregatedStatus
 } from './aggregationUtils';
+import { getPostOwnerId } from './common';
 
 type InsertActivityForPostSharedParams = {
   post: Post;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForPostShared(
@@ -17,30 +18,30 @@ export async function insertActivityForPostShared(
   const { activity, post, ctx } = params;
 
   activity.post = post;
-  activity.space = post.space;
+  activity.space =
+    post.space && post.space.id
+      ? await ctx.store.get(Space, post.space.id, false)
+      : null;
 
-  let owner = post.ownedByAccount; // Regular Post
-  if (post.rootPost) {
-    owner = post.rootPost.ownedByAccount; // Comment Post
-  } else if (post.parentPost) {
-    owner = post.parentPost.ownedByAccount; // Reply Post
-  }
+  const ownerId = await getPostOwnerId(post, ctx);
 
-  activity.aggregated = activity.account.id !== owner.id;
-  activity.aggCount = BigInt(
-    await getAggregationCount({
-      eventName: activity.event,
-      account: activity.account,
-      post,
-      ctx
-    })
-  );
+  activity.aggregated = activity.account.id !== ownerId;
 
-  await updateAggregatedStatus({
-    eventName: activity.event,
-    post,
-    ctx
-  });
+  // TODO - add implementation
+  // activity.aggCount = BigInt(
+  //   await getAggregationCount({
+  //     eventName: activity.event,
+  //     account: activity.account,
+  //     post,
+  //     ctx
+  //   })
+  // );
+  //
+  // await updateAggregatedStatus({
+  //   eventName: activity.event,
+  //   post,
+  //   ctx
+  // });
 
   return activity;
 }

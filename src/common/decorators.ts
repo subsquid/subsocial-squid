@@ -80,6 +80,8 @@ export function getSpacePermissionsDecorated(
     spaceOwner: getSpacePermissionsTpl()
   };
 
+  if (!permissionsSrc) return res;
+
   for (const permSection in permissionsSrc) {
     if (!permissionsSrc[permSection as keyof v13.SpacePermissions]) continue;
     for (const srcPermItem of permissionsSrc[

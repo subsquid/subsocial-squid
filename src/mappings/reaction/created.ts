@@ -15,85 +15,71 @@ import {
   UnknownVersionError
 } from '../../common/errors';
 import { getReactionKindFromCall, ensureReaction } from './common';
-
-type ReactionEvent = {
-  accountId: string;
-  postId: string;
-  reactionId: string;
-  reactionKind: ReactionKind;
-};
-
-function getPostReactionCreatedEvent(
-  ctx: EventHandlerContext
-): ReactionEvent | null {
-  const event = new ReactionsPostReactionCreatedEvent(ctx);
-
-  const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
-  return {
-    accountId: addressSs58ToString(accountId),
-    postId: postId.toString(),
-    reactionId: reactionId.toString(),
-    reactionKind: ReactionKind[reactionKind.__kind]
-  };
-
-  throw new UnknownVersionError(event.constructor.name);
-}
+import { Ctx } from '../../processor';
+import { PostReactionCreatedData } from '../../common/types';
 
 export async function postReactionCreated(
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: PostReactionCreatedData
 ): Promise<void> {
-  printEventLog(ctx);
-  const event = getPostReactionCreatedEvent(ctx);
-  if (!event) return;
-
-  const { accountId, postId, reactionId, reactionKind } = event;
-
-  // @ts-ignore
-  const account = await ensureAccount(accountId, ctx);
+  const { postId, reactionId } = eventData;
 
   const reaction = await ensureReaction({
-    account,
-    postId,
-    reactionId,
-    reactionKind,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!reaction) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    new EntityProvideFailWarning(Reaction, reactionId, ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  await ctx.store.save<Reaction>(reaction);
+  await ctx.store.deferredUpsert(reaction);
 
-  const { post } = reaction;
+  const postInst = await ctx.store.get(Post, postId, false);
+
+  if (!postInst) {
+    new EntityProvideFailWarning(Post, postId, ctx, eventData);
+    throw new CommonCriticalError();
+  }
 
   if (reaction.kind === ReactionKind.Upvote) {
-    post.upvotesCount = !post.upvotesCount ? 1 : post.upvotesCount + 1;
+    postInst.upvotesCount = !postInst.upvotesCount
+      ? 1
+      : postInst.upvotesCount + 1;
   } else if (reaction.kind === ReactionKind.Downvote) {
-    post.downvotesCount = !post.downvotesCount ? 1 : post.downvotesCount + 1;
+    postInst.downvotesCount = !postInst.downvotesCount
+      ? 1
+      : postInst.downvotesCount + 1;
   }
-  post.reactionsCount = !post.reactionsCount ? 1 : post.reactionsCount + 1;
+  postInst.reactionsCount = !postInst.reactionsCount
+    ? 1
+    : postInst.reactionsCount + 1;
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.deferredUpsert(postInst);
 
+  const accountInst = await ensureAccount(
+    eventData.forced && eventData.forcedData
+      ? eventData.forcedData.account
+      : eventData.accountId,
+    ctx
+  );
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(
       EventName.PostReactionCreated,
-      post
+      postInst
     ),
+    account: accountInst,
+    post: postInst,
     reaction,
-    account,
-    post,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
-    return;
   }
-  await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
+  // TODO - add implementation
+  // await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
 }

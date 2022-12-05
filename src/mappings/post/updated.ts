@@ -88,11 +88,11 @@ export async function postUpdated(
     ctx
   });
 
-  // TODO Implementation is needed
-  // await setActivity({
-  //   syntheticEventName: getSyntheticEventName(EventName.PostUpdated, post),
-  //   account: addressSs58ToString(accountId),
-  //   post,
-  //   ctx
-  // });
+  await setActivity({
+    syntheticEventName: getSyntheticEventName(EventName.PostUpdated, post),
+    account: eventData.accountId,
+    post,
+    ctx,
+    eventData
+  });
 }

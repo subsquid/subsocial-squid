@@ -25,7 +25,13 @@ import {
   SpaceUpdatedData,
   PostMovedData,
   AccountFollowedData,
-  AccountUnfollowedData
+  AccountUnfollowedData,
+  SpaceFollowedData,
+  SpaceUnfollowedData,
+  ProfileUpdatedData,
+  PostReactionCreatedData,
+  PostReactionUpdatedData,
+  PostReactionDeletedData
 } from './types';
 import argsParsers from './argsParsers';
 import { StorageDataManager } from '../storage/storageDataManager';
@@ -55,6 +61,18 @@ type EventDataType<T> = T extends EventName.SpaceCreated
   ? AccountFollowedData
   : T extends EventName.AccountUnfollowed
   ? AccountUnfollowedData
+  : T extends EventName.SpaceFollowed
+  ? SpaceFollowedData
+  : T extends EventName.SpaceUnfollowed
+  ? SpaceUnfollowedData
+  : T extends EventName.ProfileUpdated
+  ? ProfileUpdatedData
+  : T extends EventName.PostReactionCreated
+  ? PostReactionCreatedData
+  : T extends EventName.PostReactionUpdated
+  ? PostReactionUpdatedData
+  : T extends EventName.PostReactionDeleted
+  ? PostReactionDeletedData
   : never;
 
 export class ParsedEventsDataScope {

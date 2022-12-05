@@ -94,7 +94,7 @@ export async function resolveSpacesDataNative(
       })
   );
 
-  console.dir(ipfsContent, { depth: null });
+  // console.dir(ipfsContent, { depth: null });
 
   // TODO fetch content from Subsocial API by method api.ipfs.getContentArrayFromIpfs(cids)
 
@@ -130,14 +130,14 @@ export async function resolveSpacesData(
   for (const cid in contentData) {
     if (!contentIds.has(cid)) continue;
     const structId = contentIds.get(cid)!;
-    console.dir(
-      {
-        ...spacesData.get(structId),
-        // @ts-ignore
-        content: contentData[cid]
-      },
-      { depth: null }
-    );
+    // console.dir(
+    //   {
+    //     ...spacesData.get(structId),
+    //     // @ts-ignore
+    //     content: contentData[cid]
+    //   },
+    //   { depth: null }
+    // );
     spacesData.set(structId, {
       ...spacesData.get(structId),
       // @ts-ignore

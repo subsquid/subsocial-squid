@@ -123,15 +123,15 @@ export const ensurePost = async ({
       ctx
     );
     post.createdAtBlock = BigInt(eventData.forcedData.block.toString());
-    post.createdAtTime = new Date(eventData.forcedData.time);
-    post.createdOnDay = getDateWithoutTime(new Date(eventData.forcedData.time));
+    post.createdAtTime = eventData.forcedData.time;
+    post.createdOnDay = getDateWithoutTime(eventData.forcedData.time);
   } else {
     post.hidden = false;
     post.ownedByAccount = signerAccountInst;
     post.createdByAccount = signerAccountInst;
     post.createdAtBlock = BigInt(eventData.blockNumber.toString());
-    post.createdAtTime = new Date(eventData.timestamp);
-    post.createdOnDay = getDateWithoutTime(new Date(eventData.timestamp));
+    post.createdAtTime = eventData.timestamp;
+    post.createdOnDay = getDateWithoutTime(eventData.timestamp);
   }
 
   post.hiddenRepliesCount = 0;

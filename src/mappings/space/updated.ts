@@ -7,6 +7,7 @@ import {
 import { Ctx } from '../../processor';
 import { SpaceUpdatedData } from '../../common/types';
 import { StorageDataManager } from '../../storage/storageDataManager';
+import { setActivity } from "../activity";
 
 export async function spaceUpdated(
   ctx: Ctx,
@@ -28,7 +29,7 @@ export async function spaceUpdated(
     throw new CommonCriticalError();
   }
 
-  space.updatedAtTime = new Date(eventData.timestamp);
+  space.updatedAtTime = eventData.timestamp;
 
   space.updatedAtBlock = BigInt(eventData.blockNumber);
 
@@ -45,12 +46,12 @@ export async function spaceUpdated(
 
   await ctx.store.deferredUpsert(space);
 
-  // TODO Implementation
-  // await setActivity({
-  //   account: addressSs58ToString(accountId),
-  //   space,
-  //   ctx
-  // });
+  await setActivity({
+    account: eventData.accountId,
+    space,
+    ctx,
+    eventData
+  });
 }
 //
 // export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {

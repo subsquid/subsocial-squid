@@ -167,6 +167,14 @@ export interface SpacePermissionsScope {
 
 export interface CreateSpaceCallParsedData extends ContentSrcDecorated {
   permissions: SpacePermissionsScope;
+  forced: boolean;
+  forcedData: {
+    account: string;
+    block: number;
+    time: Date;
+    owner: string;
+    hidden: boolean;
+  } | null;
 }
 export interface CreatedSpaceEventParsedData {
   accountId: string;
@@ -201,6 +209,12 @@ export type SpaceUpdatedData = EventData &
 export interface PostReactionCreateCallParsedData {
   postId: string;
   reactionKind: ReactionKind;
+  forced: boolean;
+  forcedData: {
+    account: string;
+    block: number;
+    time: Date;
+  } | null;
 }
 
 export interface PostReactionCreatedEventParsedData {
@@ -242,6 +256,10 @@ export type PostReactionUpdatedData = EventData &
 export interface PostReactionDeleteCallParsedData {
   postId: string;
   reactionId: string;
+  forced: boolean;
+  forcedData: {
+    account: string;
+  } | null;
 }
 
 export interface PostReactionDeletedEventParsedData {
@@ -337,5 +355,5 @@ export type PostWithDetails = Omit<PostWithAllDetails, 'post'> & {
 
 export type EventContext = EventHandlerContext<
   Store,
-  { event: { args: true; call: true } }
+  { event: { args: true; call: true; indexInBlock: true } }
 >;

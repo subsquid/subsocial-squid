@@ -1,4 +1,4 @@
 export enum ReactionKind {
-  Upvote = "Upvote",
-  Downvote = "Downvote",
+    Upvote = "Upvote",
+    Downvote = "Downvote",
 }

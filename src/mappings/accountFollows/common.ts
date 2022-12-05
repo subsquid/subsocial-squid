@@ -23,16 +23,14 @@ export async function handleEvent(
   const followerAccount = await ensureAccount(followerId, ctx);
   const followingAccount = await ensureAccount(followingId, ctx);
 
-  // TODO implementation is needed
-  const activity = new Activity({ id: '1' });
+  const activity = await setActivity({
+    account: followerAccount,
+    followingAccount,
+    ctx,
+    eventData
+  });
 
-  // const activity = await setActivity({
-  //   account: followerAccount,
-  //   followingAccount,
-  //   ctx
-  // });
-  //
-  // if (!activity) return;
+  if (!activity) return;
 
   await processAccountFollowingUnfollowingRelations({
     followerAccount,

@@ -19,54 +19,54 @@ import {
 } from '../notification';
 import { EntityProvideFailWarning } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
-import { Ctx } from '../../processor';
 import { EventData } from '../../common/types';
+import { Ctx } from '../../processor';
 
 export async function handleEvent(
   followerId: string,
   spaceId: string,
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: EventData
 ): Promise<void> {
-  const { name: eventName } = ctx.event;
-  // @ts-ignore
+  const { name: eventName } = eventData;
   const followerAccount = await ensureAccount(followerId, ctx);
   const eventNameDecorated = decorateEventName(eventName);
 
   let { followingSpacesCount } = followerAccount;
 
-  const space = await ctx.store.get(Space, {
-    where: { id: spaceId },
-    relations: { ownedByAccount: true }
-  });
+  const space = await ctx.store.get(Space, spaceId, false);
   if (!space) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Space, spaceId, ctx);
+    new EntityProvideFailWarning(Space, spaceId, ctx, eventData);
     return;
   }
-  // @ts-ignore
-  await processSpaceFollowingUnfollowingRelations(followerAccount, space, ctx);
+  await processSpaceFollowingUnfollowingRelations(
+    followerAccount,
+    space,
+    ctx,
+    eventData
+  );
 
   const activity = await setActivity({
     account: followerAccount,
     ctx,
-    space
+    space,
+    eventData
   });
   if (!activity) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     return;
   }
-
-  if (eventNameDecorated === EventName.SpaceFollowed) {
-    await addNotificationForAccount(space.ownedByAccount, activity, ctx);
-    followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
-  } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
-    await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
-    await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
-    followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
-  }
+  //
+  // if (eventNameDecorated === EventName.SpaceFollowed) {
+  //   await addNotificationForAccount(space.ownedByAccount, activity, ctx);
+  //   followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
+  // } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
+  //   await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
+  //   await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
+  //   followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
+  // }
   followerAccount.followingSpacesCount = followingSpacesCount;
-  await ctx.store.save<Account>(followerAccount);
+  await ctx.store.deferredUpsert(followerAccount);
 }
 
 export async function processSpaceFollowingUnfollowingRelations(

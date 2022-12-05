@@ -37,7 +37,10 @@ import { StorageDataManager } from './storage/storageDataManager';
 import { EntityRelationsManager } from './common/entityRelationsManager';
 import { handleSpaces } from './mappings/space';
 import { handlePosts } from './mappings/post';
-import { handleAccountFollowing } from "./mappings/accountFollows";
+import { handleAccountFollowing } from './mappings/accountFollows';
+import { handleProfiles } from './mappings/account';
+import { handleSpacesFollowing } from './mappings/spaceFollows';
+import { handlePostReactions } from "./mappings/reaction";
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -50,43 +53,43 @@ export const processor = new SubstrateBatchProcessor()
   .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Posts.PostUpdated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Posts.PostMoved', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Spaces.SpaceCreated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Spaces.SpaceUpdated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Reactions.PostReactionCreated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Reactions.PostReactionUpdated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Reactions.PostReactionDeleted', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('Profiles.ProfileUpdated', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('SpaceFollows.SpaceFollowed', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('SpaceFollows.SpaceUnfollowed', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('AccountFollows.AccountFollowed', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('AccountFollows.AccountUnfollowed', {
-    data: { event: { args: true, call: true } }
+    data: { event: { args: true, call: true, indexInBlock: true } }
   } as const);
 
 if (!envConfig.chainNode) {
@@ -131,7 +134,20 @@ processor.run(new TypeormDatabase(), async (ctx) => {
     {
       entityClass: Post,
       propName: 'post',
-      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+      relations: [
+        { entityClass: Account, propName: 'ownedByAccount' },
+        {
+          entityClass: Post,
+          propName: 'parentPost',
+          relations: [{ entityClass: Account, propName: 'ownedByAccount' }] // TODO check do we really need this nested relations
+        },
+        {
+          entityClass: Post,
+          propName: 'rootPost',
+          relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+        },
+        { entityClass: Space, propName: 'space' }
+      ]
     }
   ]);
 
@@ -140,6 +156,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
    * add IDs to load queue.
    */
   const parsedEvents = getParsedEventsData(ctx);
+
   let idsForLoadPrev = new Map(
     [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
   );
@@ -181,8 +198,11 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   // await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 
   await handleSpaces(ctx, parsedEvents);
-  await handlePosts(ctx, parsedEvents);
+  await handleProfiles(ctx, parsedEvents);
   await handleAccountFollowing(ctx, parsedEvents);
+  await handleSpacesFollowing(ctx, parsedEvents);
+  await handlePosts(ctx, parsedEvents);
+  await handlePostReactions(ctx, parsedEvents);
 });
 
 // processor.addEventHandler('Posts.PostCreated', postCreated);

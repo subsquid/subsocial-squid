@@ -151,17 +151,29 @@ export const ensureSpace = async ({
   }
 
   const spaceInst = new Space();
+
+  const signerAccountInst = await ensureAccount(eventData.accountId, ctx);
+
+  if (eventData.forced && eventData.forcedData) {
+    spaceInst.hidden = eventData.forcedData.hidden;
+    spaceInst.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx);
+    spaceInst.createdByAccount = await ensureAccount(
+      eventData.forcedData.account,
+      ctx
+    );
+    spaceInst.createdAtBlock = BigInt(eventData.forcedData.block.toString());
+    spaceInst.createdAtTime = eventData.forcedData.time;
+    spaceInst.createdOnDay = getDateWithoutTime(eventData.forcedData.time);
+  } else {
+    spaceInst.hidden = false;
+    spaceInst.ownedByAccount = signerAccountInst;
+    spaceInst.createdByAccount = signerAccountInst;
+    spaceInst.createdAtBlock = BigInt(eventData.blockNumber.toString());
+    spaceInst.createdAtTime = eventData.timestamp;
+    spaceInst.createdOnDay = getDateWithoutTime(eventData.timestamp);
+  }
+
   spaceInst.id = spaceId;
-
-  const createdByAccount = await ensureAccount(eventData.accountId, ctx);
-
-  spaceInst.createdByAccount = createdByAccount;
-  spaceInst.createdAtBlock = BigInt(eventData.blockNumber.toString());
-  spaceInst.createdAtTime = new Date(eventData.timestamp);
-  spaceInst.createdOnDay = getDateWithoutTime(new Date(eventData.timestamp));
-  spaceInst.hidden = false;
-
-  spaceInst.ownedByAccount = createdByAccount;
   spaceInst.content = eventData.ipfsSrc;
   spaceInst.handle = spaceStorageData.handle;
 

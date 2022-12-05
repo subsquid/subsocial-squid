@@ -1,12 +1,12 @@
 import { Activity, Space } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Ctx } from '../../../processor';
 import { updateAggregatedStatus } from './aggregationUtils';
 import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
 type InsertActivityForSpaceFollowedUnfollowedParams = {
   space: Space;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForSpaceFollowedUnfollowed(
@@ -19,10 +19,11 @@ export async function insertActivityForSpaceFollowedUnfollowed(
   activity.aggCount = BigInt(
     ensurePositiveOrZeroValue(space.followersCount - 1)
   );
-  await updateAggregatedStatus({
-    eventName: activity.event,
-    space,
-    ctx
-  });
+  // TODO - add implementation
+  // await updateAggregatedStatus({
+  //   eventName: activity.event,
+  //   space,
+  //   ctx
+  // });
   return activity;
 }

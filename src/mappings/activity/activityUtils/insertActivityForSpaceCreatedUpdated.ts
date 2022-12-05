@@ -1,11 +1,11 @@
 import { Activity, Space } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Ctx } from '../../../processor';
 import { updateAggregatedStatus } from './aggregationUtils';
 
 type InsertActivityForSpaceCreatedUpdatedParams = {
   space: Space;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForSpaceCreatedUpdated(
@@ -17,11 +17,12 @@ export async function insertActivityForSpaceCreatedUpdated(
   activity.aggregated = true;
   activity.aggCount = BigInt(0);
 
-  await updateAggregatedStatus({
-    eventName: activity.event,
-    space,
-    ctx
-  });
+  // TODO - add implementation 
+  // await updateAggregatedStatus({
+  //   eventName: activity.event,
+  //   space,
+  //   ctx
+  // });
 
   return activity;
 }

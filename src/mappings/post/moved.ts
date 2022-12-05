@@ -90,21 +90,21 @@ export async function postMoved(
 
   // await updateSpaceForPostChildren(post, newSpaceInst, ctx);
 
-  // TODO add implementation
-  // const activity = await setActivity({
-  //   syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
-  //   spacePrev: prevSpaceInst,
-  //   account,
-  //   post,
-  //   ctx
-  // });
+  const activity = await setActivity({
+    syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
+    spacePrev: await ctx.store.get(Space, eventData.toSpace, false),
+    account,
+    post,
+    ctx,
+    eventData
+  });
 
-  // if (!activity) {
-  //   // @ts-ignore
-  //   new EntityProvideFailWarning(Activity, 'new', ctx);
-  //   throw new CommonCriticalError();
-  // }
+  if (!activity) {
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
+    throw new CommonCriticalError();
+  }
 
+  // TODO - add implementation
   // await addPostToFeeds(post, activity, ctx);
   //
   // if (prevSpaceInst)

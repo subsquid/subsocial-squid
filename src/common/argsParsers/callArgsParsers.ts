@@ -6,12 +6,14 @@ import {
   ProfilesSetProfileCall,
   ReactionsCreatePostReactionCall,
   ReactionsDeletePostReactionCall,
+  ReactionsForceCreatePostReactionCall,
+  ReactionsForceDeletePostReactionCall,
   ReactionsUpdatePostReactionCall,
   SpacesCreateSpaceCall,
   SpacesForceCreateSpaceCall,
   SpacesUpdateSpaceCall
 } from '../../types/generated/calls';
-import { PostKind } from '../../model';
+import { PostKind, ReactionKind } from '../../model';
 
 import {
   CreatePostCallParsedData,
@@ -71,9 +73,9 @@ export function parsePostCreatedCallArgs(
         forcedData: {
           account: addressSs58ToString(created.account),
           block: created.block,
-          time: new Date(created.time.toString()),
+          time: new Date(Number.parseInt(created.time.toString())),
           owner: addressSs58ToString(owner),
-          hidden: hidden
+          hidden
         }
       };
       break;
@@ -154,22 +156,48 @@ export function parseSpaceCreateCallArgs(
 ): CreateSpaceCallParsedData {
   let callInst: SpacesCreateSpaceCall | SpacesForceCreateSpaceCall | null =
     null;
+  let response: CreateSpaceCallParsedData = {
+    ipfsSrc: null,
+    otherSrc: null,
+    none: false,
+    forced: false,
+    forcedData: null,
+    permissions: getSpacePermissionsDecorated()
+  };
 
   switch (ctx.event.call!.name) {
-    case 'Spaces.force_create_space':
+    case 'Spaces.force_create_space': {
       callInst = new SpacesForceCreateSpaceCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+      const { spaceId, created, owner, hidden, content, permissionsOpt } =
+        callInst.asV13;
+      response = {
+        ...response,
+        ...getContentSrcDecorated(content),
+        forced: true,
+        forcedData: {
+          account: addressSs58ToString(created.account),
+          block: created.block,
+          time: new Date(Number.parseInt(created.time.toString())),
+          owner: addressSs58ToString(owner),
+          hidden
+        },
+        permissions: getSpacePermissionsDecorated(permissionsOpt)
+      };
       break;
-    default:
+    }
+    default: {
       callInst = new SpacesCreateSpaceCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+      const { content, permissionsOpt } = callInst.asV13;
+      response = {
+        ...response,
+        ...getContentSrcDecorated(content),
+        permissions: getSpacePermissionsDecorated(permissionsOpt)
+      };
+    }
   }
-  if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
-
-  const { content, permissionsOpt } = callInst.asV13;
-
-  return {
-    ...getContentSrcDecorated(content),
-    permissions: getSpacePermissionsDecorated(permissionsOpt)
-  };
+  return response;
 }
 
 export function parseSpaceUpdateCallArgs(
@@ -195,15 +223,50 @@ export function parseSpaceUpdateCallArgs(
 export function parsePostReactionCreateCallArgs(
   ctx: EventContext
 ): PostReactionCreateCallParsedData {
-  const callInst: ReactionsCreatePostReactionCall =
-    new ReactionsCreatePostReactionCall(ctx, ctx.event.call!);
+  let callInst:
+    | ReactionsCreatePostReactionCall
+    | ReactionsForceCreatePostReactionCall
+    | null = null;
 
-  const { postId, kind } = callInst.asV13;
-
-  return {
-    reactionKind: getReactionKindDecorated(kind),
-    postId: postId.toString()
+  let response: PostReactionCreateCallParsedData = {
+    forced: false,
+    forcedData: null,
+    reactionKind: ReactionKind.Upvote,
+    postId: ''
   };
+
+  switch (ctx.event.call!.name) {
+    case 'Reactions.force_create_post_reaction': {
+      callInst = new ReactionsForceCreatePostReactionCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+
+      const { who, postId, reactionId, reactionKind, created } = callInst.asV13;
+      response = {
+        ...response,
+        forced: true,
+        forcedData: {
+          account: addressSs58ToString(created.account),
+          block: created.block,
+          time: new Date(Number.parseInt(created.time.toString()))
+        },
+        reactionKind: getReactionKindDecorated(reactionKind),
+        postId: postId.toString()
+      };
+      break;
+    }
+    default: {
+      callInst = new ReactionsCreatePostReactionCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+      const { postId, kind } = callInst.asV13;
+      response = {
+        ...response,
+        reactionKind: getReactionKindDecorated(kind),
+        postId: postId.toString()
+      };
+    }
+  }
+
+  return response;
 }
 
 export function parsePostReactionUpdateCallArgs(
@@ -224,13 +287,47 @@ export function parsePostReactionUpdateCallArgs(
 export function parsePostReactionDeleteCallArgs(
   ctx: EventContext
 ): PostReactionDeleteCallParsedData {
-  const callInst: ReactionsDeletePostReactionCall =
-    new ReactionsDeletePostReactionCall(ctx, ctx.event.call!);
+  let callInst:
+    | ReactionsDeletePostReactionCall
+    | ReactionsForceDeletePostReactionCall
+    | null = null;
 
-  const { postId, reactionId } = callInst.asV13;
-
-  return {
-    postId: postId.toString(),
-    reactionId: reactionId.toString()
+  let response: PostReactionDeleteCallParsedData = {
+    forced: false,
+    forcedData: null,
+    reactionId: '',
+    postId: ''
   };
+
+  switch (ctx.event.call!.name) {
+    case 'Reactions.force_delete_post_reaction': {
+      callInst = new ReactionsForceDeletePostReactionCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+
+      const { who, postId, reactionId } = callInst.asV13;
+      response = {
+        ...response,
+        forced: true,
+        forcedData: {
+          account: addressSs58ToString(who)
+        },
+        reactionId: reactionId.toString(),
+        postId: postId.toString()
+      };
+      break;
+    }
+    default: {
+      callInst = new ReactionsDeletePostReactionCall(ctx, ctx.event.call!);
+      if (!callInst) throw Error(`Unexpected call ${ctx.event.call!.name}`);
+
+      const { postId, reactionId } = callInst.asV13;
+      response = {
+        ...response,
+        reactionId: reactionId.toString(),
+        postId: postId.toString()
+      };
+    }
+  }
+
+  return response;
 }

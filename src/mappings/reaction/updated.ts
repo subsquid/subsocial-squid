@@ -16,69 +16,43 @@ import {
   UnknownVersionError
 } from '../../common/errors';
 import { getReactionKindFromCall } from './common';
-
-type ReactionEvent = {
-  accountId: string;
-  postId: string;
-  reactionId: string;
-  reactionKind: ReactionKind;
-};
-
-function getPostReactionUpdatedEvent(
-  ctx: EventHandlerContext
-): ReactionEvent | null {
-  const event = new ReactionsPostReactionUpdatedEvent(ctx);
-  const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
-  return {
-    accountId: addressSs58ToString(accountId),
-    postId: postId.toString(),
-    reactionId: reactionId.toString(),
-    reactionKind: ReactionKind[reactionKind.__kind]
-  };
-  throw new UnknownVersionError(event.constructor.name);
-}
+import { Ctx } from '../../processor';
+import { PostReactionUpdatedData } from '../../common/types';
 
 export async function postReactionUpdated(
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: PostReactionUpdatedData
 ): Promise<void> {
-  printEventLog(ctx);
-  const event = getPostReactionUpdatedEvent(ctx);
-  if (!event) return;
+  const {
+    accountId,
+    reactionId,
+    postId,
+    newReactionKind,
+    timestamp,
+    blockNumber
+  } = eventData;
 
-  const { accountId, reactionId, reactionKind } = event;
-
-  // @ts-ignore
   const account = await ensureAccount(accountId, ctx);
 
-  const reaction = await ctx.store.get(Reaction, {
-    where: { id: reactionId },
-    relations: {
-      post: {
-        ownedByAccount: true,
-        space: true,
-        parentPost: {
-          ownedByAccount: true
-        },
-        rootPost: {
-          ownedByAccount: true
-        }
-      },
-      account: true
-    }
-  });
+  const reaction = await ctx.store.get(Reaction, reactionId, false);
 
   if (!reaction) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    new EntityProvideFailWarning(Reaction, reactionId, ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  reaction.kind = reactionKind as unknown as ReactionKind;
-  reaction.updatedAtTime = new Date(ctx.block.timestamp);
-  reaction.updatedAtBlock = BigInt(ctx.block.height.toString());
-  await ctx.store.save<Reaction>(reaction);
+  reaction.kind = newReactionKind;
+  reaction.updatedAtTime = timestamp;
+  reaction.updatedAtBlock = BigInt(blockNumber.toString());
 
-  const { post } = reaction;
+  await ctx.store.deferredUpsert(reaction);
+
+  const post = await ctx.store.get(Post, postId, false);
+
+  if (!post) {
+    new EntityProvideFailWarning(Post, postId, ctx, eventData);
+    throw new CommonCriticalError();
+  }
 
   if (reaction.kind === ReactionKind.Upvote) {
     post.upvotesCount += 1;
@@ -88,7 +62,7 @@ export async function postReactionUpdated(
     post.upvotesCount = ensurePositiveOrZeroValue(post.upvotesCount - 1);
   }
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.deferredUpsert(post);
 
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(
@@ -98,13 +72,83 @@ export async function postReactionUpdated(
     account,
     reaction,
     post,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) {
-    // @ts-ignore
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
-  await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
+  // TODO - add implementation
+  // await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
 }
+
+//
+// export async function postReactionUpdated(
+//   ctx: Ctx,
+//   eventData: PostReactionUpdatedData
+// ): Promise<void> {
+//
+//   const { accountId, reactionId, postId, newReactionKind } = eventData;
+//
+//   const account = await ensureAccount(accountId, ctx);
+//
+//   const reaction = await ctx.store.get(Reaction, {
+//     where: { id: reactionId },
+//     relations: {
+//       post: {
+//         ownedByAccount: true,
+//         space: true,
+//         parentPost: {
+//           ownedByAccount: true
+//         },
+//         rootPost: {
+//           ownedByAccount: true
+//         }
+//       },
+//       account: true
+//     }
+//   });
+//
+//   if (!reaction) {
+//     // @ts-ignore
+//     new EntityProvideFailWarning(Reaction, reactionId, ctx);
+//     throw new CommonCriticalError();
+//   }
+//
+//   reaction.kind = reactionKind as unknown as ReactionKind;
+//   reaction.updatedAtTime = new Date(ctx.block.timestamp);
+//   reaction.updatedAtBlock = BigInt(ctx.block.height.toString());
+//   await ctx.store.save<Reaction>(reaction);
+//
+//   const { post } = reaction;
+//
+//   if (reaction.kind === ReactionKind.Upvote) {
+//     post.upvotesCount += 1;
+//     post.downvotesCount = ensurePositiveOrZeroValue(post.downvotesCount - 1);
+//   } else if (reaction.kind === ReactionKind.Downvote) {
+//     post.downvotesCount += 1;
+//     post.upvotesCount = ensurePositiveOrZeroValue(post.upvotesCount - 1);
+//   }
+//
+//   await ctx.store.save<Post>(post);
+//
+//   const activity = await setActivity({
+//     syntheticEventName: getSyntheticEventName(
+//       EventName.PostReactionCreated,
+//       post
+//     ),
+//     account,
+//     reaction,
+//     post,
+//     ctx
+//   });
+//
+//   if (!activity) {
+//     // @ts-ignore
+//     new EntityProvideFailWarning(Activity, 'new', ctx);
+//     throw new CommonCriticalError();
+//   }
+//   await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
+// }
