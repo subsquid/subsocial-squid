@@ -126,7 +126,7 @@ export class EntityRelationsManager {
       [...this.context.store.idsForDeferredLoad.entries()].map((i) => i)
     );
 
-    await this.context.store.load();
+    await this.context.store.load(500);
 
     await this.loadEntitiesByRelationsStackAll(idsForLoadPrev, index + 1);
   }

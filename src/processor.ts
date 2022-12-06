@@ -163,7 +163,7 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   /**
    * Load entities from DB to the cache by collected IDs from events
    */
-  await ctx.store.load();
+  await ctx.store.load(500);
 
   /**
    * Load all necessary relations for all loaded entities in the previous load
