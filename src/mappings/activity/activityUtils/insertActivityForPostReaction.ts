@@ -34,12 +34,11 @@ export async function insertActivityForPostReaction(
   activity.aggregated = activity.account.id !== ownerId;
   activity.aggCount = BigInt(ensurePositiveOrZeroValue(aggCountNum));
 
-  // TODO - add implementation
-  // await updateAggregatedStatus({
-  //   eventName,
-  //   post,
-  //   ctx
-  // });
+  await updateAggregatedStatus({
+    eventName,
+    post,
+    ctx
+  });
 
   return activity;
 }

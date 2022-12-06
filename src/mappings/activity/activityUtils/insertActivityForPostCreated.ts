@@ -55,20 +55,19 @@ export async function insertActivityForPostCreated(
         : null;
     activity.aggregated = activity.account.id !== ownerId;
 
-    // TODO - add implementation
-    // activity.aggCount = BigInt(
-    //   await getAggregationCount({
-    //     eventName: activity.event,
-    //     account: activity.account,
-    //     post,
-    //     ctx
-    //   })
-    // );
-    // await updateAggregatedStatus({
-    //   eventName: activity.event,
-    //   post,
-    //   ctx
-    // });
+    activity.aggCount = BigInt(
+      await getAggregationCount({
+        eventName: activity.event,
+        account: activity.account,
+        post,
+        ctx
+      })
+    );
+    await updateAggregatedStatus({
+      eventName: activity.event,
+      post,
+      ctx
+    });
   }
 
   return activity;

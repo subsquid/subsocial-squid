@@ -19,11 +19,10 @@ export async function insertActivityForSpaceFollowedUnfollowed(
   activity.aggCount = BigInt(
     ensurePositiveOrZeroValue(space.followersCount - 1)
   );
-  // TODO - add implementation
-  // await updateAggregatedStatus({
-  //   eventName: activity.event,
-  //   space,
-  //   ctx
-  // });
+  await updateAggregatedStatus({
+    eventName: activity.event,
+    space,
+    ctx
+  });
   return activity;
 }

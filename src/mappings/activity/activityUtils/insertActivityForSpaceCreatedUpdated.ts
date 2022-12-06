@@ -17,12 +17,11 @@ export async function insertActivityForSpaceCreatedUpdated(
   activity.aggregated = true;
   activity.aggCount = BigInt(0);
 
-  // TODO - add implementation 
-  // await updateAggregatedStatus({
-  //   eventName: activity.event,
-  //   space,
-  //   ctx
-  // });
+  await updateAggregatedStatus({
+    eventName: activity.event,
+    space,
+    ctx
+  });
 
   return activity;
 }

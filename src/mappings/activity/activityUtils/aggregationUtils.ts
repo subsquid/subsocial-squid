@@ -3,12 +3,13 @@ import { Not } from 'typeorm';
 import { FindManyOptions } from '@subsquid/typeorm-store/src/store';
 import { Account, Space, Post, Activity, EventName } from '../../../model';
 import { EventHandlerContext } from '../../../common/contexts';
+import { Ctx } from '../../../processor';
 
 type GetAggregationCountParams = {
   eventName: EventName;
   post: Post;
   account: Account;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 type UpdateAggregatedStatusParams = {
@@ -16,7 +17,7 @@ type UpdateAggregatedStatusParams = {
   post?: Post;
   space?: Space;
   followingAccount?: Account;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function getAggregationCount(
@@ -30,10 +31,6 @@ export async function getAggregationCount(
       account: {
         id: Not(account.id)
       }
-    },
-    relations: {
-      account: true,
-      post: true
     }
   });
 
@@ -63,10 +60,10 @@ export async function updateAggregatedStatus(
         event,
         post: {
           id: post.id,
-          rootPost: post.rootPost,
-          parentPost: post.parentPost
+          rootPost: post.rootPost ? post.rootPost.id : null,
+          parentPost: post.parentPost ? post.parentPost.id : null
         }
-      },
+      }
     };
   }
   if (space) {
@@ -74,7 +71,7 @@ export async function updateAggregatedStatus(
       where: {
         event,
         space
-      },
+      }
     };
   }
   if (followingAccount) {
@@ -82,7 +79,7 @@ export async function updateAggregatedStatus(
       where: {
         event,
         followingAccount
-      },
+      }
     };
   }
   if (!findOptions) return;
@@ -97,12 +94,8 @@ export async function updateAggregatedStatus(
     activitiesUpdated.push(activityItem);
   }
 
-  await ctx.store.save<Activity>(activitiesUpdated);
+  await ctx.store.deferredUpsert(activitiesUpdated);
 }
-
-
-
-
 
 //
 // type GetAggregationCountParams = {

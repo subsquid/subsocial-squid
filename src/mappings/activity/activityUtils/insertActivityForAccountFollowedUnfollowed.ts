@@ -20,12 +20,11 @@ export async function insertActivityForAccountFollowedUnfollowed(
     ensurePositiveOrZeroValue(followingAccount.followersCount - 1)
   );
 
-  // TODO - add implementation
-  // await updateAggregatedStatus({
-  //   eventName: activity.event,
-  //   followingAccount,
-  //   ctx
-  // });
+  await updateAggregatedStatus({
+    eventName: activity.event,
+    followingAccount,
+    ctx
+  });
 
   return activity;
 }
