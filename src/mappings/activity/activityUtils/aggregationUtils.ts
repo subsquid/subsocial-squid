@@ -24,6 +24,7 @@ export async function getAggregationCount(
   params: GetAggregationCountParams
 ): Promise<number> {
   const { eventName, post, account, ctx } = params;
+
   const findResult = await ctx.store.find(Activity, {
     where: {
       event: eventName,
@@ -60,8 +61,12 @@ export async function updateAggregatedStatus(
         event,
         post: {
           id: post.id,
-          rootPost: post.rootPost ? post.rootPost.id : null,
-          parentPost: post.parentPost ? post.parentPost.id : null
+          rootPost: {
+            id: post.rootPost ? post.rootPost.id : null
+          },
+          parentPost: {
+            id: post.parentPost ? post.parentPost.id : null
+          }
         }
       }
     };
