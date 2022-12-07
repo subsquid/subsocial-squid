@@ -84,7 +84,7 @@ export type IpfsPostContentSummarized = IpfsPostContent & SummarizedContent;
 
 export type SpaceStorageData = {
   handle: string | null;
-  ipfsContent: IpfsSpaceContentSummarized | null;
+  // ipfsContent: IpfsSpaceContentSummarized | null;
 };
 export type PostStorageData = {
   ipfsContent: IpfsPostContentSummarized | null;

@@ -198,11 +198,11 @@ export async function resolveSpacesContentIPFS<T>(
       batchSize: 500,
       timeout: 7000,
       handler: async (cidsBatch) => {
-        // await getMany(cidsBatch);
         // @ts-ignore
         tmpRes = {
           ...tmpRes,
-          ...(await resolveSpaceIPFSContentByCid(cidsBatch))
+          ...(await getMany(cidsBatch))
+          // ...(await resolveSpaceIPFSContentByCid(cidsBatch))
         };
         await new Promise((res) => setTimeout(res, 2000));
       }

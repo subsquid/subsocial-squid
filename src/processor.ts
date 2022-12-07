@@ -50,7 +50,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -102,15 +102,17 @@ export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
 
 processor.run(new TypeormDatabase(), async (ctx) => {
-  ctx.log.child('sqd:processor').info(
-    `Batch size - ${ctx.blocks.length} [${
-      ctx.blocks.length > 0
-        ? `${ctx.blocks[0].header.height}/${
-            ctx.blocks[ctx.blocks.length - 1].header.height
-          }`
-        : '---'
-    }]`
-  );
+  ctx.log
+    .child('sqd:processor')
+    .info(
+      `Batch size - ${ctx.blocks.length} [${
+        ctx.blocks.length > 0
+          ? `${ctx.blocks[0].header.height}/${
+              ctx.blocks[ctx.blocks.length - 1].header.height
+            }`
+          : '---'
+      }]`
+    );
   const entityRelationsManager = EntityRelationsManager.getInstance(ctx);
 
   entityRelationsManager.setEntityRelationsForFetch(Post, [
@@ -166,6 +168,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
    */
   const parsedEvents = getParsedEventsData(ctx);
 
+  ctx.log.info('DONE :: getParsedEventsData');
+
   let idsForLoadPrev = new Map(
     [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
   );
@@ -174,11 +178,15 @@ processor.run(new TypeormDatabase(), async (ctx) => {
    */
   await ctx.store.load(500);
 
+  ctx.log.info('DONE :: load #1');
+
   /**
    * Load all necessary relations for all loaded entities in the previous load
    * by "idsForLoadPrev" and generated relations stack.
    */
   await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
+
+  ctx.log.info('DONE :: loadEntitiesByRelationsStackAll');
 
   /**
    * Load data from chain storage for required entities by collected IDs in
@@ -189,6 +197,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   await StorageDataManager.getInstance(ctx).fetchStorageDataByEventsData(
     parsedEvents
   );
+
+  ctx.log.info('DONE :: fetchStorageDataByEventsData');
 
   // /**
   //  * Add to load queue IDs from storage data (e.g. "post.struct.parentId")
@@ -207,11 +217,24 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   // await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 
   await handleSpaces(ctx, parsedEvents);
+  ctx.log.info('DONE :: handleSpaces');
+
   await handleProfiles(ctx, parsedEvents);
+  ctx.log.info('DONE :: handleProfiles');
+
   await handleAccountFollowing(ctx, parsedEvents);
+  ctx.log.info('DONE :: handleAccountFollowing');
+
   await handleSpacesFollowing(ctx, parsedEvents);
+  ctx.log.info('DONE :: handleSpacesFollowing');
+
   await handlePosts(ctx, parsedEvents);
+  ctx.log.info('DONE :: handlePosts');
+
   await handlePostReactions(ctx, parsedEvents);
+  ctx.log.info('DONE :: handlePostReactions');
+
+  await StorageDataManager.getInstance(ctx).purgeStorage();
 });
 
 // processor.addEventHandler('Posts.PostCreated', postCreated);

@@ -181,7 +181,6 @@ export async function batchCaller<T>({
   batchSize?: number;
   timeout?: number;
 }) {
-  const list = [...srcList];
   const promises = [];
   let delayIndex = 1;
 

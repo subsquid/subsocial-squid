@@ -72,14 +72,23 @@ export const ensurePost = async ({
   ctx: Ctx;
   eventData: PostCreatedData;
 }): Promise<Post | null> => {
-  const postStorageData = StorageDataManager.getInstance(
-    ctx
-  ).getStorageDataById('post', eventData.blockHash, postId);
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
 
-  if (!postStorageData) {
-    new MissingSubsocialApiEntity('Post', ctx, eventData);
-    throw new CommonCriticalError();
-  }
+  // const postStorageData = storageDataManagerInst.getStorageDataById(
+  //   'post',
+  //   eventData.blockHash,
+  //   postId
+  // );
+  //
+  // if (!postStorageData) {
+  //   new MissingSubsocialApiEntity('Post', ctx, eventData);
+  //   throw new CommonCriticalError();
+  // }
+
+  const postIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+    'post',
+    eventData.ipfsSrc
+  );
 
   let space = null;
 
@@ -109,16 +118,25 @@ export const ensurePost = async ({
   //     space = await ctx.store.get(Space, rootSpacePost.space.id, false);
   // }
 
-  const signerAccountInst = await ensureAccount(eventData.accountId, ctx, 'a140c4ab-748a-42b2-86be-8628c5e3e5cb');
+  const signerAccountInst = await ensureAccount(
+    eventData.accountId,
+    ctx,
+    'a140c4ab-748a-42b2-86be-8628c5e3e5cb'
+  );
 
   const post = new Post();
 
   if (eventData.forced && eventData.forcedData) {
     post.hidden = eventData.forcedData.hidden;
-    post.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx, '6afd11e7-555b-4c77-a55c-4218aa3e9b1c');
+    post.ownedByAccount = await ensureAccount(
+      eventData.forcedData.owner,
+      ctx,
+      '6afd11e7-555b-4c77-a55c-4218aa3e9b1c'
+    );
     post.createdByAccount = await ensureAccount(
       eventData.forcedData.account,
-      ctx, 'fd17fcbf-743b-4ed4-9a5a-787018570cdf'
+      ctx,
+      'fd17fcbf-743b-4ed4-9a5a-787018570cdf'
     );
     post.createdAtBlock = BigInt(eventData.forcedData.block.toString());
     post.createdAtTime = eventData.forcedData.time;
@@ -169,20 +187,20 @@ export const ensurePost = async ({
       break;
   }
 
-  if (postStorageData.ipfsContent) {
-    post.title = postStorageData.ipfsContent.title ?? null;
-    post.image = postStorageData.ipfsContent.image ?? null;
-    post.link = postStorageData.ipfsContent.link ?? null;
-    // post.format = postStorageData.ipfsContent.format ?? null; // TODO check is it actual property
+  if (postIpfsContent) {
+    post.title = postIpfsContent.title ?? null;
+    post.image = postIpfsContent.image ?? null;
+    post.link = postIpfsContent.link ?? null;
+    // post.format = postIpfsContent.format ?? null; // TODO check is it actual property
     post.format = null;
-    post.canonical = postStorageData.ipfsContent.canonical ?? null;
-    post.body = postStorageData.ipfsContent.body;
-    post.summary = postStorageData.ipfsContent.summary;
+    post.canonical = postIpfsContent.canonical ?? null;
+    post.body = postIpfsContent.body;
+    post.summary = postIpfsContent.summary;
     post.slug = null;
-    if (postStorageData.ipfsContent.tags) {
-      post.tagsOriginal = Array.isArray(postStorageData.ipfsContent.tags)
-        ? postStorageData.ipfsContent.tags.join(',')
-        : postStorageData.ipfsContent.tags;
+    if (postIpfsContent.tags) {
+      post.tagsOriginal = Array.isArray(postIpfsContent.tags)
+        ? postIpfsContent.tags.join(',')
+        : postIpfsContent.tags;
     }
 
     // TODO Implementation is needed

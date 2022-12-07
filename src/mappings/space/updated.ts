@@ -7,7 +7,7 @@ import {
 import { Ctx } from '../../processor';
 import { SpaceUpdatedData } from '../../common/types';
 import { StorageDataManager } from '../../storage/storageDataManager';
-import { setActivity } from "../activity";
+import { setActivity } from '../activity';
 
 export async function spaceUpdated(
   ctx: Ctx,
@@ -20,28 +20,40 @@ export async function spaceUpdated(
     throw new CommonCriticalError();
   }
 
-  const spaceStorageData = StorageDataManager.getInstance(
-    ctx
-  ).getStorageDataById('space', eventData.blockHash, eventData.spaceId);
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
+  const spaceStorageData = storageDataManagerInst.getStorageDataById(
+    'space',
+    eventData.blockHash,
+    eventData.spaceId
+  );
 
   if (!spaceStorageData) {
     new MissingSubsocialApiEntity('SpaceData', ctx, eventData);
     throw new CommonCriticalError();
   }
 
+  const spaceIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+    'space',
+    eventData.ipfsSrc
+  );
+
   space.updatedAtTime = eventData.timestamp;
 
   space.updatedAtBlock = BigInt(eventData.blockNumber);
 
-  if (spaceStorageData.ipfsContent) {
+  if (spaceIpfsContent) {
     space.handle = spaceStorageData.handle;
-    space.name = spaceStorageData.ipfsContent.name;
-    space.email = spaceStorageData.ipfsContent.email;
-    space.about = spaceStorageData.ipfsContent.about;
-    space.summary = spaceStorageData.ipfsContent.summary;
-    space.image = spaceStorageData.ipfsContent.image;
-    space.tagsOriginal = (spaceStorageData.ipfsContent.tags || []).join(',');
-    space.linksOriginal = (spaceStorageData.ipfsContent.links || []).join(',');
+    space.name = spaceIpfsContent.name ?? null;
+    space.email = spaceIpfsContent.email ?? null;
+    space.about = spaceIpfsContent.about ?? null;
+    space.summary = spaceIpfsContent.summary ?? null;
+    space.image = spaceIpfsContent.image ?? null;
+    space.tagsOriginal = spaceIpfsContent.tags
+      ? (spaceIpfsContent.tags || []).join(',')
+      : null;
+    space.linksOriginal = spaceIpfsContent.links
+      ? (spaceIpfsContent.links || []).join(',')
+      : null;
   }
 
   await ctx.store.deferredUpsert(space);

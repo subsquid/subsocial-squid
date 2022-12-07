@@ -141,25 +141,42 @@ export const ensureSpace = async ({
   ctx: Ctx;
   eventData: SpaceCreatedData;
 }): Promise<Space> => {
-  const spaceStorageData = StorageDataManager.getInstance(
-    ctx
-  ).getStorageDataById('space', eventData.blockHash, spaceId);
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
+  const spaceStorageData = storageDataManagerInst.getStorageDataById(
+    'space',
+    eventData.blockHash,
+    spaceId
+  );
 
   if (!spaceStorageData) {
     new MissingSubsocialApiEntity('SpaceData', ctx, eventData);
     throw new CommonCriticalError();
   }
 
+  const spaceIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+    'space',
+    eventData.ipfsSrc
+  );
+
   const spaceInst = new Space();
 
-  const signerAccountInst = await ensureAccount(eventData.accountId, ctx, '3339cb5e-bd1d-4b2d-8d9d-c74bff054745');
+  const signerAccountInst = await ensureAccount(
+    eventData.accountId,
+    ctx,
+    '3339cb5e-bd1d-4b2d-8d9d-c74bff054745'
+  );
 
   if (eventData.forced && eventData.forcedData) {
     spaceInst.hidden = eventData.forcedData.hidden;
-    spaceInst.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx, 'b83c251b-8e62-4f4e-9a7b-632fabca46df');
+    spaceInst.ownedByAccount = await ensureAccount(
+      eventData.forcedData.owner,
+      ctx,
+      'b83c251b-8e62-4f4e-9a7b-632fabca46df'
+    );
     spaceInst.createdByAccount = await ensureAccount(
       eventData.forcedData.account,
-      ctx, '530b6d19-918b-4397-93aa-3bbc8e533314'
+      ctx,
+      '530b6d19-918b-4397-93aa-3bbc8e533314'
     );
     spaceInst.createdAtBlock = BigInt(eventData.forcedData.block.toString());
     spaceInst.createdAtTime = eventData.forcedData.time;
@@ -190,18 +207,18 @@ export const ensureSpace = async ({
   spaceInst.followerPermissions = getSpacePermissions(eventData.permissions);
   spaceInst.spaceOwnerPermissions = getSpacePermissions(eventData.permissions);
 
-  if (spaceStorageData.ipfsContent) {
-    spaceInst.name = spaceStorageData.ipfsContent.name;
-    spaceInst.email = spaceStorageData.ipfsContent.email;
-    spaceInst.about = spaceStorageData.ipfsContent.about;
-    spaceInst.summary = spaceStorageData.ipfsContent.summary;
-    spaceInst.image = spaceStorageData.ipfsContent.image;
-    spaceInst.tagsOriginal = (spaceStorageData.ipfsContent.tags || []).join(
-      ','
-    );
-    spaceInst.linksOriginal = (spaceStorageData.ipfsContent.links || []).join(
-      ','
-    );
+  if (spaceIpfsContent) {
+    spaceInst.name = spaceIpfsContent.name ?? null;
+    spaceInst.email = spaceIpfsContent.email ?? null;
+    spaceInst.about = spaceIpfsContent.about ?? null;
+    spaceInst.summary = spaceIpfsContent.summary ?? null;
+    spaceInst.image = spaceIpfsContent.image ?? null;
+    spaceInst.tagsOriginal = spaceIpfsContent.tags
+      ? (spaceIpfsContent.tags || []).join(',')
+      : null;
+    spaceInst.linksOriginal = spaceIpfsContent.links
+      ? (spaceIpfsContent.links || []).join(',')
+      : null;
   }
 
   ctx.store.deferredUpsert(spaceInst);
@@ -226,11 +243,6 @@ function getSpacePermissions(
 
   return newPermissionsScope;
 }
-
-
-
-
-
 
 export async function updatePostsCountersInSpace({
   space,

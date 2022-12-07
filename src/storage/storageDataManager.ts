@@ -23,6 +23,7 @@ import {
 } from '../common/types';
 import * as v7 from '../types/generated/v7';
 import { addressStringToSs58 } from '../common/utils';
+import { IpfsDataManager } from './ipfsClient';
 
 type StorageSection = 'space' | 'post';
 type BlochHash = string;
@@ -36,18 +37,21 @@ type StorageData<T> = T extends 'space'
   ? PostStorageData
   : never;
 
+type IpfsContent<T> = T extends 'space'
+  ? IpfsSpaceContentSummarized
+  : T extends 'post'
+  ? IpfsPostContentSummarized
+  : never;
+
 export class StorageDataManager {
   private static instance: StorageDataManager;
 
-  public idsForFetch: Map<
+  public idsForFetchStorage: Map<
     StorageSection,
-    Map<
-      BlochHash,
-      Set<
-        [EntityId, string | null] | [Uint8Array, v7.InnerValue, string | null]
-      >
-    >
+    Map<BlochHash, Set<[EntityId, string | null] | [Uint8Array, v7.InnerValue]>>
   > = new Map();
+
+  private idsForFetchIpfs: Set<string> = new Set();
 
   public storageDataCache: Map<
     StorageSection,
@@ -57,13 +61,26 @@ export class StorageDataManager {
     ['post', new Map()]
   ]);
 
-  private constructor(private context: Ctx) {}
+  private ipfsDataManager: IpfsDataManager;
+
+  private constructor(private context: Ctx) {
+    this.ipfsDataManager = IpfsDataManager.getInstance();
+  }
 
   static getInstance(ctx: Ctx): StorageDataManager {
     if (!StorageDataManager.instance) {
       StorageDataManager.instance = new StorageDataManager(ctx);
     }
     return StorageDataManager.instance;
+  }
+
+  get ipfsContentAll() {
+    return this.ipfsDataManager.contentMap;
+  }
+
+  purgeStorage() {
+    this.storageDataCache.clear();
+    this.ipfsDataManager.purgeStorage();
   }
 
   // public getStorageData(
@@ -96,6 +113,14 @@ export class StorageDataManager {
       | undefined;
   }
 
+  public getIpfsContentByCid<T extends StorageSection>(
+    section: T,
+    cid: string | null
+  ): IpfsContent<T> | null {
+    if (!cid) return null;
+    return this.ipfsDataManager.getContent(cid) as IpfsContent<T>;
+  }
+
   public getStorageDataItemsForBlock<T extends StorageSection>(
     section: T,
     blockHash: string
@@ -110,10 +135,10 @@ export class StorageDataManager {
     section: StorageSection,
     blockHash: string
   ) {
-    if (!this.idsForFetch.has(section))
-      this.idsForFetch.set(section, new Map());
-    if (!this.idsForFetch.get(section)!.has(blockHash))
-      this.idsForFetch.get(section)!.set(blockHash, new Set());
+    if (!this.idsForFetchStorage.has(section))
+      this.idsForFetchStorage.set(section, new Map());
+    if (!this.idsForFetchStorage.get(section)!.has(blockHash))
+      this.idsForFetchStorage.get(section)!.set(blockHash, new Set());
   }
   private ensureStorageDataCacheContainer(
     section: StorageSection,
@@ -136,14 +161,15 @@ export class StorageDataManager {
             SpaceUpdatedData)[]) {
             this.ensureIdsForFetchContainer('space', event.blockHash);
 
-            this.idsForFetch
+            this.idsForFetchStorage
               .get('space')!
               .get(event.blockHash)!
               .add([
                 addressStringToSs58(event.accountId),
-                { __kind: 'Space', value: BigInt(event.spaceId) },
-                event.ipfsSrc
+                { __kind: 'Space', value: BigInt(event.spaceId) }
               ]);
+
+            if (event.ipfsSrc) this.idsForFetchIpfs.add(event.ipfsSrc);
           }
           break;
         }
@@ -151,12 +177,13 @@ export class StorageDataManager {
         case EventName.PostUpdated: {
           for (const event of [...eventsData.values()] as (PostCreatedData &
             PostUpdatedData)[]) {
-            this.ensureIdsForFetchContainer('post', event.blockHash);
+            // this.ensureIdsForFetchContainer('post', event.blockHash);
 
-            this.idsForFetch
-              .get('post')!
-              .get(event.blockHash)!
-              .add([event.postId, event.ipfsSrc]);
+            // this.idsForFetchStorage
+            //   .get('post')!
+            //   .get(event.blockHash)!
+            //   .add([event.postId, event.ipfsSrc]);
+            if (event.ipfsSrc) this.idsForFetchIpfs.add(event.ipfsSrc);
           }
           break;
         }
@@ -165,14 +192,15 @@ export class StorageDataManager {
       }
     }
 
-    for (const [section, idsListByBlock] of [...this.idsForFetch.entries()]) {
+    for (const [section, idsListByBlock] of [
+      ...this.idsForFetchStorage.entries()
+    ]) {
       switch (section) {
         case 'space': {
           for (const [blockHash, idsPairs] of [...idsListByBlock.entries()]) {
             const idPairsList = [...idsPairs.values()] as [
               Uint8Array,
-              v7.InnerValue,
-              string | null
+              v7.InnerValue
             ][];
             const spacesHandlesResp = await resolveSpacesHandleStorage(
               idPairsList.map((d) => {
@@ -183,21 +211,11 @@ export class StorageDataManager {
               { header: { hash: blockHash } }
             );
 
-            const spacesIpfsIpfsResp =
-              await resolveSpacesContentIPFS<IpfsSpaceContentSummarized>(
-                idPairsList
-                  .filter((d) => d[2] !== null)
-                  .map((d) => {
-                    return [d[1].value.toString(), d[2]!];
-                  })
-              );
-
             this.ensureStorageDataCacheContainer(section, blockHash);
 
             for (let i = 0; i < idPairsList.length; i++) {
               const spaceIdStr = idPairsList[i][1].value.toString();
               const spaceStorageData: SpaceStorageData = {
-                ipfsContent: null,
                 handle: null
               };
 
@@ -205,10 +223,6 @@ export class StorageDataManager {
                 spaceStorageData.handle = spacesHandlesResp[i]
                   ? spacesHandlesResp[i]!.toString()
                   : null;
-
-              if (spacesIpfsIpfsResp && spacesIpfsIpfsResp.has(spaceIdStr))
-                spaceStorageData.ipfsContent =
-                  spacesIpfsIpfsResp.get(spaceIdStr) ?? null;
 
               this.storageDataCache
                 .get(section)!
@@ -219,61 +233,38 @@ export class StorageDataManager {
 
           break;
         }
-        case 'post': {
-          for (const [blockHash, idsPairs] of [...idsListByBlock.entries()]) {
-            const idPairsList = [...idsPairs.values()];
-
-            const postsIpfsResp =
-              await resolveSpacesContentIPFS<IpfsPostContentSummarized>(
-                // @ts-ignore
-                idPairsList.filter((d) => d[1] !== null)
-              );
-
-            this.ensureStorageDataCacheContainer(section, blockHash);
-
-            for (let i = 0; i < idPairsList.length; i++) {
-              const postId = idPairsList[i][0].toString();
-              const postStorageData: PostStorageData = {
-                ipfsContent: null
-              };
-
-              if (postsIpfsResp && postsIpfsResp.has(postId))
-                postStorageData.ipfsContent = postsIpfsResp.get(postId) ?? null;
-
-              this.storageDataCache
-                .get(section)!
-                .get(blockHash)!
-                .set(postId, postStorageData);
-            }
-          }
-          break;
-        }
         default:
       }
     }
-    this.idsForFetch.clear();
+
+    console.dir(this.idsForFetchIpfs, { depth: null });
+    await this.ipfsDataManager.fetchManyByCids([
+      ...(this.idsForFetchIpfs.values() || [])
+    ]);
+    this.idsForFetchStorage.clear();
+    this.idsForFetchIpfs.clear();
   }
 }
 
-// public idsForFetch: Map<Block, Map<string, Set<string>>> = new Map();
+// public idsForFetchStorage: Map<Block, Map<string, Set<string>>> = new Map();
 // public storageDataCache: Map<Block, Map<string, unknown>> = new Map();
 // export async function initialProcessingEntitiesStorageData(
 //   parsedEvents: ParsedEventsDataScope,
 //   ctx: Ctx
 // ) {
-//   const idsForFetch = new Map<Block, Map<string, Set<string>>>();
+//   const idsForFetchStorage = new Map<Block, Map<string, Set<string>>>();
 //   const storageDataCache = new Map<Block, Map<string, unknown>>();
 //   for (const [eventName, eventsData] of [...parsedEvents.entries()]) {
 //     switch (eventName) {
 //       case EventName.SpaceCreated:
 //       case EventName.SpaceUpdated: {
 //         for (const event of [...eventsData.values()]) {
-//           if (!idsForFetch.has(event.block))
-//             idsForFetch.set(event.block, new Map());
-//           if (!idsForFetch.get(event.block)!.has('space'))
-//             idsForFetch.get(event.block)!.set('space', new Set());
+//           if (!idsForFetchStorage.has(event.block))
+//             idsForFetchStorage.set(event.block, new Map());
+//           if (!idsForFetchStorage.get(event.block)!.has('space'))
+//             idsForFetchStorage.get(event.block)!.set('space', new Set());
 //           // @ts-ignore
-//           idsForFetch.get(event.block)!.get('space')!.add(event.spaceId);
+//           idsForFetchStorage.get(event.block)!.get('space')!.add(event.spaceId);
 //         }
 //         break;
 //       }
@@ -281,7 +272,7 @@ export class StorageDataManager {
 //     }
 //   }
 //
-//   for (const [block, val] of [...idsForFetch.entries()]) {
+//   for (const [block, val] of [...idsForFetchStorage.entries()]) {
 //     for (const [section, idsList] of [...val.entries()]) {
 //       switch (section) {
 //         case 'space': {

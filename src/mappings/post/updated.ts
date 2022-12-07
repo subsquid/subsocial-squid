@@ -37,14 +37,20 @@ export async function postUpdated(
 
   const prevVisStateHidden = post.hidden;
 
-  const postStorageData = StorageDataManager.getInstance(
-    ctx
-  ).getStorageDataById('post', eventData.blockHash, eventData.postId);
+  // const postStorageData = StorageDataManager.getInstance(
+  //   ctx
+  // ).getStorageDataById('post', eventData.blockHash, eventData.postId);
+  //
+  // if (!postStorageData) {
+  //   new MissingSubsocialApiEntity('Post', ctx, eventData);
+  //   throw new CommonCriticalError();
+  // }
 
-  if (!postStorageData) {
-    new MissingSubsocialApiEntity('Post', ctx, eventData);
-    throw new CommonCriticalError();
-  }
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
+  const postIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+    'post',
+    eventData.ipfsSrc
+  );
 
   const ownedByAccount = await ensureAccount(
     post.ownedByAccount.id || eventData.accountId,
@@ -57,17 +63,17 @@ export async function postUpdated(
   post.content = eventData.ipfsSrc;
   post.updatedAtTime = eventData.timestamp;
 
-  if (postStorageData.ipfsContent) {
-    post.title = postStorageData.ipfsContent.title ?? null;
-    post.image = postStorageData.ipfsContent.image ?? null;
-    post.link = postStorageData.ipfsContent.link ?? null;
-    // post.format = postStorageData.ipfsContent.format ?? null; // TODO check is it actual property
+  if (postIpfsContent) {
+    post.title = postIpfsContent.title ?? null;
+    post.image = postIpfsContent.image ?? null;
+    post.link = postIpfsContent.link ?? null;
+    // post.format = postIpfsContent.format ?? null; // TODO check is it actual property
     post.format = null;
-    post.canonical = postStorageData.ipfsContent.canonical ?? null;
-    post.body = postStorageData.ipfsContent.body;
-    post.summary = postStorageData.ipfsContent.summary;
+    post.canonical = postIpfsContent.canonical ?? null;
+    post.body = postIpfsContent.body ?? null;
+    post.summary = postIpfsContent.summary ?? null;
     post.slug = null;
-    post.tagsOriginal = postStorageData.ipfsContent.tags?.join(',') ?? null;
+    post.tagsOriginal = postIpfsContent.tags?.join(',') ?? null;
 
     // TODO Implementation is needed
     // const { meta } = postContent;

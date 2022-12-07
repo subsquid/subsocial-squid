@@ -18,7 +18,7 @@
     "update": "npx npm-check-updates --filter /subsquid/ --upgrade && npm i -f"
   },
   "dependencies": {
-    "@ipld/dag-cbor": "^8.0.0",
+    "@ipld/dag-cbor": "7.0.3",
     "@subsocial/api": "^0.7.7",
     "@subsocial/types": "^0.6.11",
     "@subsocial/utils": "^0.6.11",
@@ -38,6 +38,7 @@
     "dotenv": "^16.0.0",
     "inflected": "^2.1.0",
     "ipfs-core": "^0.13.0",
+    "ipfs-core-types": "^0.13.0",
     "ipfs-http-client": "^55.0.0",
     "lodash.uniq": "^4.5.0",
     "md5": "^2.3.0",
