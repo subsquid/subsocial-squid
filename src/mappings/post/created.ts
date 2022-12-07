@@ -27,7 +27,11 @@ export async function postCreated(
   ctx: Ctx,
   eventData: PostCreatedData
 ): Promise<void> {
-  const account = await ensureAccount(eventData.accountId, ctx, 'fc2cb4d7-402e-4ea8-b084-d3ef5bea2bc2');
+  const account = await ensureAccount(
+    eventData.accountId,
+    ctx,
+    'fc2cb4d7-402e-4ea8-b084-d3ef5bea2bc2'
+  );
 
   const post = await ensurePost({
     postId: eventData.postId,
@@ -73,19 +77,39 @@ export async function postCreated(
 
   if (post.sharedPost) return;
 
-  if (!post.isComment || (post.isComment && !post.parentPost)) {
-    await addNotificationForAccount(post.ownedByAccount, activity, ctx);
-  } else if (post.isComment && post.parentPost && post.rootPost) {
+  if (
+    !post.isComment ||
+    (post.isComment && (!post.parentPost || !post.parentPost.id))
+  ) {
+    await addNotificationForAccount(post.ownedByAccount.id, activity, ctx);
+  } else if (
+    post.isComment &&
+    post.parentPost &&
+    post.parentPost.id &&
+    post.rootPost &&
+    post.rootPost.id
+  ) {
     /**
      * Notifications should not be added for owner followers if post is reply
      */
+    const postRootPost = await ctx.store.get(Post, post.rootPost.id, false);
+    if (!postRootPost) {
+      new EntityProvideFailWarning(Post, post.rootPost.id, ctx, eventData);
+      throw new CommonCriticalError();
+    }
+    const postParentPost = await ctx.store.get(Post, post.parentPost.id, false);
+    if (!postParentPost) {
+      new EntityProvideFailWarning(Post, post.parentPost.id, ctx, eventData);
+      throw new CommonCriticalError();
+    }
+
     await addNotificationForAccount(
-      post.rootPost.ownedByAccount,
+      postRootPost.ownedByAccount.id,
       activity,
       ctx
     );
     await addNotificationForAccount(
-      post.parentPost.ownedByAccount,
+      postParentPost.ownedByAccount.id,
       activity,
       ctx
     );

@@ -6,9 +6,8 @@ export async function ensureAccount(
   ctx: Ctx,
   debugId: string = ''
 ): Promise<Account> {
-  ctx.log.warn(`DEBUG - ${debugId}`);
   if (accountId === null || !accountId)
-    throw new Error(`Account has unsupported value - ${debugId}`);
+    throw new Error(`Account ID has unsupported value - ${debugId}`);
 
   let account = await ctx.store.get(Account, accountId, false);
 

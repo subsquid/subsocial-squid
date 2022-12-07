@@ -80,5 +80,5 @@ export async function postReactionCreated(
     new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
-  await addNotificationForAccount(postInst.ownedByAccount, activity, ctx);
+  await addNotificationForAccount(postInst.ownedByAccount.id, activity, ctx);
 }
