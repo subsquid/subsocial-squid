@@ -56,15 +56,15 @@ export async function handleEvent(
     new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     return;
   }
-  //
-  // if (eventNameDecorated === EventName.SpaceFollowed) {
-  //   await addNotificationForAccount(space.ownedByAccount, activity, ctx);
-  //   followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
-  // } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
-  //   await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
-  //   await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
-  //   followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
-  // }
+
+  if (eventNameDecorated === EventName.SpaceFollowed) {
+    await addNotificationForAccount(space.ownedByAccount.id, activity, ctx);
+    followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
+  } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
+    await deleteSpacePostsFromFeedForAccount(activity.account.id, space, ctx);
+    await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
+    followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
+  }
   followerAccount.followingSpacesCount = followingSpacesCount;
   await ctx.store.deferredUpsert(followerAccount);
 }

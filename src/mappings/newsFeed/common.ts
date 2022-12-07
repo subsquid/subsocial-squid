@@ -10,6 +10,7 @@ import {
 } from '../../model';
 import { getNewsFeedEntityId } from '../../common/utils';
 import { Ctx } from '../../processor';
+import { ensureAccount } from "../account";
 
 /**
  * Add Post to NewsFeed for all Account's and Space's followers.
@@ -71,21 +72,21 @@ export const addPostToFeeds = async (
 };
 
 export const deleteSpacePostsFromFeedForAccount = async (
-  account: Account,
+  accountId:  string,
   space: Space,
   ctx: Ctx
 ): Promise<void> => {
   const relatedFeedItems = await ctx.store.find(NewsFeed, {
     where: [
       {
-        account: { id: account.id },
+        account: { id: accountId },
         activity: {
           space: { id: space.id },
           event: EventName.PostCreated
         }
       },
       {
-        account: { id: account.id },
+        account: { id: accountId },
         activity: {
           space: { id: space.id },
           event: EventName.PostMoved

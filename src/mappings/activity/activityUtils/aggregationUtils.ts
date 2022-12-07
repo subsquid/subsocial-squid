@@ -7,8 +7,8 @@ import { Ctx } from '../../../processor';
 
 type GetAggregationCountParams = {
   eventName: EventName;
-  post: Post;
-  account: Account;
+  postId: string;
+  accountId: string;
   ctx: Ctx;
 };
 
@@ -23,14 +23,14 @@ type UpdateAggregatedStatusParams = {
 export async function getAggregationCount(
   params: GetAggregationCountParams
 ): Promise<number> {
-  const { eventName, post, account, ctx } = params;
+  const { eventName, postId, accountId, ctx } = params;
 
   const findResult = await ctx.store.find(Activity, {
     where: {
       event: eventName,
-      post: { id: post.id },
+      post: { id: postId },
       account: {
-        id: Not(account.id)
+        id: Not(accountId)
       }
     }
   });

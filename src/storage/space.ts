@@ -15,6 +15,7 @@ import { resolveSpaceIPFSContentByCid } from '../connection/resolvers/resolveSpa
 import * as v7 from '../types/generated/v7';
 import { IpfsCid, IpfsCommonContent } from '@subsocial/api/types/ipfs';
 import { ContentResult } from '@subsocial/api/types';
+import { getMany } from './ipfsClient';
 
 interface SpaceStructDecorated {
   id: string;
@@ -197,13 +198,13 @@ export async function resolveSpacesContentIPFS<T>(
       batchSize: 500,
       timeout: 7000,
       handler: async (cidsBatch) => {
+        // await getMany(cidsBatch);
         // @ts-ignore
         tmpRes = {
           ...tmpRes,
           ...(await resolveSpaceIPFSContentByCid(cidsBatch))
         };
         await new Promise((res) => setTimeout(res, 2000));
-        // console.log('FETCH FINISH ', Date.now());
       }
     });
 

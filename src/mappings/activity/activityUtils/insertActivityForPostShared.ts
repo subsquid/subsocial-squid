@@ -30,8 +30,8 @@ export async function insertActivityForPostShared(
   activity.aggCount = BigInt(
     await getAggregationCount({
       eventName: activity.event,
-      account: activity.account,
-      post,
+      accountId: activity.account.id,
+      postId: post.id,
       ctx
     })
   );

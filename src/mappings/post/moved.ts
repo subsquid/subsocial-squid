@@ -109,5 +109,5 @@ export async function postMoved(
   await addPostToFeeds(post, activity, ctx);
 
   if (prevSpaceInst)
-    await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
+    await deleteSpacePostsFromFeedForAccount(account.id, prevSpaceInst, ctx);
 }

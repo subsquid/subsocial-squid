@@ -18,6 +18,7 @@
     "update": "npx npm-check-updates --filter /subsquid/ --upgrade && npm i -f"
   },
   "dependencies": {
+    "@ipld/dag-cbor": "^8.0.0",
     "@subsocial/api": "^0.7.7",
     "@subsocial/types": "^0.6.11",
     "@subsocial/utils": "^0.6.11",
