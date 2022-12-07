@@ -40,7 +40,7 @@ import { handlePosts } from './mappings/post';
 import { handleAccountFollowing } from './mappings/accountFollows';
 import { handleProfiles } from './mappings/account';
 import { handleSpacesFollowing } from './mappings/spaceFollows';
-import { handlePostReactions } from "./mappings/reaction";
+import { handlePostReactions } from './mappings/reaction';
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -102,6 +102,15 @@ export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
 
 processor.run(new TypeormDatabase(), async (ctx) => {
+  ctx.log.child('sqd:processor').info(
+    `Batch size - ${ctx.blocks.length} [${
+      ctx.blocks.length > 0
+        ? `${ctx.blocks[0].header.height}/${
+            ctx.blocks[ctx.blocks.length - 1].header.height
+          }`
+        : '---'
+    }]`
+  );
   const entityRelationsManager = EntityRelationsManager.getInstance(ctx);
 
   entityRelationsManager.setEntityRelationsForFetch(Post, [

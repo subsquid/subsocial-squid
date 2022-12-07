@@ -82,12 +82,11 @@ export async function postReactionDeleted(
     new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
-  // TODO - add implementation
-  // await addNotificationForAccount(
-  //   deletedReactionPost.ownedByAccount,
-  //   activity,
-  //   ctx
-  // );
+  await addNotificationForAccount(
+    post.ownedByAccount.id,
+    activity,
+    ctx
+  );
 }
 
 //

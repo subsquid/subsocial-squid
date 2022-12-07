@@ -85,26 +85,24 @@ export const processAccountFollowingUnfollowingRelations = async ({
 
     ctx.store.deferredUpsert(newAccountFollowersEnt);
 
-    // TODO add implementation
-    // await addNotificationForAccount(followingAccount, activity, ctx);
+    await addNotificationForAccount(followingAccount, activity, ctx);
   } else if (eventNameDecorated === EventName.AccountUnfollowed) {
     if (!accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc -= 1;
     currentFollowingCountOfFollowerAcc -= 1;
     ctx.store.deferredUpsert(accountFollowersEntity);
 
-    // TODO add implementation
-    // await addNotificationForAccount(followingAccount, activity, ctx);
-    // await deleteAllNotificationsAboutAccount(
-    //   followerAccount,
-    //   followingAccount,
-    //   ctx
-    // );
-    // await deleteAccountPostsFromFeedForAccount(
-    //   followerAccount,
-    //   followingAccount,
-    //   ctx
-    // );
+    await addNotificationForAccount(followingAccount, activity, ctx);
+    await deleteAllNotificationsAboutAccount(
+      followerAccount,
+      followingAccount,
+      ctx
+    );
+    await deleteAccountPostsFromFeedForAccount(
+      followerAccount,
+      followingAccount,
+      ctx
+    );
   }
 
   /**

@@ -69,29 +69,27 @@ export async function postCreated(
     return;
   }
 
-  // TODO add implementation
-  // await addPostToFeeds(post, activity, ctx);
+  await addPostToFeeds(post, activity, ctx);
 
   if (post.sharedPost) return;
 
-  // TODO add implementation
-  // if (!post.isComment || (post.isComment && !post.parentPost)) {
-  //   await addNotificationForAccount(post.ownedByAccount, activity, ctx);
-  // } else if (post.isComment && post.parentPost && post.rootPost) {
-  //   /**
-  //    * Notifications should not be added for owner followers if post is reply
-  //    */
-  //   await addNotificationForAccount(
-  //     post.rootPost.ownedByAccount,
-  //     activity,
-  //     ctx
-  //   );
-  //   await addNotificationForAccount(
-  //     post.parentPost.ownedByAccount,
-  //     activity,
-  //     ctx
-  //   );
-  // }
+  if (!post.isComment || (post.isComment && !post.parentPost)) {
+    await addNotificationForAccount(post.ownedByAccount, activity, ctx);
+  } else if (post.isComment && post.parentPost && post.rootPost) {
+    /**
+     * Notifications should not be added for owner followers if post is reply
+     */
+    await addNotificationForAccount(
+      post.rootPost.ownedByAccount,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(
+      post.parentPost.ownedByAccount,
+      activity,
+      ctx
+    );
+  }
 }
 
 async function handlePostShare(
@@ -114,6 +112,16 @@ async function handlePostShare(
     throw new CommonCriticalError();
   }
 
+  const originPostRootPost =
+    originPost.rootPost && originPost.rootPost.id
+      ? await ctx.store.get(Post, originPost.rootPost.id, false)
+      : null;
+
+  const originPostParentPost =
+    originPost.parentPost && originPost.parentPost.id
+      ? await ctx.store.get(Post, originPost.parentPost.id, false)
+      : null;
+
   originPost.sharesCount += 1;
 
   await ctx.store.deferredUpsert(originPost);
@@ -131,36 +139,39 @@ async function handlePostShare(
     throw new CommonCriticalError();
   }
 
-  // TODO add implementation
-  // if (
-  //   !originPost.isComment ||
-  //   (originPost.isComment && !originPost.parentPost)
-  // ) {
-  //   await addNotificationForAccountFollowers(
-  //     originPost.ownedByAccount,
-  //     activity,
-  //     ctx
-  //   );
-  //   await addNotificationForAccount(originPost.ownedByAccount, activity, ctx);
-  // } else if (
-  //   originPost.isComment &&
-  //   originPost.parentPost &&
-  //   originPost.rootPost
-  // ) {
-  //   /**
-  //    * Notifications should not be added for owner followers if post is reply
-  //    */
-  //   await addNotificationForAccount(
-  //     originPost.rootPost.ownedByAccount,
-  //     activity,
-  //     ctx
-  //   );
-  //   await addNotificationForAccount(
-  //     originPost.parentPost.ownedByAccount,
-  //     activity,
-  //     ctx
-  //   );
-  // }
+  if (
+    !originPost.isComment ||
+    (originPost.isComment && !originPostParentPost)
+  ) {
+    await addNotificationForAccountFollowers(
+      originPost.ownedByAccount.id,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(
+      originPost.ownedByAccount.id,
+      activity,
+      ctx
+    );
+  } else if (
+    originPost.isComment &&
+    originPostParentPost &&
+    originPostRootPost
+  ) {
+    /**
+     * Notifications should not be added for owner followers if post is reply
+     */
+    await addNotificationForAccount(
+      originPostRootPost.ownedByAccount.id,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(
+      originPostParentPost.ownedByAccount.id,
+      activity,
+      ctx
+    );
+  }
 }
 
 //

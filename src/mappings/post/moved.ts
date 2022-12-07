@@ -90,9 +90,11 @@ export async function postMoved(
 
   // await updateSpaceForPostChildren(post, newSpaceInst, ctx);
 
+  const prevSpaceInst = await ctx.store.get(Space, eventData.toSpace, false)
+
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
-    spacePrev: await ctx.store.get(Space, eventData.toSpace, false),
+    spacePrev: prevSpaceInst,
     account,
     post,
     ctx,
@@ -104,9 +106,8 @@ export async function postMoved(
     throw new CommonCriticalError();
   }
 
-  // TODO - add implementation
-  // await addPostToFeeds(post, activity, ctx);
-  //
-  // if (prevSpaceInst)
-  //   await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
+  await addPostToFeeds(post, activity, ctx);
+
+  if (prevSpaceInst)
+    await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
 }

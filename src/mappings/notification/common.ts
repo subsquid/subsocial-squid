@@ -8,15 +8,14 @@ import {
 } from '../../model';
 import { ensureAccount } from '../account';
 import { getNotificationEntityId } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
+import { Ctx } from '../../processor';
 
 export const addNotificationForAccount = async (
   account: Account | string,
   activity: Activity,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<Notification | null> => {
   const accountInst =
-    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const notification = new Notification();
@@ -25,22 +24,20 @@ export const addNotificationForAccount = async (
   notification.account = accountInst;
   notification.activity = activity;
 
-  await ctx.store.save<Notification>(notification);
+  ctx.store.deferredUpsert(notification);
   return notification;
 };
 
 export const addNotificationForAccountFollowers = async (
   account: Account | string,
   activity: Activity,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
-    where: { followingAccount: { id: accountInst.id } },
-    relations: { followerAccount: true }
+    where: { followingAccount: { id: accountInst.id } }
   });
 
   const notificationsDraftList = accountFollowersRelations.map(
@@ -60,7 +57,7 @@ export const addNotificationForAccountFollowers = async (
 
   if (!notificationsDraftList || notificationsDraftList.length === 0) return;
 
-  await ctx.store.save<Notification>(notificationsDraftList);
+  await ctx.store.deferredUpsert(notificationsDraftList);
 };
 
 /**
@@ -72,10 +69,9 @@ export const addNotificationForAccountFollowers = async (
 export const deleteAllNotificationsAboutSpace = async (
   account: Account | string,
   followingSpace: Space,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
 
   const relatedNotifications = await ctx.store.find(Notification, {
@@ -86,25 +82,22 @@ export const deleteAllNotificationsAboutSpace = async (
           space: { id: followingSpace.id }
         }
       }
-    ],
-    relations: { activity: { space: true } }
+    ]
   });
 
-  await ctx.store.remove<NewsFeed>(relatedNotifications);
+  await ctx.store.deferredRemove(relatedNotifications);
 };
 
 export const deleteAllNotificationsAboutAccount = async (
   account: Account | string,
   followingAccount: Account | string,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    // @ts-ignore
     account instanceof Account ? account : await ensureAccount(account, ctx);
   const followingAccountInst =
     followingAccount instanceof Account
       ? followingAccount
-      // @ts-ignore
       : await ensureAccount(followingAccount, ctx);
 
   const relatedNotifications = await ctx.store.find(Notification, {
@@ -115,9 +108,8 @@ export const deleteAllNotificationsAboutAccount = async (
           account: { id: followingAccountInst.id }
         }
       }
-    ],
-    relations: { activity: { account: true } }
+    ]
   });
 
-  await ctx.store.remove<NewsFeed>(relatedNotifications);
+  await ctx.store.deferredRemove(relatedNotifications);
 };
