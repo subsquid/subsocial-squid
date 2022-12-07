@@ -71,19 +71,23 @@ export async function updateAggregatedStatus(
       }
     };
   }
-  if (space) {
+  if (space && space.id) {
     findOptions = {
       where: {
         event,
-        space
+        space: {
+          id: space.id
+        }
       }
     };
   }
-  if (followingAccount) {
+  if (followingAccount && followingAccount.id) {
     findOptions = {
       where: {
         event,
-        followingAccount
+        followingAccount: {
+          id: followingAccount.id
+        }
       }
     };
   }
