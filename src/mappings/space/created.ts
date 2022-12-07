@@ -40,7 +40,7 @@ import { SpaceCreatedData } from '../../common/types';
 // }
 
 export async function spaceCreated(ctx: Ctx, eventData: SpaceCreatedData) {
-  const account = await ensureAccount(eventData.accountId, ctx);
+  const account = await ensureAccount(eventData.accountId, ctx, '5348ae2e-d429-4f3b-b125-a51b90423b40');
 
   const space = await ensureSpace({
     spaceId: eventData.spaceId,

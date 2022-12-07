@@ -30,7 +30,7 @@ export async function postMoved(
   ctx: Ctx,
   eventData: PostMovedData
 ): Promise<void> {
-  const account = await ensureAccount(eventData.accountId, ctx);
+  const account = await ensureAccount(eventData.accountId, ctx, '92b75b7f-4397-4ff5-a387-ff214aa3c480');
 
   const post = await ctx.store.get(Post, eventData.postId);
 

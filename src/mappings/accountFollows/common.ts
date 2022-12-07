@@ -20,8 +20,8 @@ export async function handleEvent(
   ctx: Ctx,
   eventData: EventData
 ): Promise<void> {
-  const followerAccount = await ensureAccount(followerId, ctx);
-  const followingAccount = await ensureAccount(followingId, ctx);
+  const followerAccount = await ensureAccount(followerId, ctx, '4e4d784c-df03-4498-ad2f-4f49dc4e7bc5');
+  const followingAccount = await ensureAccount(followingId, ctx, '3ac27014-207e-469b-9ffe-fe7bfd90699f');
 
   const activity = await setActivity({
     account: followerAccount,

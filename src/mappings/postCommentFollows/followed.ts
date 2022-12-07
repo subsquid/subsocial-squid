@@ -12,7 +12,7 @@ export async function postFollowed(
 ): Promise<void> {
 
   const postUpdated = post;
-  const ownerAccount = await ensureAccount(post.ownedByAccount.id, ctx);
+  const ownerAccount = await ensureAccount(post.ownedByAccount.id, ctx, '3ed806b4-871b-43a5-a1f4-a2e9bdec7a7e');
 
   await processPostFollowingUnfollowingRelations(
     post,

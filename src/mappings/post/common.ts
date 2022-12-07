@@ -72,8 +72,6 @@ export const ensurePost = async ({
   ctx: Ctx;
   eventData: PostCreatedData;
 }): Promise<Post | null> => {
-  const createdByAccount = await ensureAccount(eventData.accountId, ctx);
-
   const postStorageData = StorageDataManager.getInstance(
     ctx
   ).getStorageDataById('post', eventData.blockHash, postId);
@@ -111,16 +109,16 @@ export const ensurePost = async ({
   //     space = await ctx.store.get(Space, rootSpacePost.space.id, false);
   // }
 
-  const signerAccountInst = await ensureAccount(eventData.accountId, ctx);
+  const signerAccountInst = await ensureAccount(eventData.accountId, ctx, 'a140c4ab-748a-42b2-86be-8628c5e3e5cb');
 
   const post = new Post();
 
   if (eventData.forced && eventData.forcedData) {
     post.hidden = eventData.forcedData.hidden;
-    post.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx);
+    post.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx, '6afd11e7-555b-4c77-a55c-4218aa3e9b1c');
     post.createdByAccount = await ensureAccount(
       eventData.forcedData.account,
-      ctx
+      ctx, 'fd17fcbf-743b-4ed4-9a5a-787018570cdf'
     );
     post.createdAtBlock = BigInt(eventData.forcedData.block.toString());
     post.createdAtTime = eventData.forcedData.time;

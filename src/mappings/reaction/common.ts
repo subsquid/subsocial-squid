@@ -68,7 +68,7 @@ export async function ensureReaction({
     eventData.forced && eventData.forcedData
       ? eventData.forcedData.account
       : eventData.accountId,
-    ctx
+    ctx, '9ff05d06-e8ac-4ae5-b021-d483de676ded'
   );
 
   const postInst = await ctx.store.get(Post, eventData.postId, false);

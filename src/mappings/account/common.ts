@@ -3,8 +3,13 @@ import { Ctx } from '../../processor';
 
 export async function ensureAccount(
   accountId: string,
-  ctx: Ctx
+  ctx: Ctx,
+  debugId: string = ''
 ): Promise<Account> {
+  ctx.log.warn(`DEBUG - ${debugId}`);
+  if (accountId === null || !accountId)
+    throw new Error(`Account has unsupported value - ${debugId}`);
+
   let account = await ctx.store.get(Account, accountId, false);
 
   if (account) return account;

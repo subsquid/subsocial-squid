@@ -27,7 +27,7 @@ export async function postCreated(
   ctx: Ctx,
   eventData: PostCreatedData
 ): Promise<void> {
-  const account = await ensureAccount(eventData.accountId, ctx);
+  const account = await ensureAccount(eventData.accountId, ctx, 'fc2cb4d7-402e-4ea8-b084-d3ef5bea2bc2');
 
   const post = await ensurePost({
     postId: eventData.postId,

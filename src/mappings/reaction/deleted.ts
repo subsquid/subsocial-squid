@@ -63,7 +63,7 @@ export async function postReactionDeleted(
     eventData.forced && eventData.forcedData
       ? eventData.forcedData.account
       : eventData.accountId,
-    ctx
+    ctx, '38411c37-6952-49db-8f1a-19560e960109'
   );
 
   const activity = await setActivity({

@@ -29,7 +29,7 @@ export async function handleEvent(
   eventData: EventData
 ): Promise<void> {
   const { name: eventName } = eventData;
-  const followerAccount = await ensureAccount(followerId, ctx);
+  const followerAccount = await ensureAccount(followerId, ctx, 'e61e74cc-7e24-4452-b303-8c5b25fcfae1');
   const eventNameDecorated = decorateEventName(eventName);
 
   let { followingSpacesCount } = followerAccount;
@@ -77,7 +77,7 @@ export async function processSpaceFollowingUnfollowingRelations(
 ): Promise<void> {
   if (!space) return;
   const followerAccountInst =
-    follower instanceof Account ? follower : await ensureAccount(follower, ctx);
+    follower instanceof Account ? follower : await ensureAccount(follower, ctx, 'c50dd256-f497-44ce-9a50-d23fdbcc3667');
 
   const { name: eventName } = eventData;
   const eventNameDecorated = decorateEventName(eventName);

@@ -16,7 +16,7 @@ export const addNotificationForAccount = async (
   ctx: Ctx
 ): Promise<Notification | null> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account ? account : await ensureAccount(account, ctx, 'dbf0ccab-5307-4495-88fb-c92c2e50580c');
 
   const notification = new Notification();
 
@@ -34,7 +34,7 @@ export const addNotificationForAccountFollowers = async (
   ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account ? account : await ensureAccount(account, ctx, 'ec067182-ce7d-49d7-9065-7e53c40eb450');
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: { id: accountInst.id } }
@@ -72,7 +72,7 @@ export const deleteAllNotificationsAboutSpace = async (
   ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account ? account : await ensureAccount(account, ctx, '0179387a-991c-4956-9db5-e091bb33dea4');
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
@@ -94,11 +94,11 @@ export const deleteAllNotificationsAboutAccount = async (
   ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account ? account : await ensureAccount(account, ctx, 'f323589c-c261-4013-9cac-c5aa2740efe1');
   const followingAccountInst =
     followingAccount instanceof Account
       ? followingAccount
-      : await ensureAccount(followingAccount, ctx);
+      : await ensureAccount(followingAccount, ctx, 'd0bf5378-1131-491c-8592-f52bb679d4d5');
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [

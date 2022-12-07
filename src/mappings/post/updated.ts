@@ -48,7 +48,8 @@ export async function postUpdated(
 
   const ownedByAccount = await ensureAccount(
     post.ownedByAccount.id || eventData.accountId,
-    ctx
+    ctx,
+    '876a9485-c5ac-4198-8e49-9f18bb770e57'
   );
 
   post.hidden = eventData.hidden ?? true;

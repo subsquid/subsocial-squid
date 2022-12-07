@@ -62,7 +62,7 @@ export async function postReactionCreated(
     eventData.forced && eventData.forcedData
       ? eventData.forcedData.account
       : eventData.accountId,
-    ctx
+    ctx, '27dd085f-2586-449c-b8f7-0ce2e76b1c4d'
   );
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(

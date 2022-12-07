@@ -152,14 +152,14 @@ export const ensureSpace = async ({
 
   const spaceInst = new Space();
 
-  const signerAccountInst = await ensureAccount(eventData.accountId, ctx);
+  const signerAccountInst = await ensureAccount(eventData.accountId, ctx, '3339cb5e-bd1d-4b2d-8d9d-c74bff054745');
 
   if (eventData.forced && eventData.forcedData) {
     spaceInst.hidden = eventData.forcedData.hidden;
-    spaceInst.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx);
+    spaceInst.ownedByAccount = await ensureAccount(eventData.forcedData.owner, ctx, 'b83c251b-8e62-4f4e-9a7b-632fabca46df');
     spaceInst.createdByAccount = await ensureAccount(
       eventData.forcedData.account,
-      ctx
+      ctx, '530b6d19-918b-4397-93aa-3bbc8e533314'
     );
     spaceInst.createdAtBlock = BigInt(eventData.forcedData.block.toString());
     spaceInst.createdAtTime = eventData.forcedData.time;

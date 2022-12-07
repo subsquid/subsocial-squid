@@ -32,7 +32,7 @@ export async function postReactionUpdated(
     blockNumber
   } = eventData;
 
-  const account = await ensureAccount(accountId, ctx);
+  const account = await ensureAccount(accountId, ctx, '87b4ba64-d8d8-494c-a0e6-c9a7d1d1dd05');
 
   const reaction = await ctx.store.get(Reaction, reactionId, false);
 
