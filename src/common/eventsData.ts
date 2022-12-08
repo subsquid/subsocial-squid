@@ -128,6 +128,7 @@ function getEventMetadata(block: Block, event: SubstrateEvent): EventData {
 
 export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
   const parsedData = new ParsedEventsDataScope();
+  let totalEventsNumber = 0;
 
   for (let block of ctx.blocks) {
     for (let item of block.items) {
@@ -178,6 +179,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           );
           ctx.store.deferredLoad(CommentFollowers, postFollowersEntityId);
           ctx.store.deferredLoad(PostFollowers, postFollowersEntityId);
+          totalEventsNumber++;
           break;
         }
 
@@ -195,6 +197,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
 
           ctx.store.deferredLoad(Post, eventData.postId);
           ctx.store.deferredLoad(Account, eventData.accountId);
+          totalEventsNumber++;
           break;
         }
 
@@ -214,6 +217,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           if (eventData.fromSpace)
             ctx.store.deferredLoad(Space, eventData.fromSpace);
           if (callData.toSpace) ctx.store.deferredLoad(Space, callData.toSpace);
+          totalEventsNumber++;
           break;
         }
 
@@ -234,6 +238,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             SpaceFollowers,
             getSpaceFollowersEntityId(eventData.accountId, eventData.spaceId)
           );
+          totalEventsNumber++;
           break;
         }
 
@@ -250,6 +255,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           });
           ctx.store.deferredLoad(Account, eventData.accountId);
           ctx.store.deferredLoad(Space, eventData.spaceId);
+          totalEventsNumber++;
           break;
         }
 
@@ -272,6 +278,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           ctx.store.deferredLoad(Account, eventData.accountId);
           ctx.store.deferredLoad(Post, eventData.postId);
           ctx.store.deferredLoad(Reaction, eventData.reactionId);
+          totalEventsNumber++;
           break;
         }
 
@@ -294,6 +301,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           ctx.store.deferredLoad(Account, eventData.accountId);
           ctx.store.deferredLoad(Post, eventData.postId);
           ctx.store.deferredLoad(Reaction, eventData.reactionId);
+          totalEventsNumber++;
           break;
         }
 
@@ -316,6 +324,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           ctx.store.deferredLoad(Account, eventData.accountId);
           ctx.store.deferredLoad(Post, eventData.postId);
           ctx.store.deferredLoad(Reaction, eventData.reactionId);
+          totalEventsNumber++;
           break;
         }
 
@@ -331,6 +340,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
           ctx.store.deferredLoad(Account, eventData.accountId);
           if (eventData.spaceId)
             ctx.store.deferredLoad(Space, eventData.spaceId);
+          totalEventsNumber++;
           break;
         }
 
@@ -349,6 +359,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             SpaceFollowers,
             getSpaceFollowersEntityId(eventData.followerId, eventData.spaceId)
           );
+          totalEventsNumber++;
           break;
         }
 
@@ -369,6 +380,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             SpaceFollowers,
             getSpaceFollowersEntityId(eventData.followerId, eventData.spaceId)
           );
+          totalEventsNumber++;
           break;
         }
 
@@ -391,7 +403,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
               eventData.accountId
             )
           );
-
+          totalEventsNumber++;
           break;
         }
 
@@ -408,6 +420,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
 
           ctx.store.deferredLoad(Account, eventData.followerId);
           ctx.store.deferredLoad(Account, eventData.accountId);
+          totalEventsNumber++;
           break;
         }
         default:
@@ -415,6 +428,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
     }
   }
 
+  ctx.log.info(`Total number of events for processing - ${totalEventsNumber}`);
   return parsedData;
 }
 

@@ -62,7 +62,7 @@ export async function handleEvent(
     followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
   } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
     await deleteSpacePostsFromFeedForAccount(activity.account.id, space, ctx);
-    await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
+    await deleteAllNotificationsAboutSpace(followerAccount.id, space, ctx);
     followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
   }
   followerAccount.followingSpacesCount = followingSpacesCount;

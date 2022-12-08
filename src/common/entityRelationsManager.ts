@@ -94,6 +94,9 @@ export class EntityRelationsManager {
     srcIdsScope: Map<EntityClassConstructable, Set<string>>,
     index = 0
   ) {
+    console.log(
+      `this.relationsStack.length - ${this.relationsStack.length} / index - ${index}`
+    );
     if (index === this.relationsStack.length) return;
 
     for (const [parentClass, relations] of [
@@ -129,6 +132,11 @@ export class EntityRelationsManager {
     await this.context.store.load(500);
 
     await this.loadEntitiesByRelationsStackAll(idsForLoadPrev, index + 1);
+  }
+
+  purgeStorage() {
+    this.relationsStack = [];
+    this.relationsForFetch.clear();
   }
 }
 

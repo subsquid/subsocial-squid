@@ -30,6 +30,8 @@ export class IpfsDataManager {
 
   public contentMap: Map<string, CommonContent> = new Map();
 
+  public fetchedCidsList: Set<string> = new Set();
+
   static getInstance(): IpfsDataManager {
     if (!IpfsDataManager.instance) {
       IpfsDataManager.instance = new IpfsDataManager();
@@ -60,14 +62,22 @@ export class IpfsDataManager {
     return this.ipfsNode as IPFSTypes.IPFS;
   }
 
-  async fetchOneByIdHttp(ipfsCid: IpfsCid): Promise<IpfsCommonContent> {
+  async fetchOneByIdHttp(ipfsCid: IpfsCid): Promise<IpfsCommonContent | null> {
     const subsocialApi = await resolveSubsocialApi();
     let res = null;
+
+    if (this.fetchedCidsList.has(ipfsCid.toString())) {
+      console.log(
+        `CID ${ipfsCid.toString()} has been already fetched. No duplicated fetches.`
+      );
+      return res;
+    }
 
     try {
       console.log(`Request by CID - ${ipfsCid.toString()}`);
       res = await subsocialApi.ipfs.getContent(ipfsCid, 10000);
       console.log(`Response by CID - ${ipfsCid.toString()} >>>`);
+      this.fetchedCidsList.add(ipfsCid.toString());
       await new Promise((res) => setTimeout(res, 200));
     } catch (e) {
       console.log(`Response by CID - ${ipfsCid.toString()} with ERROR`);

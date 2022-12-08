@@ -41,6 +41,7 @@ import { handleAccountFollowing } from './mappings/accountFollows';
 import { handleProfiles } from './mappings/account';
 import { handleSpacesFollowing } from './mappings/spaceFollows';
 import { handlePostReactions } from './mappings/reaction';
+import { splitIntoBatches } from './common/utils';
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -50,7 +51,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -113,6 +114,26 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           : '---'
       }]`
     );
+
+  const currentBlocksListFull = [...ctx.blocks];
+  let blocksBatchHandlerIndex = 1;
+  for (const blocksBatch of splitIntoBatches(
+    currentBlocksListFull,
+    ctx.blocks[ctx.blocks.length - 1].header.height > 11000000
+      ? ctx.blocks.length + 1
+      : 3
+  )) {
+    const partialCtx = ctx;
+    partialCtx.blocks = blocksBatch;
+    await blocksBatchHandler(partialCtx);
+    ctx.log.info(
+      `Blocks batch #${blocksBatchHandlerIndex} has been processed.`
+    );
+    blocksBatchHandlerIndex++;
+  }
+});
+
+async function blocksBatchHandler(ctx: Ctx) {
   const entityRelationsManager = EntityRelationsManager.getInstance(ctx);
 
   entityRelationsManager.setEntityRelationsForFetch(Post, [
@@ -235,28 +256,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
   ctx.log.info('DONE :: handlePostReactions');
 
   await StorageDataManager.getInstance(ctx).purgeStorage();
-});
+  entityRelationsManager.purgeStorage();
 
-// processor.addEventHandler('Posts.PostCreated', postCreated);
-// processor.addEventHandler('Posts.PostUpdated', postUpdated);
-// processor.addEventHandler('Posts.PostMoved', postMoved);
-//
-// processor.addEventHandler('Spaces.SpaceCreated', spaceCreated);
-// processor.addEventHandler('Spaces.SpaceUpdated', spaceUpdated);
-//
-// processor.addEventHandler('Reactions.PostReactionCreated', postReactionCreated);
-// processor.addEventHandler('Reactions.PostReactionUpdated', postReactionUpdated);
-// processor.addEventHandler('Reactions.PostReactionDeleted', postReactionDeleted);
-//
-// processor.addEventHandler('Profiles.ProfileUpdated', accountUpdated);
-//
-// processor.addEventHandler('SpaceFollows.SpaceFollowed', spaceFollowed);
-// processor.addEventHandler('SpaceFollows.SpaceUnfollowed', spaceUnfollowed);
-//
-// processor.addEventHandler('AccountFollows.AccountFollowed', accountFollowed);
-// processor.addEventHandler(
-//   'AccountFollows.AccountUnfollowed',
-//   accountUnfollowed
-// );
-//
-// processor.run();
+  await ctx.store.flush();
+  ctx.store.purge();
+}

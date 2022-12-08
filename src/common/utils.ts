@@ -210,3 +210,16 @@ export function getOrderedListByBlockNumber<T extends EventData>(
     a.blockNumber < b.blockNumber ? -1 : b.blockNumber < a.blockNumber ? 1 : 0
   );
 }
+
+export function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
+  if (list.length <= maxBatchSize) {
+    yield list;
+  } else {
+    let offset = 0;
+    while (list.length - offset > maxBatchSize) {
+      yield list.slice(offset, offset + maxBatchSize);
+      offset += maxBatchSize;
+    }
+    yield list.slice(offset);
+  }
+}

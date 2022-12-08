@@ -90,7 +90,7 @@ export const processAccountFollowingUnfollowingRelations = async ({
     if (!accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc -= 1;
     currentFollowingCountOfFollowerAcc -= 1;
-    ctx.store.deferredUpsert(accountFollowersEntity);
+    ctx.store.deferredRemove(accountFollowersEntity);
 
     await addNotificationForAccount(followingAccount, activity, ctx);
     await deleteAllNotificationsAboutAccount(
