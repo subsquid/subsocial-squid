@@ -66,46 +66,70 @@ export class IpfsDataManager {
 
     console.log('fetchManyByCids - ', ipfsCids.length);
 
-    try {
-      await batchCaller({
-        srcList: ipfsCids,
-        batchSize: 100,
-        timeout: 10000,
-        handler: async (cidsBatch) => {
-          const promisesList = cidsBatch.map(async (cid) => {
-            const cidStr = cid.toString();
-
-            const controller = new AbortController();
-            const signal = controller.signal;
-
-            try {
-              for await (const chunk of node.cat(cidStr, {
-                timeout: 10000,
-                signal
-              })) {
-                // @ts-ignore
-                this.contentMap.set(
-                  cidStr,
-                  // @ts-ignore
-                  chunk
-                );
-              }
-              controller.abort();
-            } catch (e) {
-              console.log(e);
-            }
-
-            console.dir(this.contentMap.get(cidStr), { depth: null });
-          });
-
-          await Promise.all(promisesList);
-          console.log(`icds batch has been resolved`);
-          // await new Promise((res) => setTimeout(res, 1000));
+    for (const cidItem of ipfsCids) {
+      const cidStr = cidItem.toString();
+      const controller = new AbortController();
+      const signal = controller.signal;
+      try {
+        for await (const chunk of node.cat(cidStr, {
+          timeout: 10000,
+          signal
+        })) {
+          // @ts-ignore
+          this.contentMap.set(
+            cidStr,
+            // @ts-ignore
+            chunk
+          );
+          console.dir(this.contentMap.get(cidStr), { depth: null });
         }
-      });
-    } catch (err) {
-      console.log('ERROR - ', err);
+        await new Promise((res) => setTimeout(res, 500));
+        controller.abort();
+      } catch (e) {
+        console.log(e);
+      }
     }
+
+    // try {
+    //   await batchCaller({
+    //     srcList: ipfsCids,
+    //     batchSize: 100,
+    //     timeout: 10000,
+    //     handler: async (cidsBatch) => {
+    //       const promisesList = cidsBatch.map(async (cid) => {
+    //         const cidStr = cid.toString();
+    //
+    //         const controller = new AbortController();
+    //         const signal = controller.signal;
+    //
+    //         try {
+    //           for await (const chunk of node.cat(cidStr, {
+    //             timeout: 10000,
+    //             signal
+    //           })) {
+    //             // @ts-ignore
+    //             this.contentMap.set(
+    //               cidStr,
+    //               // @ts-ignore
+    //               chunk
+    //             );
+    //           }
+    //           controller.abort();
+    //         } catch (e) {
+    //           console.log(e);
+    //         }
+    //
+    //         console.dir(this.contentMap.get(cidStr), { depth: null });
+    //       });
+    //
+    //       await Promise.all(promisesList);
+    //       console.log(`icds batch has been resolved`);
+    //       // await new Promise((res) => setTimeout(res, 1000));
+    //     }
+    //   });
+    // } catch (err) {
+    //   console.log('ERROR - ', err);
+    // }
   }
 
   // async getManyByCids<T extends IpfsCommonContent>(
