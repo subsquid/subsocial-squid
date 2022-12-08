@@ -102,7 +102,7 @@ export type EventItem = BatchProcessorEventItem<typeof processor>;
 export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
 
-processor.run(new TypeormDatabase(), async (ctx) => {
+processor.run(new TypeormDatabase({ saveBatchSize: 400 }), async (ctx) => {
   ctx.log
     .child('sqd:processor')
     .info(
