@@ -50,7 +50,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  .setBlockRange({ from: 1093209 }) // SpaceCreated
+  // .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -100,9 +100,9 @@ export type Item = BatchProcessorItem<typeof processor>;
 export type EventItem = BatchProcessorEventItem<typeof processor>;
 export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
-process.setMaxListeners(0);
 
 processor.run(new TypeormDatabase(), async (ctx) => {
+  process.setMaxListeners(0);
   ctx.log
     .child('sqd:processor')
     .info(
