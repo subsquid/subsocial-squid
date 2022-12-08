@@ -243,10 +243,10 @@ export class StorageDataManager {
       }
     }
 
-    // console.dir(this.idsForFetchIpfs, { depth: null });
-    // await this.ipfsDataManager.fetchManyByCids([
-    //   ...(this.idsForFetchIpfs.values() || [])
-    // ]);
+    console.dir(this.idsForFetchIpfs, { depth: null });
+    await this.ipfsDataManager.fetchManyByCids([
+      ...(this.idsForFetchIpfs.values() || [])
+    ]);
     this.idsForFetchStorage.clear();
     this.idsForFetchIpfs.clear();
   }
