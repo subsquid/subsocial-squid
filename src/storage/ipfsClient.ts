@@ -112,7 +112,7 @@ export class IpfsDataManager {
   async fetchManyByCids<T extends IpfsCommonContent>(
     ipfsCids: IpfsCid[]
   ): Promise<void> {
-    const maxCallsPerNode = 10;
+    const maxCallsPerNode = 5;
     let nodeUsageIndex = 0;
     // const node = await this.getIpfsNode();
     let node = await IPFS.create();
