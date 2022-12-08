@@ -15,7 +15,6 @@ import { resolveSpaceIPFSContentByCid } from '../connection/resolvers/resolveSpa
 import * as v7 from '../types/generated/v7';
 import { IpfsCid, IpfsCommonContent } from '@subsocial/api/types/ipfs';
 import { ContentResult } from '@subsocial/api/types';
-import { getMany } from './ipfsClient';
 
 interface SpaceStructDecorated {
   id: string;
@@ -185,35 +184,35 @@ export async function resolveSpacesHandleStorage(
     throw new UnknownVersionError(storage.constructor.name);
   }
 }
-
-export async function resolveSpacesContentIPFS<T>(
-  spaceCids: [string, IpfsCid][]
-): Promise<Map<string, T> | undefined> {
-  try {
-    const resMap = new Map();
-    let tmpRes: ContentResult<T> = {};
-
-    await batchCaller({
-      srcList: spaceCids.map((p) => p[1]),
-      batchSize: 500,
-      timeout: 7000,
-      handler: async (cidsBatch) => {
-        // @ts-ignore
-        tmpRes = {
-          ...tmpRes,
-          ...(await getMany(cidsBatch))
-          // ...(await resolveSpaceIPFSContentByCid(cidsBatch))
-        };
-        await new Promise((res) => setTimeout(res, 2000));
-      }
-    });
-
-    for (const [spaceId, cid] of spaceCids) {
-      resMap.set(spaceId, tmpRes[cid.toString()] ?? undefined);
-    }
-
-    return resMap;
-  } catch (e) {
-    return undefined;
-  }
-}
+//
+// export async function resolveSpacesContentIPFS<T>(
+//   spaceCids: [string, IpfsCid][]
+// ): Promise<Map<string, T> | undefined> {
+//   try {
+//     const resMap = new Map();
+//     let tmpRes: ContentResult<T> = {};
+//
+//     await batchCaller({
+//       srcList: spaceCids.map((p) => p[1]),
+//       batchSize: 500,
+//       timeout: 7000,
+//       handler: async (cidsBatch) => {
+//         // @ts-ignore
+//         tmpRes = {
+//           ...tmpRes,
+//           ...(await getMany(cidsBatch))
+//           // ...(await resolveSpaceIPFSContentByCid(cidsBatch))
+//         };
+//         await new Promise((res) => setTimeout(res, 2000));
+//       }
+//     });
+//
+//     for (const [spaceId, cid] of spaceCids) {
+//       resMap.set(spaceId, tmpRes[cid.toString()] ?? undefined);
+//     }
+//
+//     return resMap;
+//   } catch (e) {
+//     return undefined;
+//   }
+// }

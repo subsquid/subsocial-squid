@@ -177,7 +177,7 @@ export async function batchCaller<T>({
   timeout = 0
 }: {
   srcList: Array<T>;
-  handler: (batch: Array<T>) => Promise<void>;
+  handler: (batch: Array<T>, batchIndex?: number) => Promise<void>;
   batchSize?: number;
   timeout?: number;
 }) {
@@ -190,7 +190,8 @@ export async function batchCaller<T>({
       new Promise<void>(async (res) => {
         await new Promise<void>((waitRes) =>
           setTimeout(async () => {
-            await handler(batch);
+            const batchIndex = delayIndex;
+            await handler(batch, batchIndex);
             waitRes();
           }, delayIndex * timeout)
         );

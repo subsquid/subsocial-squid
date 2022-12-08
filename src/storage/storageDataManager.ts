@@ -4,7 +4,6 @@ import { EventName } from '../model';
 import {
   resolveSpacesData,
   resolveSpacesHandleStorage,
-  resolveSpacesContentIPFS
 } from './space';
 import { resolvePostsData } from './post';
 import { ParsedEventsDataScope } from '../common/eventsData';

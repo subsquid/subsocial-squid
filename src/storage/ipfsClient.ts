@@ -8,6 +8,8 @@ import * as IPFS from 'ipfs-core';
 import { decode } from '@ipld/dag-cbor';
 import { Ctx } from '../processor';
 import { batchCaller } from '../common/utils';
+import { setPriority } from "os";
+// import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
 
 let ipfsNode: IPFSTypes.IPFS | null = null;
 
@@ -18,38 +20,6 @@ export async function getIpfsNode(): Promise<IPFSTypes.IPFS> {
 
   // @ts-ignore
   return ipfsNode;
-}
-
-export async function getMany<T extends IpfsCommonContent>(
-  ipfsCids: IpfsCid[]
-): Promise<ContentResult<T>> {
-  const node = await getIpfsNode();
-
-  try {
-    const content: ContentResult<T> = {};
-
-    const promisesList = ipfsCids.map(async (cid) => {
-      const cidStr = cid.toString();
-      const cidItem = CID.parse(cidStr);
-
-      // @ts-ignore
-      const nodeResp = await node.get(cidStr);
-      // const decoder = new TextDecoder()
-      for await (const chunk of node.cat(cidStr)) {
-        // @ts-ignore
-        content[cidStr] = chunk;
-        // streamResult += decoder.decode(chunk, {
-        //   stream: true
-        // })
-      }
-    });
-
-    await Promise.all(promisesList);
-    return content;
-  } catch (err) {
-    console.log('ERROR - ', err);
-    return {};
-  }
 }
 
 export class IpfsDataManager {
@@ -99,19 +69,34 @@ export class IpfsDataManager {
     try {
       await batchCaller({
         srcList: ipfsCids,
-        batchSize: 100,
-        timeout: 5000,
+        batchSize: 10,
+        timeout: 1000,
         handler: async (cidsBatch) => {
           const promisesList = cidsBatch.map(async (cid) => {
             const cidStr = cid.toString();
-            for await (const chunk of node.cat(cidStr)) {
+
+            const controller = new AbortController();
+            const signal = controller.signal;
+
+            for await (const chunk of node.cat(cidStr, {
+              timeout: 500,
+              signal
+            })) {
               // @ts-ignore
-              this.contentMap.set(cidStr, chunk);
+              this.contentMap.set(
+                cidStr,
+                // @ts-ignore
+                chunk
+              );
             }
+            controller.abort();
+
+            console.dir(this.contentMap.get(cidStr), { depth: null });
           });
 
           await Promise.all(promisesList);
-          await new Promise((res) => setTimeout(res, 1000));
+          console.log(`icds batch has been resolved`);
+          // await new Promise((res) => setTimeout(res, 1000));
         }
       });
     } catch (err) {
