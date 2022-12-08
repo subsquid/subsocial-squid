@@ -60,7 +60,8 @@ export class IpfsDataManager {
   }
 
   async fetchOneById(ipfsCid: IpfsCid): Promise<IpfsCommonContent> {
-    const node = await this.getIpfsNode();
+    // const node = await this.getIpfsNode();
+    const node = await IPFS.create();
     const cidStr = ipfsCid.toString();
     let res = null;
 
@@ -78,6 +79,7 @@ export class IpfsDataManager {
       console.log(`Response by CID - ${cidStr} with ERROR`);
       console.log(e);
     }
+    await node.stop();
     // @ts-ignore
     return res;
   }
