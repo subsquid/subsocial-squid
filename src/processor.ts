@@ -100,6 +100,7 @@ export type Item = BatchProcessorItem<typeof processor>;
 export type EventItem = BatchProcessorEventItem<typeof processor>;
 export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
+process.setMaxListeners(0);
 
 processor.run(new TypeormDatabase(), async (ctx) => {
   ctx.log

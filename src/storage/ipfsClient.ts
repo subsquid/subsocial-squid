@@ -68,12 +68,10 @@ export class IpfsDataManager {
 
     for (const cidItem of ipfsCids) {
       const cidStr = cidItem.toString();
-      const controller = new AbortController();
-      const signal = controller.signal;
+      console.log(`Request by CID - ${cidStr}`);
       try {
         for await (const chunk of node.cat(cidStr, {
-          timeout: 10000,
-          signal
+          timeout: 20000
         })) {
           // @ts-ignore
           this.contentMap.set(
@@ -81,11 +79,12 @@ export class IpfsDataManager {
             // @ts-ignore
             chunk
           );
+          console.log(`Response by CID - ${cidStr} >>>`);
           console.dir(this.contentMap.get(cidStr), { depth: null });
         }
-        await new Promise((res) => setTimeout(res, 500));
-        controller.abort();
+        await new Promise((res) => setTimeout(res, 250));
       } catch (e) {
+        console.log(`Response by CID - ${cidStr} with ERROR`);
         console.log(e);
       }
     }
