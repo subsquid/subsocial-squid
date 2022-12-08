@@ -47,7 +47,7 @@ export async function postUpdated(
   // }
 
   const storageDataManagerInst = StorageDataManager.getInstance(ctx);
-  const postIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+  const postIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
     'post',
     eventData.ipfsSrc
   );

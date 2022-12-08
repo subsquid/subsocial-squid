@@ -32,7 +32,7 @@ export async function spaceUpdated(
     throw new CommonCriticalError();
   }
 
-  const spaceIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+  const spaceIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
     'space',
     eventData.ipfsSrc
   );

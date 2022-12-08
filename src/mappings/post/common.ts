@@ -85,7 +85,7 @@ export const ensurePost = async ({
   //   throw new CommonCriticalError();
   // }
 
-  const postIpfsContent = storageDataManagerInst.getIpfsContentByCid(
+  const postIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
     'post',
     eventData.ipfsSrc
   );

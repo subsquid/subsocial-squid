@@ -59,6 +59,29 @@ export class IpfsDataManager {
     return this.ipfsNode as IPFSTypes.IPFS;
   }
 
+  async fetchOneById(ipfsCid: IpfsCid): Promise<IpfsCommonContent> {
+    const node = await this.getIpfsNode();
+    const cidStr = ipfsCid.toString();
+    let res = null;
+
+    try {
+      console.log(`Request by CID - ${cidStr}`);
+      for await (const chunk of node.cat(cidStr, {
+        timeout: 20000
+      })) {
+        res = chunk;
+
+        console.log(`Response by CID - ${cidStr} >>>`);
+      }
+      await new Promise((res) => setTimeout(res, 100));
+    } catch (e) {
+      console.log(`Response by CID - ${cidStr} with ERROR`);
+      console.log(e);
+    }
+    // @ts-ignore
+    return res;
+  }
+
   async fetchManyByCids<T extends IpfsCommonContent>(
     ipfsCids: IpfsCid[]
   ): Promise<void> {

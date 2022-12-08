@@ -1,10 +1,7 @@
 import { SubstrateBlock } from '@subsquid/substrate-processor';
 import { Block, Ctx } from '../processor';
 import { EventName } from '../model';
-import {
-  resolveSpacesData,
-  resolveSpacesHandleStorage,
-} from './space';
+import { resolveSpacesData, resolveSpacesHandleStorage } from './space';
 import { resolvePostsData } from './post';
 import { ParsedEventsDataScope } from '../common/eventsData';
 import { SpaceData, PostWithAllDetails } from '@subsocial/types/dto';
@@ -118,6 +115,16 @@ export class StorageDataManager {
   ): IpfsContent<T> | null {
     if (!cid) return null;
     return this.ipfsDataManager.getContent(cid) as IpfsContent<T>;
+  }
+
+  public async fetchIpfsContentByCid<T extends StorageSection>(
+    section: T,
+    cid: string | null
+  ): Promise<IpfsContent<T> | null> {
+    if (!cid) return null;
+    const res = await this.ipfsDataManager.fetchOneById(cid);
+    if (!res) return null;
+    return res as IpfsContent<T>;
   }
 
   public getStorageDataItemsForBlock<T extends StorageSection>(
@@ -236,10 +243,10 @@ export class StorageDataManager {
       }
     }
 
-    console.dir(this.idsForFetchIpfs, { depth: null });
-    await this.ipfsDataManager.fetchManyByCids([
-      ...(this.idsForFetchIpfs.values() || [])
-    ]);
+    // console.dir(this.idsForFetchIpfs, { depth: null });
+    // await this.ipfsDataManager.fetchManyByCids([
+    //   ...(this.idsForFetchIpfs.values() || [])
+    // ]);
     this.idsForFetchStorage.clear();
     this.idsForFetchIpfs.clear();
   }
