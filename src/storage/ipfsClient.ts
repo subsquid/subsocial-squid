@@ -9,6 +9,7 @@ import { decode } from '@ipld/dag-cbor';
 import { Ctx } from '../processor';
 import { batchCaller } from '../common/utils';
 import { setPriority } from 'os';
+import { resolveSubsocialApi } from '../connection/subsocial';
 // import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
 
 let ipfsNode: IPFSTypes.IPFS | null = null;
@@ -60,26 +61,18 @@ export class IpfsDataManager {
   }
 
   async fetchOneByIdHttp(ipfsCid: IpfsCid): Promise<IpfsCommonContent> {
-    // const node = await this.getIpfsNode();
-    const node = await IPFS.create();
-    const cidStr = ipfsCid.toString();
+    const subsocialApi = await resolveSubsocialApi();
     let res = null;
 
     try {
-      console.log(`Request by CID - ${cidStr}`);
-      for await (const chunk of node.cat(cidStr, {
-        timeout: 20000
-      })) {
-        res = chunk;
-
-        console.log(`Response by CID - ${cidStr} >>>`);
-      }
-      await new Promise((res) => setTimeout(res, 100));
+      console.log(`Request by CID - ${ipfsCid.toString()}`);
+      res = await subsocialApi.ipfs.getContent(ipfsCid, 10000);
+      console.log(`Response by CID - ${ipfsCid.toString()} >>>`);
+      await new Promise((res) => setTimeout(res, 200));
     } catch (e) {
-      console.log(`Response by CID - ${cidStr} with ERROR`);
+      console.log(`Response by CID - ${ipfsCid.toString()} with ERROR`);
       console.log(e);
     }
-    await node.stop();
     // @ts-ignore
     return res;
   }
@@ -93,7 +86,7 @@ export class IpfsDataManager {
     try {
       console.log(`Request by CID - ${cidStr}`);
       for await (const chunk of node.cat(cidStr, {
-        timeout: 20000
+        timeout: 10000
       })) {
         res = chunk;
 

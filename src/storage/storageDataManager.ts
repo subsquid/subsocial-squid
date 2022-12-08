@@ -122,7 +122,7 @@ export class StorageDataManager {
     cid: string | null
   ): Promise<IpfsContent<T> | null> {
     if (!cid) return null;
-    const res = await this.ipfsDataManager.fetchOneById(cid);
+    const res = await this.ipfsDataManager.fetchOneByIdHttp(cid);
     if (!res) return null;
     return res as IpfsContent<T>;
   }
@@ -243,10 +243,10 @@ export class StorageDataManager {
       }
     }
 
-    console.dir(this.idsForFetchIpfs, { depth: null });
-    await this.ipfsDataManager.fetchManyByCids([
-      ...(this.idsForFetchIpfs.values() || [])
-    ]);
+    // console.dir(this.idsForFetchIpfs, { depth: null });
+    // await this.ipfsDataManager.fetchManyByCids([
+    //   ...(this.idsForFetchIpfs.values() || [])
+    // ]);
     this.idsForFetchStorage.clear();
     this.idsForFetchIpfs.clear();
   }
