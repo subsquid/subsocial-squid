@@ -8,7 +8,7 @@ import * as IPFS from 'ipfs-core';
 import { decode } from '@ipld/dag-cbor';
 import { Ctx } from '../processor';
 import { batchCaller } from '../common/utils';
-import { setPriority } from "os";
+import { setPriority } from 'os';
 // import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
 
 let ipfsNode: IPFSTypes.IPFS | null = null;
@@ -78,18 +78,22 @@ export class IpfsDataManager {
             const controller = new AbortController();
             const signal = controller.signal;
 
-            for await (const chunk of node.cat(cidStr, {
-              timeout: 500,
-              signal
-            })) {
-              // @ts-ignore
-              this.contentMap.set(
-                cidStr,
+            try {
+              for await (const chunk of node.cat(cidStr, {
+                timeout: 3000,
+                signal
+              })) {
                 // @ts-ignore
-                chunk
-              );
+                this.contentMap.set(
+                  cidStr,
+                  // @ts-ignore
+                  chunk
+                );
+              }
+              controller.abort();
+            } catch (e) {
+              console.log(e);
             }
-            controller.abort();
 
             console.dir(this.contentMap.get(cidStr), { depth: null });
           });
