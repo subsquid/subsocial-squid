@@ -69,8 +69,8 @@ export class IpfsDataManager {
     try {
       await batchCaller({
         srcList: ipfsCids,
-        batchSize: 10,
-        timeout: 1000,
+        batchSize: 100,
+        timeout: 10000,
         handler: async (cidsBatch) => {
           const promisesList = cidsBatch.map(async (cid) => {
             const cidStr = cid.toString();
@@ -80,7 +80,7 @@ export class IpfsDataManager {
 
             try {
               for await (const chunk of node.cat(cidStr, {
-                timeout: 3000,
+                timeout: 10000,
                 signal
               })) {
                 // @ts-ignore
