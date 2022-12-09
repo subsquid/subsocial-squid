@@ -60,13 +60,7 @@ export async function updateAggregatedStatus(
       where: {
         event,
         post: {
-          id: post.id,
-          rootPost: {
-            id: post.rootPost ? post.rootPost.id : null
-          },
-          parentPost: {
-            id: post.parentPost ? post.parentPost.id : null
-          }
+          id: post.id
         }
       }
     };
