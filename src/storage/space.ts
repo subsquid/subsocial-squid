@@ -61,9 +61,9 @@ async function getStorageDataSpaceById(
 
   if (storage.isV13) {
     if (Array.isArray(idOrList)) {
-      return await storage.getManyAsV13(idOrList);
+      return await storage.asV13.getMany(idOrList);
     } else {
-      return await storage.getAsV13(idOrList);
+      return await storage.asV13.get(idOrList);
     }
   } else {
     throw new UnknownVersionError(storage.constructor.name);
@@ -174,11 +174,11 @@ export async function resolveSpacesHandleStorage(
 
   if (storage.isV7) {
     if (Array.isArray(idOrList)) {
-      return await storage.getManyAsV7(
+      return await storage.asV7.getMany(
         idOrList as [Uint8Array, v7.InnerValue][]
       );
     } else {
-      return await storage.getAsV7(idOrList[0], idOrList[1]);
+      return await storage.asV7.get(idOrList[0], idOrList[1]);
     }
   } else {
     throw new UnknownVersionError(storage.constructor.name);
