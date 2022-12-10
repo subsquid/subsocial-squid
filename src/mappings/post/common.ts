@@ -5,7 +5,7 @@ import {
   asCommentStruct,
   asSharedPostStruct
 } from '@subsocial/api/subsocial/flatteners/utils';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
@@ -17,6 +17,7 @@ import { PostsCreatePostCall } from '../../types/generated/calls';
 import { PostCreatedData } from '../../common/types';
 import { Ctx } from '../../processor';
 import { StorageDataManager } from '../../storage/storageDataManager';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 const updatePostReplyCount = async (
   targetPost: Post,
@@ -30,7 +31,7 @@ const updatePostReplyCount = async (
   } else {
     targetPostUpdated.publicRepliesCount += 1;
   }
-  await ctx.store.deferredUpsert(targetPostUpdated);
+  await ctx.store.save(targetPostUpdated);
 };
 
 /**
@@ -71,7 +72,7 @@ export const ensurePost = async ({
   postId: string;
   ctx: Ctx;
   eventData: PostCreatedData;
-}): Promise<Post | null> => {
+}): Promise<Post> => {
   const storageDataManagerInst = StorageDataManager.getInstance(ctx);
 
   // const postStorageData = storageDataManagerInst.getStorageDataById(
@@ -93,9 +94,7 @@ export const ensurePost = async ({
   let space = null;
 
   if (eventData.postKind === PostKind.RegularPost) {
-    if (eventData.spaceId) {
-      space = await ctx.store.get(Space, eventData.spaceId, false);
-    }
+    space = await getEntityWithRelations.space(eventData.spaceId, ctx);
   }
   /**
    * TODO We won't add space to child posts (comment/replies) to avoid redundant processing in root PostMoved event
@@ -118,7 +117,7 @@ export const ensurePost = async ({
   //     space = await ctx.store.get(Space, rootSpacePost.space.id, false);
   // }
 
-  const signerAccountInst = await ensureAccount(
+  const signerAccountInst = await getOrCreateAccount(
     eventData.accountId,
     ctx,
     'a140c4ab-748a-42b2-86be-8628c5e3e5cb'
@@ -128,12 +127,12 @@ export const ensurePost = async ({
 
   if (eventData.forced && eventData.forcedData) {
     post.hidden = eventData.forcedData.hidden;
-    post.ownedByAccount = await ensureAccount(
+    post.ownedByAccount = await getOrCreateAccount(
       eventData.forcedData.owner,
       ctx,
       '6afd11e7-555b-4c77-a55c-4218aa3e9b1c'
     );
-    post.createdByAccount = await ensureAccount(
+    post.createdByAccount = await getOrCreateAccount(
       eventData.forcedData.account,
       ctx,
       'fd17fcbf-743b-4ed4-9a5a-787018570cdf'
@@ -168,12 +167,16 @@ export const ensurePost = async ({
 
   switch (post.kind) {
     case PostKind.Comment:
-      post.rootPost = eventData.rootPostId
-        ? await ctx.store.get(Post, eventData.rootPostId, false)
-        : null;
-      post.parentPost = eventData.parentPostId
-        ? await ctx.store.get(Post, eventData.parentPostId, false)
-        : null;
+      post.rootPost = await getEntityWithRelations.post({
+        postId: eventData.rootPostId,
+        ctx,
+        rootOrParentPost: true
+      });
+      post.parentPost = await getEntityWithRelations.post({
+        postId: eventData.parentPostId,
+        ctx,
+        rootOrParentPost: true
+      });
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
       if (post.parentPost)
@@ -181,9 +184,11 @@ export const ensurePost = async ({
       break;
 
     case PostKind.SharedPost:
-      post.sharedPost = eventData.originalPost
-        ? await ctx.store.get(Post, eventData.originalPost, false)
-        : null;
+      post.sharedPost = await getEntityWithRelations.post({
+        postId: eventData.originalPost,
+        ctx
+      });
+
       break;
   }
 
@@ -210,8 +215,6 @@ export const ensurePost = async ({
     //   post.proposalIndex = meta[0].proposalIndex;
     // }
   }
-
-  ctx.store.deferredUpsert(post);
 
   return post;
 };

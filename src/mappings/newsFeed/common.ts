@@ -10,7 +10,7 @@ import {
 } from '../../model';
 import { getNewsFeedEntityId } from '../../common/utils';
 import { Ctx } from '../../processor';
-import { ensureAccount } from "../account";
+import { getOrCreateAccount } from '../account';
 
 /**
  * Add Post to NewsFeed for all Account's and Space's followers.
@@ -46,7 +46,7 @@ export const addPostToFeeds = async (
     );
   });
 
-  if (post.space && post.space.id) {
+  if (post.space) {
     const spaceFollowers = await ctx.store.find(SpaceFollowers, {
       where: { followingSpace: { id: post.space.id } }
     });
@@ -68,11 +68,11 @@ export const addPostToFeeds = async (
       });
   }
 
-  await ctx.store.deferredUpsert([...feedItemsMap.values()]);
+  await ctx.store.save([...feedItemsMap.values()]);
 };
 
 export const deleteSpacePostsFromFeedForAccount = async (
-  accountId:  string,
+  accountId: string,
   space: Space,
   ctx: Ctx
 ): Promise<void> => {
@@ -95,7 +95,7 @@ export const deleteSpacePostsFromFeedForAccount = async (
     ]
   });
 
-  await ctx.store.deferredRemove(relatedFeedItems);
+  await ctx.store.remove(relatedFeedItems);
 };
 
 export const deleteAccountPostsFromFeedForAccount = async (
@@ -113,5 +113,5 @@ export const deleteAccountPostsFromFeedForAccount = async (
     }
   });
 
-  await ctx.store.deferredRemove(feedsForDelete);
+  await ctx.store.remove(feedsForDelete);
 };

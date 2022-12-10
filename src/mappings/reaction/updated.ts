@@ -2,7 +2,7 @@ import { ReactionKind, Post, Reaction, Activity, EventName } from '../../model';
 import { ReactionsPostReactionUpdatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import {
   addressSs58ToString,
   ensurePositiveOrZeroValue,
@@ -18,6 +18,7 @@ import {
 import { getReactionKindFromCall } from './common';
 import { Ctx } from '../../processor';
 import { PostReactionUpdatedData } from '../../common/types';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function postReactionUpdated(
   ctx: Ctx,
@@ -32,9 +33,13 @@ export async function postReactionUpdated(
     blockNumber
   } = eventData;
 
-  const account = await ensureAccount(accountId, ctx, '87b4ba64-d8d8-494c-a0e6-c9a7d1d1dd05');
+  const account = await getOrCreateAccount(
+    accountId,
+    ctx,
+    '87b4ba64-d8d8-494c-a0e6-c9a7d1d1dd05'
+  );
 
-  const reaction = await ctx.store.get(Reaction, reactionId, false);
+  const reaction = await ctx.store.get(Reaction, reactionId);
 
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx, eventData);
@@ -45,9 +50,9 @@ export async function postReactionUpdated(
   reaction.updatedAtTime = timestamp;
   reaction.updatedAtBlock = BigInt(blockNumber.toString());
 
-  await ctx.store.deferredUpsert(reaction);
+  await ctx.store.save(reaction);
 
-  const post = await ctx.store.get(Post, postId, false);
+  const post = await getEntityWithRelations.post({ postId, ctx });
 
   if (!post) {
     new EntityProvideFailWarning(Post, postId, ctx, eventData);
@@ -62,7 +67,7 @@ export async function postReactionUpdated(
     post.upvotesCount = ensurePositiveOrZeroValue(post.upvotesCount - 1);
   }
 
-  await ctx.store.deferredUpsert(post);
+  await ctx.store.save(post);
 
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(
@@ -80,7 +85,7 @@ export async function postReactionUpdated(
     new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
-  await addNotificationForAccount(post.ownedByAccount.id, activity, ctx);
+  await addNotificationForAccount(post.ownedByAccount, activity, ctx);
 }
 
 //
@@ -91,7 +96,7 @@ export async function postReactionUpdated(
 //
 //   const { accountId, reactionId, postId, newReactionKind } = eventData;
 //
-//   const account = await ensureAccount(accountId, ctx);
+//   const account = await getOrCreateAccount(accountId, ctx);
 //
 //   const reaction = await ctx.store.get(Reaction, {
 //     where: { id: reactionId },

@@ -8,7 +8,7 @@ import {
 } from '../../model';
 import { getActivityEntityId, decorateEventName } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import * as insertActivityData from './activityUtils';
 import { Ctx } from '../../processor';
 import { EventData } from '../../common/types';
@@ -43,7 +43,7 @@ export const setActivity = async ({
     ];
 
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx, '34bfd3b6-abc0-4911-b543-cac93e01b77d');
+    account instanceof Account ? account : await getOrCreateAccount(account, ctx, '34bfd3b6-abc0-4911-b543-cac93e01b77d');
 
   let activity = new Activity({
     id: getActivityEntityId(
@@ -214,6 +214,6 @@ export const setActivity = async ({
         ctx
       });
   }
-  await ctx.store.deferredUpsert(activity);
+  await ctx.store.save(activity);
   return activity;
 };

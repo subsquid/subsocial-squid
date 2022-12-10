@@ -5,7 +5,7 @@ import {
 } from '../../common/utils';
 import { Post, Space, Activity, EventName } from '../../model';
 import { PostsPostMovedEvent } from '../../types/generated/events';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import {
@@ -25,19 +25,29 @@ import {
 // import { updateSpaceForPostChildren } from './common';
 import { postFollowed, postUnfollowed } from '../postCommentFollows';
 import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function postMoved(
   ctx: Ctx,
   eventData: PostMovedData
 ): Promise<void> {
-  const account = await ensureAccount(eventData.accountId, ctx, '92b75b7f-4397-4ff5-a387-ff214aa3c480');
+  const account = await getOrCreateAccount(
+    eventData.accountId,
+    ctx,
+    '92b75b7f-4397-4ff5-a387-ff214aa3c480'
+  );
 
-  const post = await ctx.store.get(Post, eventData.postId);
+  const post = await getEntityWithRelations.post({
+    postId: eventData.postId,
+    ctx
+  });
 
   if (!post) {
     new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
     throw new CommonCriticalError();
   }
+
+  const prevSpaceInst = await getEntityWithRelations.space(eventData.fromSpace, ctx)
 
   /**
    * Update counters for previous space. Will be skipped if post is restored
@@ -45,7 +55,7 @@ export async function postMoved(
    */
   if (eventData.fromSpace)
     await updatePostsCountersInSpace({
-      space: await ctx.store.get(Space, eventData.fromSpace, false),
+      space: prevSpaceInst,
       post,
       action: SpaceCountersAction.PostDeleted,
       ctx
@@ -54,7 +64,7 @@ export async function postMoved(
   let newSpaceInst = null;
 
   if (eventData.toSpace && eventData.toSpace !== '0') {
-    newSpaceInst = await ctx.store.get(Space, eventData.toSpace, false);
+    newSpaceInst = await getEntityWithRelations.space(eventData.toSpace, ctx);
 
     if (!newSpaceInst) {
       new EntityProvideFailWarning(
@@ -80,7 +90,7 @@ export async function postMoved(
       ctx
     });
 
-  await ctx.store.deferredUpsert(post);
+  await ctx.store.save(post);
 
   if (!newSpaceInst) {
     await postUnfollowed(post, ctx);
@@ -89,8 +99,6 @@ export async function postMoved(
   }
 
   // await updateSpaceForPostChildren(post, newSpaceInst, ctx);
-
-  const prevSpaceInst = await ctx.store.get(Space, eventData.toSpace, false)
 
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),

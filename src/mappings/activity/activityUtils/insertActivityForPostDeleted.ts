@@ -13,10 +13,7 @@ export async function insertActivityForPostDeleted(
   const { activity, post, ctx } = params;
 
   activity.post = post;
-  activity.space =
-    post.space && post.space.id
-      ? await ctx.store.get(Space, post.space.id, false)
-      : null;
+  activity.space = post.space;
   activity.aggregated = false;
   activity.aggCount = BigInt(0);
   return activity;

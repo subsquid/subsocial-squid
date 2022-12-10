@@ -4,7 +4,7 @@ import { EventName } from "../../model";
 import { getOrderedListByBlockNumber } from "../../common/utils";
 import { accountUpdated } from './updated';
 
-export { ensureAccount } from './common';
+export { getOrCreateAccount } from './common';
 
 
 export async function handleProfiles(

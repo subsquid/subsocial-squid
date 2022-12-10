@@ -7,7 +7,7 @@ import {
 import { PostId } from '@subsocial/types/substrate/interfaces';
 import { Post, Account, EventName, Space } from '../../model';
 import { PostsPostUpdatedEvent } from '../../types/generated/events';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import {
@@ -24,12 +24,16 @@ import {
 import { isEmptyArray } from '@subsocial/utils';
 import { Ctx } from '../../processor';
 import { StorageDataManager } from '../../storage/storageDataManager';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function postUpdated(
   ctx: Ctx,
   eventData: PostUpdatedData
 ): Promise<void> {
-  const post = await ctx.store.get(Post, eventData.postId);
+  const post = await getEntityWithRelations.post({
+    postId: eventData.postId,
+    ctx
+  });
   if (!post) {
     new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
     throw new CommonCriticalError();
@@ -52,7 +56,7 @@ export async function postUpdated(
     eventData.ipfsSrc
   );
 
-  const ownedByAccount = await ensureAccount(
+  const ownedByAccount = await getOrCreateAccount(
     post.ownedByAccount.id || eventData.accountId,
     ctx,
     '876a9485-c5ac-4198-8e49-9f18bb770e57'
@@ -82,13 +86,10 @@ export async function postUpdated(
     // }
   }
 
-  await ctx.store.deferredUpsert(post);
+  await ctx.store.save(post);
 
   await updatePostsCountersInSpace({
-    space:
-      post.space && post.space.id
-        ? await ctx.store.get(Space, post.space.id, false)
-        : null,
+    space: post.space ?? null,
     post,
     isPrevVisStateHidden: prevVisStateHidden,
     action: SpaceCountersAction.PostUpdated,

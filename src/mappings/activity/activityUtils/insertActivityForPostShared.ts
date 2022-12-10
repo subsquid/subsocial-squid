@@ -4,7 +4,6 @@ import {
   getAggregationCount,
   updateAggregatedStatus
 } from './aggregationUtils';
-import { getPostOwnerId } from './common';
 
 type InsertActivityForPostSharedParams = {
   post: Post;
@@ -18,12 +17,13 @@ export async function insertActivityForPostShared(
   const { activity, post, ctx } = params;
 
   activity.post = post;
-  activity.space =
-    post.space && post.space.id
-      ? await ctx.store.get(Space, post.space.id, false)
-      : null;
+  activity.space = post.space;
 
-  const ownerId = await getPostOwnerId(post, ctx);
+  const ownerId = post.parentPost
+    ? post.parentPost.ownedByAccount.id
+    : post.rootPost
+    ? post.rootPost.ownedByAccount.id
+    : null; // Owner of either root post or parent comment
 
   activity.aggregated = activity.account.id !== ownerId;
 

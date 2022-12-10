@@ -10,31 +10,14 @@ import {
   BatchBlock,
   BatchProcessorEventItem
 } from '@subsquid/substrate-processor/src/processor/batchProcessor';
-import { Store, TypeormDatabase } from '@subsquid/processor-tools';
+import { Store, TypeormDatabase } from '@subsquid/typeorm-store';
 import * as envConfig from './env';
 import {
   getParsedEventsData
   // processEntityRelationsByStorageData
 } from './common/eventsData';
-import { Post, Account, Space, Reaction } from './model';
-
-// import {
-//   postCreated,
-//   postUpdated,
-//   postMoved,
-//   postReactionCreated,
-//   postReactionUpdated,
-//   postReactionDeleted,
-//   spaceCreated,
-//   spaceUpdated,
-//   spaceFollowed,
-//   spaceUnfollowed,
-//   accountUpdated,
-//   accountFollowed,
-//   accountUnfollowed
-// } from './mappings';
 import { StorageDataManager } from './storage/storageDataManager';
-import { EntityRelationsManager } from './common/entityRelationsManager';
+// import { EntityRelationsManager } from './common/entityRelationsManager';
 import { handleSpaces } from './mappings/space';
 import { handlePosts } from './mappings/post';
 import { handleAccountFollowing } from './mappings/accountFollows';
@@ -51,7 +34,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -102,7 +85,7 @@ export type EventItem = BatchProcessorEventItem<typeof processor>;
 export type Ctx = BatchContext<Store, Item>;
 export type Block = BatchBlock<Item>;
 
-processor.run(new TypeormDatabase({ saveBatchSize: 400 }), async (ctx) => {
+processor.run(new TypeormDatabase(), async (ctx) => {
   ctx.log
     .child('sqd:processor')
     .info(
@@ -134,80 +117,59 @@ processor.run(new TypeormDatabase({ saveBatchSize: 400 }), async (ctx) => {
 });
 
 async function blocksBatchHandler(ctx: Ctx) {
-  const entityRelationsManager = EntityRelationsManager.getInstance(ctx);
 
-  entityRelationsManager.setEntityRelationsForFetch(Post, [
-    { entityClass: Account, propName: 'ownedByAccount' },
-    {
-      entityClass: Post,
-      propName: 'rootPost',
-      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-    },
-    {
-      entityClass: Post,
-      propName: 'parentPost',
-      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-    },
-    {
-      entityClass: Space,
-      propName: 'space',
-      relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-    }
-  ]);
-
-  entityRelationsManager.setEntityRelationsForFetch(Space, [
-    { entityClass: Account, propName: 'ownedByAccount' }
-  ]);
-  entityRelationsManager.setEntityRelationsForFetch(Account, [
-    { entityClass: Space, propName: 'profileSpace' }
-  ]);
-  entityRelationsManager.setEntityRelationsForFetch(Reaction, [
-    { entityClass: Account, propName: 'account' },
-    {
-      entityClass: Post,
-      propName: 'post',
-      relations: [
-        { entityClass: Account, propName: 'ownedByAccount' },
-        {
-          entityClass: Post,
-          propName: 'parentPost',
-          relations: [{ entityClass: Account, propName: 'ownedByAccount' }] // TODO check do we really need this nested relations
-        },
-        {
-          entityClass: Post,
-          propName: 'rootPost',
-          relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-        },
-        { entityClass: Space, propName: 'space' }
-      ]
-    }
-  ]);
+  // entityRelationsManager.setEntityRelationsForFetch(Post, [
+  //   { entityClass: Account, propName: 'ownedByAccount' },
+  //   {
+  //     entityClass: Post,
+  //     propName: 'rootPost',
+  //     relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+  //   },
+  //   {
+  //     entityClass: Post,
+  //     propName: 'parentPost',
+  //     relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+  //   },
+  //   {
+  //     entityClass: Space,
+  //     propName: 'space',
+  //     relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+  //   }
+  // ]);
+  //
+  // entityRelationsManager.setEntityRelationsForFetch(Space, [
+  //   { entityClass: Account, propName: 'ownedByAccount' }
+  // ]);
+  // entityRelationsManager.setEntityRelationsForFetch(Account, [
+  //   { entityClass: Space, propName: 'profileSpace' }
+  // ]);
+  // entityRelationsManager.setEntityRelationsForFetch(Reaction, [
+  //   { entityClass: Account, propName: 'account' },
+  //   {
+  //     entityClass: Post,
+  //     propName: 'post',
+  //     relations: [
+  //       { entityClass: Account, propName: 'ownedByAccount' },
+  //       {
+  //         entityClass: Post,
+  //         propName: 'parentPost',
+  //         relations: [{ entityClass: Account, propName: 'ownedByAccount' }] // TODO check do we really need this nested relations
+  //       },
+  //       {
+  //         entityClass: Post,
+  //         propName: 'rootPost',
+  //         relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
+  //       },
+  //       { entityClass: Space, propName: 'space' }
+  //     ]
+  //   }
+  // ]);
 
   /**
    * Collect data from all tracked events (postId, accountId, spaceId, etc.) and
    * add IDs to load queue.
    */
   const parsedEvents = getParsedEventsData(ctx);
-
-  ctx.log.info('DONE :: getParsedEventsData');
-
-  let idsForLoadPrev = new Map(
-    [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
-  );
-  /**
-   * Load entities from DB to the cache by collected IDs from events
-   */
-  await ctx.store.load(500);
-
-  ctx.log.info('DONE :: load #1');
-
-  /**
-   * Load all necessary relations for all loaded entities in the previous load
-   * by "idsForLoadPrev" and generated relations stack.
-   */
-  await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
-
-  ctx.log.info('DONE :: loadEntitiesByRelationsStackAll');
 
   /**
    * Load data from chain storage for required entities by collected IDs in
@@ -220,22 +182,6 @@ async function blocksBatchHandler(ctx: Ctx) {
   );
 
   ctx.log.info('DONE :: fetchStorageDataByEventsData');
-
-  // /**
-  //  * Add to load queue IDs from storage data (e.g. "post.struct.parentId")
-  //  */
-  // await processEntityRelationsByStorageData(parsedEvents, ctx);
-  //
-  // idsForLoadPrev = new Map(
-  //   [...ctx.store.idsForDeferredLoad.entries()].map((i) => i)
-  // );
-  // await ctx.store.load();
-  //
-  // /**
-  //  * Load all necessary relations for all loaded entities in the previous load
-  //  * by "idsForLoadPrev" and generated relations stack.
-  //  */
-  // await entityRelationsManager.loadEntitiesByRelationsStackAll(idsForLoadPrev);
 
   await handleSpaces(ctx, parsedEvents);
   ctx.log.info('DONE :: handleSpaces');
@@ -256,8 +202,4 @@ async function blocksBatchHandler(ctx: Ctx) {
   ctx.log.info('DONE :: handlePostReactions');
 
   await StorageDataManager.getInstance(ctx).purgeStorage();
-  entityRelationsManager.purgeStorage();
-
-  await ctx.store.flush();
-  ctx.store.purge();
 }

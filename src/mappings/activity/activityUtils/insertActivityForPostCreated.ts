@@ -21,38 +21,22 @@ export async function insertActivityForPostCreated(
      * Regular Post
      */
     activity.post = post;
-    activity.space =
-      post.space && post.space.id
-        ? await ctx.store.get(Space, post.space.id, false)
-        : null;
+    activity.space = post.space;
     activity.aggregated = false;
     activity.aggCount = BigInt(0);
-  } else if (post.isComment && post.rootPost && post.rootPost.id) {
+  } else if (post.isComment && post.rootPost) {
     /**
      * Post Comment / Comment Reply
      */
-    const parentPost = await ctx.store.get(
-      Post,
-      post.parentPost ? post.parentPost.id : null,
-      false
-    );
-    const rootPost = await ctx.store.get(
-      Post,
-      post.rootPost ? post.rootPost.id : null,
-      false
-    );
-
-    const ownerId = parentPost
-      ? parentPost.ownedByAccount.id
-      : rootPost
-      ? rootPost.ownedByAccount.id
+    const ownerId = post.parentPost
+      ? post.parentPost.ownedByAccount.id
+      : post.rootPost
+      ? post.rootPost.ownedByAccount.id
       : null; // Owner of either root post or parent comment
 
     activity.post = post;
-    activity.space =
-      rootPost && rootPost.space && rootPost.space.id
-        ? await ctx.store.get(Space, rootPost.space.id, false)
-        : null;
+    activity.space = post.rootPost.space;
+
     activity.aggregated = activity.account.id !== ownerId;
 
     activity.aggCount = BigInt(

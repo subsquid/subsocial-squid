@@ -4,7 +4,7 @@ import {
   getAccountFollowersEntityId,
   decorateEventName
 } from '../../common/utils';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { setActivity } from '../activity';
 import { deleteAccountPostsFromFeedForAccount } from '../newsFeed';
 import {
@@ -20,8 +20,16 @@ export async function handleEvent(
   ctx: Ctx,
   eventData: EventData
 ): Promise<void> {
-  const followerAccount = await ensureAccount(followerId, ctx, '4e4d784c-df03-4498-ad2f-4f49dc4e7bc5');
-  const followingAccount = await ensureAccount(followingId, ctx, '3ac27014-207e-469b-9ffe-fe7bfd90699f');
+  const followerAccount = await getOrCreateAccount(
+    followerId,
+    ctx,
+    '4e4d784c-df03-4498-ad2f-4f49dc4e7bc5'
+  );
+  const followingAccount = await getOrCreateAccount(
+    followingId,
+    ctx,
+    '3ac27014-207e-469b-9ffe-fe7bfd90699f'
+  );
 
   const activity = await setActivity({
     account: followerAccount,
@@ -63,8 +71,7 @@ export const processAccountFollowingUnfollowingRelations = async ({
   );
   const accountFollowersEntity = await ctx.store.get(
     AccountFollowers,
-    accountFollowersEntityId,
-    false
+    accountFollowersEntityId
   );
 
   let currentFollowersCountOfFollowingAcc =
@@ -83,14 +90,14 @@ export const processAccountFollowingUnfollowingRelations = async ({
       followingAccount: followingAccount
     });
 
-    ctx.store.deferredUpsert(newAccountFollowersEnt);
+    await ctx.store.save(newAccountFollowersEnt);
 
     await addNotificationForAccount(followingAccount, activity, ctx);
   } else if (eventNameDecorated === EventName.AccountUnfollowed) {
     if (!accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc -= 1;
     currentFollowingCountOfFollowerAcc -= 1;
-    ctx.store.deferredRemove(accountFollowersEntity);
+    await ctx.store.remove(accountFollowersEntity);
 
     await addNotificationForAccount(followingAccount, activity, ctx);
     await deleteAllNotificationsAboutAccount(
@@ -111,5 +118,5 @@ export const processAccountFollowingUnfollowingRelations = async ({
   followerAccount.followingAccountsCount = currentFollowingCountOfFollowerAcc;
   followingAccount.followersCount = currentFollowersCountOfFollowingAcc;
 
-  await ctx.store.deferredUpsert([followerAccount, followingAccount]);
+  await ctx.store.save([followerAccount, followingAccount]);
 };

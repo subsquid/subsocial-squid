@@ -11,7 +11,7 @@ import { Ctx } from '../../processor';
 
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import {
   addressSs58ToString,
   getSyntheticEventName,
@@ -25,6 +25,7 @@ import {
 } from '../../common/errors';
 // import { getReactionKindFromSquidDb } from './common';
 import { PostReactionDeletedData } from '../../common/types';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function postReactionDeleted(
   ctx: Ctx,
@@ -32,14 +33,14 @@ export async function postReactionDeleted(
 ): Promise<void> {
   const { forced, forcedData, postId, reactionId, reactionKind } = eventData;
 
-  const reaction = await ctx.store.get(Reaction, reactionId, false);
+  const reaction = await ctx.store.get(Reaction, reactionId);
 
   if (!reaction) {
     new EntityProvideFailWarning(Reaction, reactionId, ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  const post = await ctx.store.get(Post, postId, false);
+  const post = await getEntityWithRelations.post({ postId, ctx });
 
   if (!post) {
     new EntityProvideFailWarning(Reaction, postId, ctx, eventData);
@@ -48,7 +49,7 @@ export async function postReactionDeleted(
 
   reaction.status = Status.Deleted;
 
-  ctx.store.deferredUpsert(reaction);
+  await ctx.store.save(reaction);
 
   if (reactionKind === ReactionKind.Upvote) {
     post.upvotesCount! -= 1;
@@ -57,13 +58,14 @@ export async function postReactionDeleted(
   }
   post.reactionsCount! -= 1;
 
-  await ctx.store.deferredUpsert(post);
+  await ctx.store.save(post);
 
-  const accountInst = await ensureAccount(
+  const accountInst = await getOrCreateAccount(
     eventData.forced && eventData.forcedData
       ? eventData.forcedData.account
       : eventData.accountId,
-    ctx, '38411c37-6952-49db-8f1a-19560e960109'
+    ctx,
+    '38411c37-6952-49db-8f1a-19560e960109'
   );
 
   const activity = await setActivity({
@@ -82,11 +84,7 @@ export async function postReactionDeleted(
     new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
-  await addNotificationForAccount(
-    post.ownedByAccount.id,
-    activity,
-    ctx
-  );
+  await addNotificationForAccount(post.ownedByAccount, activity, ctx);
 }
 
 //
@@ -116,7 +114,7 @@ export async function postReactionDeleted(
 //   const { accountId, reactionId } = event;
 //
 //   // @ts-ignore
-//   const accountInst = await ensureAccount(accountId, ctx);
+//   const accountInst = await getOrCreateAccount(accountId, ctx);
 //
 //   const reaction = await ctx.store.get(Reaction, {
 //     where: { id: reactionId },

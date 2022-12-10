@@ -97,7 +97,7 @@ export async function updateAggregatedStatus(
     activitiesUpdated.push(activityItem);
   }
 
-  await ctx.store.deferredUpsert(activitiesUpdated);
+  await ctx.store.save(activitiesUpdated);
 }
 
 //

@@ -2,7 +2,6 @@ import { Post, Activity, Reaction, EventName } from '../../../model';
 import { Ctx } from '../../../processor';
 import { updateAggregatedStatus } from './aggregationUtils';
 import { ensurePositiveOrZeroValue } from '../../../common/utils';
-import { getPostOwnerId } from "./common";
 
 type InsertActivityForPostReactionParams = {
   post: Post;
@@ -29,7 +28,11 @@ export async function insertActivityForPostReaction(
 
   const aggCountNum = post.upvotesCount + post.downvotesCount - 1;
 
-  const ownerId = await getPostOwnerId(post, ctx);
+  const ownerId = post.parentPost
+    ? post.parentPost.ownedByAccount.id
+    : post.rootPost
+      ? post.rootPost.ownedByAccount.id
+      : null; // Owner of either root post or parent comment
 
   activity.aggregated = activity.account.id !== ownerId;
   activity.aggCount = BigInt(ensurePositiveOrZeroValue(aggCountNum));

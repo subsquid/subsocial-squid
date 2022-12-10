@@ -17,7 +17,7 @@ import {
   PostKind
 } from '../model';
 import { PostWithAllDetails, PostData, PostStruct } from '@subsocial/types/dto';
-import { Store } from '@subsquid/processor-tools';
+import { Store } from '@subsquid/typeorm-store';
 import { EventHandlerContext } from '@subsquid/substrate-processor';
 import {
   SpacePermissionMap,

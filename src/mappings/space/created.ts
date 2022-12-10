@@ -1,7 +1,7 @@
 import { addressSs58ToString, printEventLog } from '../../common/utils';
 import { Space } from '../../model';
 import { SpacesSpaceCreatedEvent } from '../../types/generated/events';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { setActivity } from '../activity';
 import { processSpaceFollowingUnfollowingRelations } from '../spaceFollows';
 import {
@@ -19,7 +19,7 @@ import { SpaceCreatedData } from '../../common/types';
 //
 //   const { account: accountId, spaceId } = event.asV13;
 //
-//   const account = await ensureAccount(addressSs58ToString(accountId), ctx);
+//   const account = await getOrCreateAccount(addressSs58ToString(accountId), ctx);
 //
 //   const space = await ensureSpace({ space: spaceId.toString(), ctx });
 //
@@ -40,7 +40,11 @@ import { SpaceCreatedData } from '../../common/types';
 // }
 
 export async function spaceCreated(ctx: Ctx, eventData: SpaceCreatedData) {
-  const account = await ensureAccount(eventData.accountId, ctx, '5348ae2e-d429-4f3b-b125-a51b90423b40');
+  const account = await getOrCreateAccount(
+    eventData.accountId,
+    ctx,
+    '5348ae2e-d429-4f3b-b125-a51b90423b40'
+  );
 
   const space = await ensureSpace({
     spaceId: eventData.spaceId,
@@ -48,10 +52,7 @@ export async function spaceCreated(ctx: Ctx, eventData: SpaceCreatedData) {
     eventData
   });
 
-  if (!space) {
-    new EntityProvideFailWarning(Space, eventData.spaceId, ctx, eventData);
-    throw new CommonCriticalError();
-  }
+  await ctx.store.save(space);
 
   await processSpaceFollowingUnfollowingRelations(
     account,

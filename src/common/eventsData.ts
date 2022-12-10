@@ -152,33 +152,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...callData,
             ...eventData
           });
-
-          let ownerAccount = eventData.accountId;
-          ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Account, ownerAccount);
-          if (callData.originalPost)
-            ctx.store.deferredLoad(Post, callData.originalPost);
-          if (callData.parentPostId)
-            ctx.store.deferredLoad(Post, callData.parentPostId);
-          if (callData.rootPostId)
-            ctx.store.deferredLoad(Post, callData.rootPostId);
-          if (callData.spaceId) ctx.store.deferredLoad(Space, callData.spaceId);
-
-          if (callData.forced && callData.forcedData) {
-            if (callData.forcedData.account)
-              ctx.store.deferredLoad(Account, callData.forcedData.account);
-            if (callData.forcedData.owner) {
-              ctx.store.deferredLoad(Account, callData.forcedData.owner);
-              ownerAccount = callData.forcedData.owner;
-            }
-          }
-
-          const postFollowersEntityId = getPostFollowersEntityId(
-            ownerAccount,
-            eventData.postId
-          );
-          ctx.store.deferredLoad(CommentFollowers, postFollowersEntityId);
-          ctx.store.deferredLoad(PostFollowers, postFollowersEntityId);
           totalEventsNumber++;
           break;
         }
@@ -195,8 +168,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...callData
           });
 
-          ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Account, eventData.accountId);
           totalEventsNumber++;
           break;
         }
@@ -212,11 +183,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData,
             ...callData
           });
-          ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          if (eventData.fromSpace)
-            ctx.store.deferredLoad(Space, eventData.fromSpace);
-          if (callData.toSpace) ctx.store.deferredLoad(Space, callData.toSpace);
           totalEventsNumber++;
           break;
         }
@@ -232,12 +198,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData,
             ...callData
           });
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          ctx.store.deferredLoad(Space, eventData.spaceId);
-          ctx.store.deferredLoad(
-            SpaceFollowers,
-            getSpaceFollowersEntityId(eventData.accountId, eventData.spaceId)
-          );
           totalEventsNumber++;
           break;
         }
@@ -253,8 +213,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData,
             ...callData
           });
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          ctx.store.deferredLoad(Space, eventData.spaceId);
           totalEventsNumber++;
           break;
         }
@@ -275,9 +233,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...callData
           });
 
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Reaction, eventData.reactionId);
           totalEventsNumber++;
           break;
         }
@@ -298,9 +253,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...callData
           });
 
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Reaction, eventData.reactionId);
           totalEventsNumber++;
           break;
         }
@@ -321,9 +273,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...callData
           });
 
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          ctx.store.deferredLoad(Post, eventData.postId);
-          ctx.store.deferredLoad(Reaction, eventData.reactionId);
           totalEventsNumber++;
           break;
         }
@@ -337,9 +286,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData
           });
 
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          if (eventData.spaceId)
-            ctx.store.deferredLoad(Space, eventData.spaceId);
           totalEventsNumber++;
           break;
         }
@@ -353,12 +299,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData
           });
 
-          ctx.store.deferredLoad(Account, eventData.followerId);
-          ctx.store.deferredLoad(Space, eventData.spaceId);
-          ctx.store.deferredLoad(
-            SpaceFollowers,
-            getSpaceFollowersEntityId(eventData.followerId, eventData.spaceId)
-          );
           totalEventsNumber++;
           break;
         }
@@ -374,12 +314,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData
           });
 
-          ctx.store.deferredLoad(Account, eventData.followerId);
-          ctx.store.deferredLoad(Space, eventData.spaceId);
-          ctx.store.deferredLoad(
-            SpaceFollowers,
-            getSpaceFollowersEntityId(eventData.followerId, eventData.spaceId)
-          );
           totalEventsNumber++;
           break;
         }
@@ -394,15 +328,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...getEventMetadata(block, item.event as SubstrateEvent),
             ...eventData
           });
-          ctx.store.deferredLoad(Account, eventData.followerId);
-          ctx.store.deferredLoad(Account, eventData.accountId);
-          ctx.store.deferredLoad(
-            AccountFollowers,
-            getAccountFollowersEntityId(
-              eventData.followerId,
-              eventData.accountId
-            )
-          );
           totalEventsNumber++;
           break;
         }
@@ -418,8 +343,6 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             ...eventData
           });
 
-          ctx.store.deferredLoad(Account, eventData.followerId);
-          ctx.store.deferredLoad(Account, eventData.accountId);
           totalEventsNumber++;
           break;
         }
@@ -436,52 +359,52 @@ export async function processEntityRelationsByStorageData(
   parsedEvents: ParsedEventsDataScope,
   ctx: Ctx
 ) {
-  const storageManager = StorageDataManager.getInstance(ctx);
-
-  for (const [eventName, eventsData] of [...parsedEvents.entries()]) {
-    switch (eventName) {
-      case EventName.PostCreated: {
-        for (const event of [...eventsData.values()] as PostCreatedData[]) {
-          const storagePostData = storageManager
-            .getStorageDataForSection('post')
-            .get(event.postId) as PostWithDetails | undefined;
-
-          if (!storagePostData) continue;
-
-          ctx.store.deferredLoad(Account, storagePostData.post.struct.ownerId);
-          if (storagePostData.post.struct.parentId)
-            ctx.store.deferredLoad(Post, storagePostData.post.struct.parentId);
-          if (storagePostData.post.struct.parentId)
-            ctx.store.deferredLoad(
-              Post,
-              storagePostData.post.struct.rootPostId
-            );
-          if (storagePostData.space)
-            ctx.store.deferredLoad(Space, storagePostData.space.id);
-        }
-        break;
-      }
-      case EventName.PostUpdated: {
-        for (const event of [...eventsData.values()] as PostUpdatedData[]) {
-          const storagePostData = storageManager
-            .getStorageDataForSection('post')
-            .get(event.postId) as PostWithDetails | undefined;
-
-          if (!storagePostData) continue;
-
-          if (storagePostData.post.struct.parentId)
-            ctx.store.deferredLoad(Post, storagePostData.post.struct.parentId);
-          if (storagePostData.post.struct.parentId)
-            ctx.store.deferredLoad(
-              Post,
-              storagePostData.post.struct.rootPostId
-            );
-          if (storagePostData.space)
-            ctx.store.deferredLoad(Space, storagePostData.space.id);
-        }
-        break;
-      }
-      default:
-    }
-  }
+  // const storageManager = StorageDataManager.getInstance(ctx);
+  //
+  // for (const [eventName, eventsData] of [...parsedEvents.entries()]) {
+  //   switch (eventName) {
+  //     case EventName.PostCreated: {
+  //       for (const event of [...eventsData.values()] as PostCreatedData[]) {
+  //         const storagePostData = storageManager
+  //           .getStorageDataForSection('post')
+  //           .get(event.postId) as PostWithDetails | undefined;
+  //
+  //         if (!storagePostData) continue;
+  //
+  //         ctx.store.deferredLoad(Account, storagePostData.post.struct.ownerId);
+  //         if (storagePostData.post.struct.parentId)
+  //           ctx.store.deferredLoad(Post, storagePostData.post.struct.parentId);
+  //         if (storagePostData.post.struct.parentId)
+  //           ctx.store.deferredLoad(
+  //             Post,
+  //             storagePostData.post.struct.rootPostId
+  //           );
+  //         if (storagePostData.space)
+  //           ctx.store.deferredLoad(Space, storagePostData.space.id);
+  //       }
+  //       break;
+  //     }
+  //     case EventName.PostUpdated: {
+  //       for (const event of [...eventsData.values()] as PostUpdatedData[]) {
+  //         const storagePostData = storageManager
+  //           .getStorageDataForSection('post')
+  //           .get(event.postId) as PostWithDetails | undefined;
+  //
+  //         if (!storagePostData) continue;
+  //
+  //         if (storagePostData.post.struct.parentId)
+  //           ctx.store.deferredLoad(Post, storagePostData.post.struct.parentId);
+  //         if (storagePostData.post.struct.parentId)
+  //           ctx.store.deferredLoad(
+  //             Post,
+  //             storagePostData.post.struct.rootPostId
+  //           );
+  //         if (storagePostData.space)
+  //           ctx.store.deferredLoad(Space, storagePostData.space.id);
+  //       }
+  //       break;
+  //     }
+  //     default:
+  //   }
+  // }
 }

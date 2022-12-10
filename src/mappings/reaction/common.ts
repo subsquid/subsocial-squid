@@ -5,7 +5,7 @@ import {
   ReactionsUpdatePostReactionCall
 } from '../../types/generated/calls';
 
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
@@ -13,6 +13,7 @@ import {
 } from '../../common/errors';
 import { EventData, PostReactionCreatedData } from '../../common/types';
 import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export function getReactionKindFromCall(
   eventName: string,
@@ -64,14 +65,18 @@ export async function ensureReaction({
   ctx: Ctx;
   eventData: PostReactionCreatedData;
 }): Promise<Reaction | null> {
-  const accountInst = await ensureAccount(
+  const accountInst = await getOrCreateAccount(
     eventData.forced && eventData.forcedData
       ? eventData.forcedData.account
       : eventData.accountId,
-    ctx, '9ff05d06-e8ac-4ae5-b021-d483de676ded'
+    ctx,
+    '9ff05d06-e8ac-4ae5-b021-d483de676ded'
   );
 
-  const postInst = await ctx.store.get(Post, eventData.postId, false);
+  const postInst = await getEntityWithRelations.post({
+    postId: eventData.postId,
+    ctx
+  });
 
   if (!postInst) {
     new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
@@ -85,7 +90,7 @@ export async function ensureReaction({
   newReaction.post = postInst;
   newReaction.kind = eventData.reactionKind;
   newReaction.createdAtBlock = BigInt(eventData.blockNumber.toString());
-  newReaction.createdAtTime = new Date(eventData.timestamp);
+  newReaction.createdAtTime = eventData.timestamp;
 
   return newReaction;
 }
@@ -127,7 +132,7 @@ export async function ensureReaction({
 //
 //   const accountInst =
 //     // @ts-ignore
-//     account instanceof Account ? account : await ensureAccount(account, ctx);
+//     account instanceof Account ? account : await getOrCreateAccount(account, ctx);
 //
 //   const postInst = await ctx.store.get(Post, {
 //     where: { id: postId },

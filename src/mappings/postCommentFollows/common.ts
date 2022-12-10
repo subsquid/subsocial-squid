@@ -23,7 +23,7 @@ export const processPostFollowingUnfollowingRelations = async (
   switch (followingEvent) {
     case EventName.PostFollowed:
       if (post.isComment) {
-        ctx.store.deferredUpsert(
+        await ctx.store.save(
           new CommentFollowers({
             id: postFollowersEntityId,
             followerAccount: follower,
@@ -31,7 +31,7 @@ export const processPostFollowingUnfollowingRelations = async (
           })
         );
       } else {
-        ctx.store.deferredUpsert(
+        await ctx.store.save(
           new PostFollowers({
             id: postFollowersEntityId,
             followerAccount: follower,
@@ -45,17 +45,15 @@ export const processPostFollowingUnfollowingRelations = async (
       if (post.isComment) {
         existingRelation = await ctx.store.get(
           CommentFollowers,
-          postFollowersEntityId,
-          false
+          postFollowersEntityId
         );
-        if (existingRelation) await ctx.store.deferredRemove(existingRelation);
+        if (existingRelation) await ctx.store.remove(existingRelation);
       } else {
         existingRelation = await ctx.store.get(
           PostFollowers,
-          postFollowersEntityId,
-          false
+          postFollowersEntityId
         );
-        if (existingRelation) await ctx.store.deferredRemove(existingRelation);
+        if (existingRelation) await ctx.store.remove(existingRelation);
       }
       break;
     default:

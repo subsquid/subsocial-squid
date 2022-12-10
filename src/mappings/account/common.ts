@@ -1,7 +1,8 @@
 import { Account } from '../../model';
 import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
-export async function ensureAccount(
+export async function getOrCreateAccount(
   accountId: string,
   ctx: Ctx,
   debugId: string = ''
@@ -9,7 +10,7 @@ export async function ensureAccount(
   if (accountId === null || !accountId)
     throw new Error(`Account ID has unsupported value - ${debugId}`);
 
-  let account = await ctx.store.get(Account, accountId, false);
+  let account = await getEntityWithRelations.account(accountId, ctx);
 
   if (account) return account;
 
@@ -20,7 +21,7 @@ export async function ensureAccount(
   account.followingSpacesCount = 0;
   account.followingPostsCount = 0;
 
-  await ctx.store.deferredUpsert(account);
+  await ctx.store.save(account);
 
   return account;
 }

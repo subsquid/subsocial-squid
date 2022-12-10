@@ -6,7 +6,7 @@ import {
   Space,
   AccountFollowers
 } from '../../model';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { getNotificationEntityId } from '../../common/utils';
 import { Ctx } from '../../processor';
 
@@ -18,19 +18,19 @@ export const addNotificationForAccount = async (
   const accountInst =
     account instanceof Account
       ? account
-      : await ensureAccount(
+      : await getOrCreateAccount(
           account,
           ctx,
           'dbf0ccab-5307-4495-88fb-c92c2e50580c'
         );
 
-  const notification = new Notification();
+  const notification = new Notification({
+    id: getNotificationEntityId(accountInst.id, activity.id),
+    account: accountInst,
+    activity: activity
+  });
 
-  notification.id = getNotificationEntityId(accountInst.id, activity.id);
-  notification.account = accountInst;
-  notification.activity = activity;
-
-  ctx.store.deferredUpsert(notification);
+  await ctx.store.save(notification);
   return notification;
 };
 
@@ -42,7 +42,7 @@ export const addNotificationForAccountFollowers = async (
   const accountInst =
     account instanceof Account
       ? account
-      : await ensureAccount(
+      : await getOrCreateAccount(
           account,
           ctx,
           'ec067182-ce7d-49d7-9065-7e53c40eb450'
@@ -69,7 +69,7 @@ export const addNotificationForAccountFollowers = async (
 
   if (!notificationsDraftList || notificationsDraftList.length === 0) return;
 
-  await ctx.store.deferredUpsert(notificationsDraftList);
+  await ctx.store.save(notificationsDraftList);
 };
 
 /**
@@ -88,13 +88,13 @@ export const deleteAllNotificationsAboutSpace = async (
       {
         account: { id: accountId },
         activity: {
-          space: { id: accountId }
+          space: { id: followingSpace.id }
         }
       }
     ]
   });
 
-  await ctx.store.deferredRemove(relatedNotifications);
+  await ctx.store.remove(relatedNotifications);
 };
 
 export const deleteAllNotificationsAboutAccount = async (
@@ -105,7 +105,7 @@ export const deleteAllNotificationsAboutAccount = async (
   const accountInst =
     account instanceof Account
       ? account
-      : await ensureAccount(
+      : await getOrCreateAccount(
           account,
           ctx,
           'f323589c-c261-4013-9cac-c5aa2740efe1'
@@ -113,7 +113,7 @@ export const deleteAllNotificationsAboutAccount = async (
   const followingAccountInst =
     followingAccount instanceof Account
       ? followingAccount
-      : await ensureAccount(
+      : await getOrCreateAccount(
           followingAccount,
           ctx,
           'd0bf5378-1131-491c-8592-f52bb679d4d5'
@@ -130,5 +130,5 @@ export const deleteAllNotificationsAboutAccount = async (
     ]
   });
 
-  await ctx.store.deferredRemove(relatedNotifications);
+  await ctx.store.remove(relatedNotifications);
 };

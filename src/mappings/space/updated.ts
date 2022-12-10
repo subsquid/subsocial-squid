@@ -8,12 +8,13 @@ import { Ctx } from '../../processor';
 import { SpaceUpdatedData } from '../../common/types';
 import { StorageDataManager } from '../../storage/storageDataManager';
 import { setActivity } from '../activity';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function spaceUpdated(
   ctx: Ctx,
   eventData: SpaceUpdatedData
 ): Promise<void> {
-  const space = await ctx.store.get(Space, eventData.spaceId, false);
+  const space = await getEntityWithRelations.space(eventData.spaceId, ctx);
 
   if (!space) {
     new EntityProvideFailWarning(Space, eventData.spaceId, ctx, eventData);
@@ -56,7 +57,7 @@ export async function spaceUpdated(
       : null;
   }
 
-  await ctx.store.deferredUpsert(space);
+  await ctx.store.save(space);
 
   await setActivity({
     account: eventData.accountId,

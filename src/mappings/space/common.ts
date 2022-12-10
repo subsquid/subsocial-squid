@@ -15,7 +15,7 @@ import {
   SpacePermissionsScope
 } from '../../common/types';
 import { Post, Space, SpacePermissions } from '../../model';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
@@ -73,7 +73,7 @@ import { StorageDataManager } from '../../storage/storageDataManager';
 //     spaceInst = new Space();
 //     spaceInst.id = spaceId.toString();
 //
-//     const createdByAccount = await ensureAccount(
+//     const createdByAccount = await getOrCreateAccount(
 //       spaceStruct.createdByAccount,
 //       ctx
 //     );
@@ -86,7 +86,7 @@ import { StorageDataManager } from '../../storage/storageDataManager';
 //     );
 //     spaceInst.hidden = spaceStruct.hidden;
 //   }
-//   const ownerAccount = await ensureAccount(spaceStruct.ownerId, ctx);
+//   const ownerAccount = await getOrCreateAccount(spaceStruct.ownerId, ctx);
 //
 //   spaceInst.ownedByAccount = ownerAccount;
 //   spaceInst.content = spaceStruct.contentId;
@@ -160,7 +160,7 @@ export const ensureSpace = async ({
 
   const spaceInst = new Space();
 
-  const signerAccountInst = await ensureAccount(
+  const signerAccountInst = await getOrCreateAccount(
     eventData.accountId,
     ctx,
     '3339cb5e-bd1d-4b2d-8d9d-c74bff054745'
@@ -168,12 +168,12 @@ export const ensureSpace = async ({
 
   if (eventData.forced && eventData.forcedData) {
     spaceInst.hidden = eventData.forcedData.hidden;
-    spaceInst.ownedByAccount = await ensureAccount(
+    spaceInst.ownedByAccount = await getOrCreateAccount(
       eventData.forcedData.owner,
       ctx,
       'b83c251b-8e62-4f4e-9a7b-632fabca46df'
     );
-    spaceInst.createdByAccount = await ensureAccount(
+    spaceInst.createdByAccount = await getOrCreateAccount(
       eventData.forcedData.account,
       ctx,
       '530b6d19-918b-4397-93aa-3bbc8e533314'
@@ -220,8 +220,6 @@ export const ensureSpace = async ({
       ? (spaceIpfsContent.links || []).join(',')
       : null;
   }
-
-  ctx.store.deferredUpsert(spaceInst);
 
   return spaceInst;
 };
@@ -301,5 +299,5 @@ export async function updatePostsCountersInSpace({
       break;
   }
 
-  await ctx.store.deferredUpsert(spaceChanged);
+  await ctx.store.save(spaceChanged);
 }
