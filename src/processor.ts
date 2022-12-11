@@ -45,9 +45,10 @@ import { splitIntoBatches } from './common/utils';
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
-    archive: lookupArchive('subsocial-parachain' as KnownArchives, {
-      release: 'FireSquid'
-    }),
+    // archive: lookupArchive('subsocial-parachain' as KnownArchives, {
+    //   release: 'FireSquid'
+    // }),
+    archive: envConfig.indexerEndpointUrl,
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated

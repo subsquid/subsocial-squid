@@ -1,6 +1,6 @@
 {
   "outDir": "../src/types/generated",
-  "specVersions": "https://subsocial.archive.subsquid.io/graphql",
+  "specVersions": "https://subsocial-v1-3-3.archive.subsquid.io/graphql",
   "typesBundle": "subsocial",
   "events": [
     "Posts.PostCreated",
