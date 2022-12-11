@@ -2,7 +2,6 @@ import assert from 'assert';
 import { Not } from 'typeorm';
 import { FindManyOptions } from '@subsquid/typeorm-store/src/store';
 import { Account, Space, Post, Activity, EventName } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
 import { Ctx } from '../../../processor';
 
 type GetAggregationCountParams = {
@@ -25,7 +24,7 @@ export async function getAggregationCount(
 ): Promise<number> {
   const { eventName, postId, accountId, ctx } = params;
 
-  const findResult = await ctx.store.find(Activity, {
+  return await ctx.store.count(Activity, {
     where: {
       event: eventName,
       post: { id: postId },
@@ -35,11 +34,9 @@ export async function getAggregationCount(
     }
   });
 
-  const uniqueIds = findResult
-    .map((actItem) => actItem.id)
-    .filter((val, i, arr) => arr.indexOf(val) === i);
-
-  return uniqueIds.length;
+  // const uniqueIds = findResult
+  //   .map((actItem) => actItem.id)
+  //   .filter((val, i, arr) => arr.indexOf(val) === i);
 }
 
 export async function updateAggregatedStatus(
