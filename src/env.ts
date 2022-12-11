@@ -10,9 +10,14 @@ export const batchSize = process.env.BATCH_SIZE
   ? parseInt(process.env.BATCH_SIZE)
   : 1;
 export const chainNode = process.env.CHAIN_NODE || 'wss://para.f3joule.space';
+// export const indexerEndpointUrl =
+//   process.env.INDEXER_ENDPOINT_URL ||
+//   'https://subsocial.archive.subsquid.io/graphql';
+
 export const indexerEndpointUrl =
   process.env.INDEXER_ENDPOINT_URL ||
-  'https://subsocial.archive.subsquid.io/graphql';
+  'https://subsocial-v1-3-3.archive.subsquid.io/graphql';
+
 export const offchainUrl =
   process.env.OFFCHAIN_URL || 'https://app.subsocial.network/network/offchain';
 export const warningLogsTrace = process.env.WARNING_LOGS_TRACE || 'false';

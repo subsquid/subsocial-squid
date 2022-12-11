@@ -28,9 +28,10 @@ import { splitIntoBatches } from './common/utils';
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
-    archive: lookupArchive('subsocial-parachain' as KnownArchives, {
-      release: 'FireSquid'
-    }),
+    // archive: lookupArchive('subsocial-parachain' as KnownArchives, {
+    //   release: 'FireSquid'
+    // }),
+    archive: 'https://subsocial-v1-3-3.archive.subsquid.io/graphql',
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
@@ -117,7 +118,6 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 });
 
 async function blocksBatchHandler(ctx: Ctx) {
-
   // entityRelationsManager.setEntityRelationsForFetch(Post, [
   //   { entityClass: Account, propName: 'ownedByAccount' },
   //   {
