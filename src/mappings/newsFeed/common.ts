@@ -31,6 +31,9 @@ export const addPostToFeeds = async (
       followingAccount: {
         id: post.ownedByAccount.id
       }
+    },
+    relations: {
+      followerAccount: true
     }
   });
 
