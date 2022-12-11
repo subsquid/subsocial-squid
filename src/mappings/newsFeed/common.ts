@@ -48,7 +48,8 @@ export const addPostToFeeds = async (
 
   if (post.space) {
     const spaceFollowers = await ctx.store.find(SpaceFollowers, {
-      where: { followingSpace: { id: post.space.id } }
+      where: { followingSpace: { id: post.space.id } },
+      relations: { followerAccount: true }
     });
 
     spaceFollowers

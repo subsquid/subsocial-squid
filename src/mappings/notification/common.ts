@@ -49,7 +49,8 @@ export const addNotificationForAccountFollowers = async (
         );
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
-    where: { followingAccount: { id: accountInst.id } }
+    where: { followingAccount: { id: accountInst.id } },
+    relations: { followerAccount: true }
   });
 
   const notificationsDraftList = accountFollowersRelations.map(
