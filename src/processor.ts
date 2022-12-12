@@ -32,7 +32,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  .setBlockRange({ from: 1093209 }) // SpaceCreated
+  // .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
