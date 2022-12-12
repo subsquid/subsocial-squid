@@ -1,5 +1,5 @@
 import { Content } from '../types/generated/v13';
-import { ContentSrcDecorated, SpacePermissionsScope } from './types';
+import { ContentSrcDecorated, SpacePermissionsScope } from '../common/types';
 import { SpacePermissionMap } from '@subsocial/api/types/dto';
 import * as v13 from '../types/generated/v13';
 import { ReactionKind } from '../model';

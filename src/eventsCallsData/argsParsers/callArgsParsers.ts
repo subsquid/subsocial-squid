@@ -25,14 +25,14 @@ import {
   PostReactionCreateCallParsedData,
   PostReactionUpdateCallParsedData,
   PostReactionDeleteCallParsedData
-} from '../types';
+} from '../../common/types';
 import {
   getContentSrcDecorated,
   getReactionKindDecorated,
   getSpacePermissionsDecorated
 } from '../decorators';
 import * as v13 from '../../types/generated/v13';
-import { addressSs58ToString } from '../utils';
+import { addressSs58ToString } from '../../common/utils';
 
 function ensureSpaceId(srcVal: bigint | undefined) {
   return srcVal !== null && srcVal !== undefined ? srcVal.toString() : srcVal;

@@ -1,21 +1,10 @@
 import {
   EventName,
-  ReactionKind,
-  PostKind,
-  Post,
-  Account,
-  Space,
-  Reaction,
-  SpaceFollowers,
-  CommentFollowers,
-  PostFollowers,
-  AccountFollowers
 } from '../model';
 import { Block, Ctx, EventItem } from '../processor';
 import {
   ParsedEventsData,
   ParsedEventsDataMap,
-  PostWithDetails,
   PostCreatedData,
   PostUpdatedData,
   EventId,
@@ -32,20 +21,11 @@ import {
   PostReactionCreatedData,
   PostReactionUpdatedData,
   PostReactionDeletedData
-} from './types';
+} from '../common/types';
 import argsParsers from './argsParsers';
-import { StorageDataManager } from '../storage/storageDataManager';
 import {
-  SubstrateBlock,
   SubstrateEvent,
-  EventHandlerContext,
-  SubstrateBatchProcessor
 } from '@subsquid/substrate-processor';
-import {
-  getAccountFollowersEntityId,
-  getPostFollowersEntityId,
-  getSpaceFollowersEntityId
-} from './utils';
 
 type EventDataType<T> = T extends EventName.SpaceCreated
   ? SpaceCreatedData
@@ -94,12 +74,6 @@ export class ParsedEventsDataScope {
       (this.scope.get(section) as Map<EventId, T>) || new Map<EventId, T>()
     );
   }
-
-  // getSectionByEventName<T>(section: EventName): Map<EventId, T> {
-  //   return (
-  //     (this.scope.get(section) as Map<EventId, T>) || new Map<EventId, T>()
-  //   );
-  // }
 
   getSectionByEventName<T extends EventName>(
     section: T
@@ -353,58 +327,4 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
 
   ctx.log.info(`Total number of events for processing - ${totalEventsNumber}`);
   return parsedData;
-}
-
-export async function processEntityRelationsByStorageData(
-  parsedEvents: ParsedEventsDataScope,
-  ctx: Ctx
-) {
-  // const storageManager = StorageDataManager.getInstance(ctx);
-  //
-  // for (const [eventName, eventsData] of [...parsedEvents.entries()]) {
-  //   switch (eventName) {
-  //     case EventName.PostCreated: {
-  //       for (const event of [...eventsData.values()] as PostCreatedData[]) {
-  //         const storagePostData = storageManager
-  //           .getStorageDataForSection('post')
-  //           .get(event.postId) as PostWithDetails | undefined;
-  //
-  //         if (!storagePostData) continue;
-  //
-  //         ctx.store.deferredLoad(Account, storagePostData.post.struct.ownerId);
-  //         if (storagePostData.post.struct.parentId)
-  //           ctx.store.deferredLoad(Post, storagePostData.post.struct.parentId);
-  //         if (storagePostData.post.struct.parentId)
-  //           ctx.store.deferredLoad(
-  //             Post,
-  //             storagePostData.post.struct.rootPostId
-  //           );
-  //         if (storagePostData.space)
-  //           ctx.store.deferredLoad(Space, storagePostData.space.id);
-  //       }
-  //       break;
-  //     }
-  //     case EventName.PostUpdated: {
-  //       for (const event of [...eventsData.values()] as PostUpdatedData[]) {
-  //         const storagePostData = storageManager
-  //           .getStorageDataForSection('post')
-  //           .get(event.postId) as PostWithDetails | undefined;
-  //
-  //         if (!storagePostData) continue;
-  //
-  //         if (storagePostData.post.struct.parentId)
-  //           ctx.store.deferredLoad(Post, storagePostData.post.struct.parentId);
-  //         if (storagePostData.post.struct.parentId)
-  //           ctx.store.deferredLoad(
-  //             Post,
-  //             storagePostData.post.struct.rootPostId
-  //           );
-  //         if (storagePostData.space)
-  //           ctx.store.deferredLoad(Space, storagePostData.space.id);
-  //       }
-  //       break;
-  //     }
-  //     default:
-  //   }
-  // }
 }

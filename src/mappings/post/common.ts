@@ -16,7 +16,7 @@ import assert from 'assert';
 import { PostsCreatePostCall } from '../../types/generated/calls';
 import { PostCreatedData } from '../../common/types';
 import { Ctx } from '../../processor';
-import { StorageDataManager } from '../../storage/storageDataManager';
+import { StorageDataManager } from '../../storage';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 const updatePostReplyCount = async (
@@ -74,17 +74,6 @@ export const ensurePost = async ({
   eventData: PostCreatedData;
 }): Promise<Post> => {
   const storageDataManagerInst = StorageDataManager.getInstance(ctx);
-
-  // const postStorageData = storageDataManagerInst.getStorageDataById(
-  //   'post',
-  //   eventData.blockHash,
-  //   postId
-  // );
-  //
-  // if (!postStorageData) {
-  //   new MissingSubsocialApiEntity('Post', ctx, eventData);
-  //   throw new CommonCriticalError();
-  // }
 
   const postIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
     'post',

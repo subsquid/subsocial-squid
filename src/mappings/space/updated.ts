@@ -1,4 +1,4 @@
-import { Reaction, Space } from '../../model';
+import { Space } from '../../model';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
@@ -6,7 +6,7 @@ import {
 } from '../../common/errors';
 import { Ctx } from '../../processor';
 import { SpaceUpdatedData } from '../../common/types';
-import { StorageDataManager } from '../../storage/storageDataManager';
+import { StorageDataManager } from '../../storage';
 import { setActivity } from '../activity';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
@@ -66,59 +66,3 @@ export async function spaceUpdated(
     eventData
   });
 }
-//
-// export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
-//   const event = new SpacesSpaceUpdatedEvent(ctx);
-//   printEventLog(ctx);
-//
-//   const { account: accountId, spaceId } = event.asV13;
-//
-//   const space = await ensureSpace({
-//     space: spaceId.toString(),
-//     ctx
-//   });
-//
-//   if (!space) {
-//     new EntityProvideFailWarning(Space, spaceId.toString(), ctx);
-//     throw new CommonCriticalError();
-//   }
-//
-//   const spaceDataSSApi = await resolveSpace(new BN(spaceId.toString(), 10));
-//   if (!spaceDataSSApi) {
-//     new MissingSubsocialApiEntity('SpaceData', ctx);
-//     throw new CommonCriticalError();
-//   }
-//
-//   const { struct: spaceStruct, content: spaceContent } = spaceDataSSApi;
-//
-//   if (
-//     spaceStruct.updatedAtTime &&
-//     space.updatedAtTime === new Date(spaceStruct.updatedAtTime)
-//   )
-//     return;
-//
-//   space.updatedAtTime = spaceStruct.updatedAtTime
-//     ? new Date(spaceStruct.updatedAtTime)
-//     : null;
-//   space.updatedAtBlock = spaceStruct.updatedAtBlock
-//     ? BigInt(spaceStruct.updatedAtBlock)
-//     : BigInt(ctx.block.height.toString());
-//
-//   if (spaceContent) {
-//     space.name = spaceContent.name;
-//     space.email = spaceContent.email;
-//     space.about = spaceContent.about;
-//     space.summary = spaceContent.summary;
-//     space.image = spaceContent.image;
-//     space.tagsOriginal = (spaceContent.tags || []).join(',');
-//     space.linksOriginal = (spaceContent.links || []).join(',');
-//   }
-//
-//   await ctx.store.save<Space>(space);
-//
-//   await setActivity({
-//     account: addressSs58ToString(accountId),
-//     space,
-//     ctx
-//   });
-// }

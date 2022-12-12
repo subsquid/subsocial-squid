@@ -1,8 +1,7 @@
 import { Ctx } from '../../processor';
-import { ParsedEventsDataScope } from '../../common/eventsData';
+import { ParsedEventsDataScope } from '../../eventsCallsData';
 import { EventName } from '../../model';
 import { getOrderedListByBlockNumber } from '../../common/utils';
-import { SpaceCreatedData, SpaceUpdatedData } from '../../common/types';
 
 export { updatePostsCountersInSpace } from './common';
 import { spaceCreated } from './created';

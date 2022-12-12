@@ -12,11 +12,8 @@ import {
 } from '@subsquid/substrate-processor/src/processor/batchProcessor';
 import { Store, TypeormDatabase } from '@subsquid/typeorm-store';
 import * as envConfig from './env';
-import {
-  getParsedEventsData
-  // processEntityRelationsByStorageData
-} from './common/eventsData';
-import { StorageDataManager } from './storage/storageDataManager';
+import { getParsedEventsData } from './eventsCallsData';
+import { StorageDataManager } from './storage';
 // import { EntityRelationsManager } from './common/entityRelationsManager';
 import { handleSpaces } from './mappings/space';
 import { handlePosts } from './mappings/post';
@@ -35,7 +32,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -118,56 +115,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
 });
 
 async function blocksBatchHandler(ctx: Ctx) {
-  // entityRelationsManager.setEntityRelationsForFetch(Post, [
-  //   { entityClass: Account, propName: 'ownedByAccount' },
-  //   {
-  //     entityClass: Post,
-  //     propName: 'rootPost',
-  //     relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-  //   },
-  //   {
-  //     entityClass: Post,
-  //     propName: 'parentPost',
-  //     relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-  //   },
-  //   {
-  //     entityClass: Space,
-  //     propName: 'space',
-  //     relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-  //   }
-  // ]);
-  //
-  // entityRelationsManager.setEntityRelationsForFetch(Space, [
-  //   { entityClass: Account, propName: 'ownedByAccount' }
-  // ]);
-  // entityRelationsManager.setEntityRelationsForFetch(Account, [
-  //   { entityClass: Space, propName: 'profileSpace' }
-  // ]);
-  // entityRelationsManager.setEntityRelationsForFetch(Reaction, [
-  //   { entityClass: Account, propName: 'account' },
-  //   {
-  //     entityClass: Post,
-  //     propName: 'post',
-  //     relations: [
-  //       { entityClass: Account, propName: 'ownedByAccount' },
-  //       {
-  //         entityClass: Post,
-  //         propName: 'parentPost',
-  //         relations: [{ entityClass: Account, propName: 'ownedByAccount' }] // TODO check do we really need this nested relations
-  //       },
-  //       {
-  //         entityClass: Post,
-  //         propName: 'rootPost',
-  //         relations: [{ entityClass: Account, propName: 'ownedByAccount' }]
-  //       },
-  //       { entityClass: Space, propName: 'space' }
-  //     ]
-  //   }
-  // ]);
-
   /**
-   * Collect data from all tracked events (postId, accountId, spaceId, etc.) and
-   * add IDs to load queue.
+   * Collect data from all tracked events (postId, accountId, spaceId, etc.).
    */
   const parsedEvents = getParsedEventsData(ctx);
 
@@ -177,29 +126,20 @@ async function blocksBatchHandler(ctx: Ctx) {
    * as we need get actual detailed data from the chain. In appropriate events
    * parameters we can get only IDs.
    */
-  await StorageDataManager.getInstance(ctx).fetchStorageDataByEventsData(
-    parsedEvents
-  );
-
-  ctx.log.info('DONE :: fetchStorageDataByEventsData');
+  const storageDataManager = StorageDataManager.getInstance(ctx);
+  await storageDataManager.fetchStorageDataByEventsData(parsedEvents);
 
   await handleSpaces(ctx, parsedEvents);
-  ctx.log.info('DONE :: handleSpaces');
 
   await handleProfiles(ctx, parsedEvents);
-  ctx.log.info('DONE :: handleProfiles');
 
   await handleAccountFollowing(ctx, parsedEvents);
-  ctx.log.info('DONE :: handleAccountFollowing');
 
   await handleSpacesFollowing(ctx, parsedEvents);
-  ctx.log.info('DONE :: handleSpacesFollowing');
 
   await handlePosts(ctx, parsedEvents);
-  ctx.log.info('DONE :: handlePosts');
 
   await handlePostReactions(ctx, parsedEvents);
-  ctx.log.info('DONE :: handlePostReactions');
 
-  await StorageDataManager.getInstance(ctx).purgeStorage();
+  storageDataManager.purgeStorage();
 }

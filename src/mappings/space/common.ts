@@ -1,31 +1,20 @@
-import BN from 'bn.js';
-import {
-  resolveSpace,
-  resolveSpaceHandle
-} from '../../connection/resolvers/resolveSpaceData';
 import {
   ensurePositiveOrZeroValue,
   getDateWithoutTime
 } from '../../common/utils';
 import {
-  EventData,
   SpaceCountersAction,
   SpaceCreatedData,
-  // SpacePermissionRoot,
   SpacePermissionsScope
 } from '../../common/types';
 import { Post, Space, SpacePermissions } from '../../model';
 import { getOrCreateAccount } from '../account';
 import {
   CommonCriticalError,
-  EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
-import { SpaceStruct } from '@subsocial/types/dto';
-import { FlatSpacePermissionMap } from '@subsocial/types/substrate/rpc';
 import { Ctx } from '../../processor';
-import { StorageDataManager } from '../../storage/storageDataManager';
+import { StorageDataManager } from '../../storage';
 
 /**
  * Provides Space data. Merges data from Squid DB and Subsocial API. If Space entity is not existing in Squid DB, new
@@ -34,103 +23,6 @@ import { StorageDataManager } from '../../storage/storageDataManager';
  * @param ctx
  * @param createIfNotExists
  */
-// export const ensureSpace = async ({
-//   space,
-//   signerAccountId,
-//   ctx,
-//   createIfNotExists = false
-// }: {
-//   space: Space | string;
-//   signerAccountId: string;
-//   ctx: EventHandlerContext;
-//   createIfNotExists?: boolean;
-// }): Promise<Space | null> => {
-//   let spaceInst =
-//     space instanceof Space
-//       ? space
-//       : await ctx.store.get(Space, {
-//           where: { id: space },
-//           relations: { ownedByAccount: true }
-//         });
-//
-//   if (spaceInst) return spaceInst;
-//   const spaceId = space instanceof Space ? space.id : space;
-//
-//   const spaceDataSSApi = await resolveSpace(new BN(spaceId, 10));
-//
-//   if (!spaceDataSSApi) {
-//     new MissingSubsocialApiEntity('SpaceData', ctx);
-//     new CommonCriticalError();
-//     return null;
-//   }
-//
-//   const { struct: spaceStruct, content: spaceContent } = spaceDataSSApi;
-//   const spaceHandle =
-//     (await resolveSpaceHandle(new BN(spaceId, 10), spaceStruct.ownerId)) ??
-//     null;
-//
-//   if (!spaceInst) {
-//     spaceInst = new Space();
-//     spaceInst.id = spaceId.toString();
-//
-//     const createdByAccount = await getOrCreateAccount(
-//       spaceStruct.createdByAccount,
-//       ctx
-//     );
-//
-//     spaceInst.createdByAccount = createdByAccount;
-//     spaceInst.createdAtBlock = BigInt(spaceStruct.createdAtBlock.toString());
-//     spaceInst.createdAtTime = new Date(spaceStruct.createdAtTime);
-//     spaceInst.createdOnDay = getDateWithoutTime(
-//       new Date(spaceStruct.createdAtTime)
-//     );
-//     spaceInst.hidden = spaceStruct.hidden;
-//   }
-//   const ownerAccount = await getOrCreateAccount(spaceStruct.ownerId, ctx);
-//
-//   spaceInst.ownedByAccount = ownerAccount;
-//   spaceInst.content = spaceStruct.contentId;
-//   spaceInst.handle = spaceHandle;
-//
-//   spaceInst.postsCount = 0; // Initial value for counter
-//   spaceInst.hiddenPostsCount = 0; // Initial value for counter
-//   spaceInst.publicPostsCount = 0; // Initial value for counter
-//   spaceInst.followersCount = 0; // Initial value for counter
-//
-//   spaceInst.canFollowerCreatePosts = spaceStruct.canFollowerCreatePosts;
-//   spaceInst.canEveryoneCreatePosts = spaceStruct.canEveryoneCreatePosts;
-//
-//   spaceInst.nonePermissions = getSpacePermissions(
-//     SpacePermissionRoot.none,
-//     spaceStruct
-//   );
-//   spaceInst.everyonePermissions = getSpacePermissions(
-//     SpacePermissionRoot.everyone,
-//     spaceStruct
-//   );
-//   spaceInst.followerPermissions = getSpacePermissions(
-//     SpacePermissionRoot.follower,
-//     spaceStruct
-//   );
-//   spaceInst.spaceOwnerPermissions = getSpacePermissions(
-//     SpacePermissionRoot.spaceOwner,
-//     spaceStruct
-//   );
-//
-//   if (spaceContent) {
-//     spaceInst.name = spaceContent.name;
-//     spaceInst.email = spaceContent.email;
-//     spaceInst.about = spaceContent.about;
-//     spaceInst.summary = spaceContent.summary;
-//     spaceInst.image = spaceContent.image;
-//     spaceInst.tagsOriginal = (spaceContent.tags || []).join(',');
-//     spaceInst.linksOriginal = (spaceContent.links || []).join(',');
-//   }
-//
-//   if (createIfNotExists) await ctx.store.save<Space>(spaceInst);
-//
-//   return spaceInst;
-// };
 
 export const ensureSpace = async ({
   spaceId,

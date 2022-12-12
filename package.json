@@ -20,6 +20,7 @@
   "dependencies": {
     "@ipld/dag-cbor": "7.0.3",
     "@subsocial/api": "^0.7.7",
+    "@subsocial/elasticsearch": "^0.7.9",
     "@subsocial/types": "^0.6.11",
     "@subsocial/utils": "^0.6.11",
     "@subsquid/archive-registry": "^1.0.17",
@@ -32,6 +33,7 @@
     "@subsquid/typeorm-store": "^0.1.5",
     "@subsquid/util-internal-hex": "^0.0.0",
     "@types/lodash.uniq": "^4.5.7",
+    "axios": "^1.2.1",
     "bn.js": "^5.2.1",
     "class-validator": "^0.13.2",
     "dayjs": "^1.11.2",

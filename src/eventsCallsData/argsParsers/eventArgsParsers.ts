@@ -16,7 +16,7 @@ import {
   SpaceUnfollowedEventParsedData,
   SpaceFollowedEventParsedData,
   AccountFollowedEventParsedData, AccountUnfollowedEventParsedData
-} from "../types";
+} from "../../common/types";
 import {
   AccountFollowsAccountFollowedEvent, AccountFollowsAccountUnfollowedEvent,
   PostsPostCreatedEvent,
@@ -31,7 +31,7 @@ import {
   SpacesSpaceCreatedEvent,
   SpacesSpaceUpdatedEvent
 } from "../../types/generated/events";
-import { addressSs58ToString } from '../utils';
+import { addressSs58ToString } from '../../common/utils';
 import { getReactionKindDecorated } from '../decorators';
 
 export function parsePostCreatedEventArgs(

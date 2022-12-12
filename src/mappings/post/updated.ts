@@ -13,17 +13,13 @@ import { setActivity } from '../activity';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
-  MissingSubsocialApiEntity
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
 import {
-  PostCreatedData,
   PostUpdatedData,
   SpaceCountersAction
 } from '../../common/types';
-import { isEmptyArray } from '@subsocial/utils';
 import { Ctx } from '../../processor';
-import { StorageDataManager } from '../../storage/storageDataManager';
+import { StorageDataManager } from '../../storage';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function postUpdated(
@@ -40,15 +36,6 @@ export async function postUpdated(
   }
 
   const prevVisStateHidden = post.hidden;
-
-  // const postStorageData = StorageDataManager.getInstance(
-  //   ctx
-  // ).getStorageDataById('post', eventData.blockHash, eventData.postId);
-  //
-  // if (!postStorageData) {
-  //   new MissingSubsocialApiEntity('Post', ctx, eventData);
-  //   throw new CommonCriticalError();
-  // }
 
   const storageDataManagerInst = StorageDataManager.getInstance(ctx);
   const postIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
