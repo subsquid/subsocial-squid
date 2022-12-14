@@ -1,6 +1,5 @@
-import { EventHandlerContext } from '../../common/contexts';
 import { Account, Post, EventName } from '../../model';
-import { ensurePositiveOrZeroValue, printEventLog } from '../../common/utils';
+import { ensurePositiveOrZeroValue } from '../../common/utils';
 import { processPostFollowingUnfollowingRelations } from './common';
 import { Ctx } from '../../processor';
 import { getOrCreateAccount } from '../account';

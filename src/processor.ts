@@ -11,10 +11,9 @@ import {
   BatchProcessorEventItem
 } from '@subsquid/substrate-processor/src/processor/batchProcessor';
 import { Store, TypeormDatabase } from '@subsquid/typeorm-store';
-import * as envConfig from './env';
+import envConfig from './config';
 import { getParsedEventsData } from './eventsCallsData';
 import { StorageDataManager } from './storage';
-// import { EntityRelationsManager } from './common/entityRelationsManager';
 import { handleSpaces } from './mappings/space';
 import { handlePosts } from './mappings/post';
 import { handleAccountFollowing } from './mappings/accountFollows';
@@ -22,6 +21,7 @@ import { handleProfiles } from './mappings/account';
 import { handleSpacesFollowing } from './mappings/spaceFollows';
 import { handlePostReactions } from './mappings/reaction';
 import { splitIntoBatches } from './common/utils';
+import { ElasticSearchIndexerManager } from './elasticsearch';
 
 export const processor = new SubstrateBatchProcessor()
   .setDataSource({
@@ -32,7 +32,7 @@ export const processor = new SubstrateBatchProcessor()
     chain: envConfig.chainNode
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
-  // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  .setBlockRange({ from: 1093209 }) // SpaceCreated
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -95,6 +95,8 @@ processor.run(new TypeormDatabase(), async (ctx) => {
           : '---'
       }]`
     );
+
+  await ElasticSearchIndexerManager.getInstance(ctx).processIndexingQueue();
 
   const currentBlocksListFull = [...ctx.blocks];
   let blocksBatchHandlerIndex = 1;

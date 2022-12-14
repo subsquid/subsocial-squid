@@ -1,8 +1,5 @@
-import { EventHandlerContext } from '../../common/contexts';
 import { Post, Account, EventName } from '../../model';
-import { printEventLog } from '../../common/utils';
 import { processPostFollowingUnfollowingRelations } from './common';
-import { PostCreatedData } from '../../common/types';
 import { Ctx } from '../../processor';
 import { getOrCreateAccount } from '../account';
 

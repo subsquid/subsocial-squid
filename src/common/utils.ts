@@ -5,7 +5,6 @@ dayjs.extend(localizedFormat);
 import * as ss58 from '@subsquid/ss58';
 import md5 from 'md5';
 import { EventHandlerContext } from './contexts';
-import { eventLogsTrace } from '../env';
 import { EventName, PostKind, Post } from '../model';
 import { EventData } from './types';
 
@@ -94,15 +93,6 @@ export const stringDateToTimestamp = (date: string | undefined) =>
 
 export const getDateWithoutTime = (date: Date | undefined): Date | undefined =>
   date ? new Date(dayjs(date).format('YYYY-MM-DD')) : undefined;
-
-export const printEventLog = (ctx: EventHandlerContext) => {
-  const { name, indexInBlock } = ctx.event;
-  const { height } = ctx.block;
-  if (eventLogsTrace === 'true')
-    console.log(
-      `>>> method ::: ${name} ::: >>> blockNumber :::  ${height} ::: >>> indexInBlock [ ${indexInBlock} ]`
-    );
-};
 
 export const getSyntheticEventName = (
   originEvent: EventName,

@@ -1,9 +1,5 @@
-import { Account, Space } from '../../model';
-import { ProfilesProfileUpdatedEvent } from '../../types/generated/events';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
 import { setActivity } from '../activity';
 import { getOrCreateAccount } from './common';
-import { EventHandlerContext } from '../../common/contexts';
 import { Ctx } from '../../processor';
 import { ProfileUpdatedData } from '../../common/types';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';

@@ -1,26 +1,19 @@
-import { resolvePost } from '../../connection/resolvers/resolvePostData';
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
-import { PostId } from '@subsocial/types/substrate/interfaces';
 import { Post, Account, EventName, Space } from '../../model';
-import { PostsPostUpdatedEvent } from '../../types/generated/events';
 import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import {
   CommonCriticalError,
-  EntityProvideFailWarning,
+  EntityProvideFailWarning
 } from '../../common/errors';
-import {
-  PostUpdatedData,
-  SpaceCountersAction
-} from '../../common/types';
+import { PostUpdatedData, SpaceCountersAction } from '../../common/types';
 import { Ctx } from '../../processor';
 import { StorageDataManager } from '../../storage';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
+import { ElasticSearchIndexerManager } from '../../elasticsearch';
 
 export async function postUpdated(
   ctx: Ctx,
@@ -74,6 +67,8 @@ export async function postUpdated(
   }
 
   await ctx.store.save(post);
+
+  ElasticSearchIndexerManager.getInstance(ctx).addToQueue(post);
 
   await updatePostsCountersInSpace({
     space: post.space ?? null,

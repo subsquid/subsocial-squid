@@ -1,21 +1,15 @@
 import { ReactionKind, Post, Reaction, Activity, EventName } from '../../model';
-import { ReactionsPostReactionUpdatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { getOrCreateAccount } from '../account';
 import {
-  addressSs58ToString,
   ensurePositiveOrZeroValue,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
-  UnknownVersionError
 } from '../../common/errors';
-import { getReactionKindFromCall } from './common';
 import { Ctx } from '../../processor';
 import { PostReactionUpdatedData } from '../../common/types';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';

@@ -1,10 +1,7 @@
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
 import { Post, Space, Activity, EventName } from '../../model';
-import { PostsPostMovedEvent } from '../../types/generated/events';
 import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
@@ -16,16 +13,14 @@ import {
   CommonCriticalError,
   EntityProvideFailWarning
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
 import {
   PostMovedData,
-  PostUpdatedData,
   SpaceCountersAction
 } from '../../common/types';
-// import { updateSpaceForPostChildren } from './common';
 import { postFollowed, postUnfollowed } from '../postCommentFollows';
 import { Ctx } from '../../processor';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
+import { ElasticSearchIndexerManager } from '../../elasticsearch';
 
 export async function postMoved(
   ctx: Ctx,
@@ -47,7 +42,10 @@ export async function postMoved(
     throw new CommonCriticalError();
   }
 
-  const prevSpaceInst = await getEntityWithRelations.space(eventData.fromSpace, ctx)
+  const prevSpaceInst = await getEntityWithRelations.space(
+    eventData.fromSpace,
+    ctx
+  );
 
   /**
    * Update counters for previous space. Will be skipped if post is restored
@@ -91,6 +89,8 @@ export async function postMoved(
     });
 
   await ctx.store.save(post);
+
+  ElasticSearchIndexerManager.getInstance(ctx).addToQueue(post);
 
   if (!newSpaceInst) {
     await postUnfollowed(post, ctx);

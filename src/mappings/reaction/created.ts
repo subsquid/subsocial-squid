@@ -4,15 +4,11 @@ import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { getOrCreateAccount } from '../account';
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
-  UnknownVersionError
 } from '../../common/errors';
 import { getReactionKindFromCall, ensureReaction } from './common';
 import { Ctx } from '../../processor';

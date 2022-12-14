@@ -6,24 +6,18 @@ import {
   Activity,
   EventName
 } from '../../model';
-import { ReactionsPostReactionDeletedEvent } from '../../types/generated/events';
 import { Ctx } from '../../processor';
 
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { getOrCreateAccount } from '../account';
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
-  UnknownVersionError
 } from '../../common/errors';
-// import { getReactionKindFromSquidDb } from './common';
 import { PostReactionDeletedData } from '../../common/types';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
 

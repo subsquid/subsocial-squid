@@ -1,5 +1,7 @@
 import { SubsocialApi } from '@subsocial/api';
-import { ipfsReadOnlyNodeUrl, offchainUrl, chainNode } from '../env';
+import config from '../config';
+
+const { ipfsReadOnlyNodeUrl, offchainUrl, chainNode } = config;
 
 let subsocial: SubsocialApi;
 

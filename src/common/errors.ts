@@ -1,8 +1,5 @@
 import { DbEntity, EventData } from './types';
-import { warningLogsTrace } from '../env';
-import { EventHandlerContext } from './contexts';
 import { Ctx } from '../processor';
-import { SubstrateEvent } from '@subsquid/substrate-processor';
 
 export class UnknownVersionError extends Error {
   constructor(name: string) {
@@ -13,17 +10,6 @@ export class UnknownVersionError extends Error {
 export class CommonCriticalError extends Error {
   constructor(msg = 'Processor has been terminated') {
     super(msg);
-  }
-}
-
-export class MissingDbRecord {
-  constructor(entity: DbEntity, ctx: EventHandlerContext) {
-    const msg = `WARNING ::: Missing record for ${entity.name} in database at block ${ctx.block.height}, method "${ctx.event.name}"`;
-    if (warningLogsTrace === 'true') {
-      console.trace(msg);
-    } else {
-      console.warn(msg);
-    }
   }
 }
 
