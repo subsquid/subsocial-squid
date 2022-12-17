@@ -18,6 +18,7 @@ export const setActivity = async ({
   ctx,
   eventData,
   space,
+  oldOwner,
   post,
   spacePrev,
   reaction,
@@ -29,6 +30,7 @@ export const setActivity = async ({
   eventData: EventData;
   space?: Space;
   spacePrev?: Space | null;
+  oldOwner?: Account;
   post?: Post;
   reaction?: Reaction;
   followingAccount?: Account;
@@ -43,7 +45,13 @@ export const setActivity = async ({
     ];
 
   const accountInst =
-    account instanceof Account ? account : await getOrCreateAccount(account, ctx, '34bfd3b6-abc0-4911-b543-cac93e01b77d');
+    account instanceof Account
+      ? account
+      : await getOrCreateAccount(
+          account,
+          ctx,
+          '34bfd3b6-abc0-4911-b543-cac93e01b77d'
+        );
 
   let activity = new Activity({
     id: getActivityEntityId(
@@ -214,6 +222,23 @@ export const setActivity = async ({
         ctx
       });
   }
+
+  /**
+   * SpaceOwnershipChangeAccepted
+   */
+  if (
+    eventNameDecorated === EventName.SpaceOwnershipChangeAccepted &&
+    oldOwner &&
+    space
+  ) {
+    activity = await insertActivityData.insertActivityForSpaceOwnershipTransfer({
+      space,
+      oldOwner,
+      activity,
+      ctx
+    });
+  }
+
   await ctx.store.save(activity);
   return activity;
 };

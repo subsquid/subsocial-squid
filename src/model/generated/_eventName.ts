@@ -13,6 +13,7 @@ export enum EventName {
     SpaceUpdated = "SpaceUpdated",
     SpaceFollowed = "SpaceFollowed",
     SpaceUnfollowed = "SpaceUnfollowed",
+    SpaceOwnershipChangeAccepted = "SpaceOwnershipChangeAccepted",
     AccountFollowed = "AccountFollowed",
     AccountUnfollowed = "AccountUnfollowed",
     ProfileUpdated = "ProfileUpdated",

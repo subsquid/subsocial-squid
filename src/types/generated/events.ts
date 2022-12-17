@@ -261,6 +261,29 @@ export class SpaceFollowsSpaceUnfollowedEvent {
     }
 }
 
+export class SpaceOwnershipSpaceOwnershipTransferAcceptedEvent {
+    private readonly _chain: Chain
+    private readonly event: Event
+
+    constructor(ctx: EventContext)
+    constructor(ctx: ChainContext, event: Event)
+    constructor(ctx: EventContext, event?: Event) {
+        event = event || ctx.event
+        assert(event.name === 'SpaceOwnership.SpaceOwnershipTransferAccepted')
+        this._chain = ctx._chain
+        this.event = event
+    }
+
+    get isV13(): boolean {
+        return this._chain.getEventHash('SpaceOwnership.SpaceOwnershipTransferAccepted') === '3598290eeb909bc34636d196da89829d37d0fa0ae5899f72908d4977aa03a0b7'
+    }
+
+    get asV13(): {account: Uint8Array, spaceId: bigint} {
+        assert(this.isV13)
+        return this._chain.decodeEvent(this.event)
+    }
+}
+
 export class SpacesSpaceCreatedEvent {
     private readonly _chain: Chain
     private readonly event: Event

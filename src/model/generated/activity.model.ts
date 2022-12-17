@@ -26,7 +26,7 @@ export class Activity {
     eventIndex!: number
 
     @Index_()
-    @Column_("varchar", {length: 27, nullable: false})
+    @Column_("varchar", {length: 28, nullable: false})
     event!: EventName
 
     @Index_()
@@ -40,6 +40,14 @@ export class Activity {
     @Index_()
     @ManyToOne_(() => Space, {nullable: true})
     spacePrev!: Space | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    newOwner!: Account | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    oldOwner!: Account | undefined | null
 
     @Index_()
     @ManyToOne_(() => Post, {nullable: true})

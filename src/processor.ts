@@ -33,6 +33,7 @@ export const processor = new SubstrateBatchProcessor()
   })
   // .setBlockRange({ from: 1093431 }) // PostCreated
   // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  // .setBlockRange({ from: 1368300 }) // SpaceOwnershipTransferAccepted
   .setTypesBundle('subsocial')
   .addEvent('Posts.PostCreated', {
     data: { event: { args: true, call: true, indexInBlock: true } }
@@ -65,6 +66,9 @@ export const processor = new SubstrateBatchProcessor()
     data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('SpaceFollows.SpaceUnfollowed', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('SpaceOwnership.SpaceOwnershipTransferAccepted', {
     data: { event: { args: true, call: true, indexInBlock: true } }
   } as const)
   .addEvent('AccountFollows.AccountFollowed', {

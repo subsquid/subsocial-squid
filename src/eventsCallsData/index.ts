@@ -1,6 +1,4 @@
-import {
-  EventName,
-} from '../model';
+import { EventName } from '../model';
 import { Block, Ctx, EventItem } from '../processor';
 import {
   ParsedEventsData,
@@ -23,9 +21,8 @@ import {
   PostReactionDeletedData
 } from '../common/types';
 import argsParsers from './argsParsers';
-import {
-  SubstrateEvent,
-} from '@subsquid/substrate-processor';
+import { SubstrateEvent } from '@subsquid/substrate-processor';
+import { parseSpaceOwnershipTransferAcceptedEventArgs } from "./argsParsers/eventArgsParsers";
 
 type EventDataType<T> = T extends EventName.SpaceCreated
   ? SpaceCreatedData
@@ -284,6 +281,20 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
             );
 
           parsedData.set(EventName.SpaceUnfollowed, {
+            ...getEventMetadata(block, item.event as SubstrateEvent),
+            ...eventData
+          });
+
+          totalEventsNumber++;
+          break;
+        }
+        case 'SpaceOwnership.SpaceOwnershipTransferAccepted': {
+          const eventData =
+            argsParsers.event.parseSpaceOwnershipTransferAcceptedEventArgs(
+              eventHandlerContext
+            );
+
+          parsedData.set(EventName.SpaceOwnershipChangeAccepted, {
             ...getEventMetadata(block, item.event as SubstrateEvent),
             ...eventData
           });

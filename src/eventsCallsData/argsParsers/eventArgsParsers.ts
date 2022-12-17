@@ -15,10 +15,13 @@ import {
   ProfileUpdatedEventParsedData,
   SpaceUnfollowedEventParsedData,
   SpaceFollowedEventParsedData,
-  AccountFollowedEventParsedData, AccountUnfollowedEventParsedData
-} from "../../common/types";
+  AccountFollowedEventParsedData,
+  AccountUnfollowedEventParsedData,
+  SpaceOwnershipTransferAcceptedEventParsedData
+} from '../../common/types';
 import {
-  AccountFollowsAccountFollowedEvent, AccountFollowsAccountUnfollowedEvent,
+  AccountFollowsAccountFollowedEvent,
+  AccountFollowsAccountUnfollowedEvent,
   PostsPostCreatedEvent,
   PostsPostMovedEvent,
   PostsPostUpdatedEvent,
@@ -28,9 +31,10 @@ import {
   ReactionsPostReactionUpdatedEvent,
   SpaceFollowsSpaceFollowedEvent,
   SpaceFollowsSpaceUnfollowedEvent,
+  SpaceOwnershipSpaceOwnershipTransferAcceptedEvent,
   SpacesSpaceCreatedEvent,
   SpacesSpaceUpdatedEvent
-} from "../../types/generated/events";
+} from '../../types/generated/events';
 import { addressSs58ToString } from '../../common/utils';
 import { getReactionKindDecorated } from '../decorators';
 
@@ -198,6 +202,22 @@ export function parseSpaceUnfollowedEventArgs(
 
   return {
     followerId: addressSs58ToString(follower),
+    spaceId: spaceId.toString()
+  };
+}
+
+export function parseSpaceOwnershipTransferAcceptedEventArgs(
+  ctx: EventContext
+): SpaceOwnershipTransferAcceptedEventParsedData {
+  const event = new SpaceOwnershipSpaceOwnershipTransferAcceptedEvent(
+    ctx,
+    ctx.event
+  );
+
+  const { account, spaceId } = event.asV13;
+
+  return {
+    accountId: addressSs58ToString(account),
     spaceId: spaceId.toString()
   };
 }

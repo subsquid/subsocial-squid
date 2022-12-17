@@ -6,7 +6,6 @@ enum EventName {
   PostMoved
   PostFollowed # synthetic
   PostUnfollowed # synthetic
-
   PostReactionCreated
   PostReactionUpdated
   PostReactionDeleted
@@ -15,6 +14,8 @@ enum EventName {
   SpaceUpdated
   SpaceFollowed
   SpaceUnfollowed
+  SpaceOwnershipChangeAccepted
+
   AccountFollowed
   AccountUnfollowed
   ProfileUpdated
@@ -26,7 +27,6 @@ enum EventName {
   CommentReactionCreated # synthetic
   CommentReactionUpdated # synthetic
   CommentReactionDeleted # synthetic
-
   CommentReplyCreated # synthetic
   CommentReplyDeleted # synthetic
   CommentReplyUpdated # synthetic
@@ -78,7 +78,7 @@ type Account @entity {
   updatedAtBlock: BigInt
 }
 
-type Post @entity  {
+type Post @entity {
   id: ID!
   parentPost: Post
   rootPost: Post
@@ -186,6 +186,8 @@ type Activity @entity {
   followingAccount: Account
   space: Space
   spacePrev: Space
+  newOwner: Account
+  oldOwner: Account
   post: Post
   reaction: Reaction
   date: DateTime!

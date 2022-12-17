@@ -21,7 +21,8 @@ import {
   parseSpaceFollowedEventArgs,
   parseSpaceUnfollowedEventArgs,
   parseAccountFollowedEventArgs,
-  parseAccountUnfollowedEventArgs
+  parseAccountUnfollowedEventArgs,
+  parseSpaceOwnershipTransferAcceptedEventArgs
 } from './eventArgsParsers';
 
 export default {
@@ -41,6 +42,7 @@ export default {
     parsePostMovedEventArgs,
     parseSpaceCreatedEventArgs,
     parseSpaceUpdatedEventArgs,
+    parseSpaceOwnershipTransferAcceptedEventArgs,
     parsePostReactionCreatedEventArgs,
     parsePostReactionUpdatedEventArgs,
     parsePostReactionDeletedEventArgs,

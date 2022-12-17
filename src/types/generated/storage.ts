@@ -9,6 +9,7 @@ import * as v12 from './v12'
 import * as v13 from './v13'
 import * as v14 from './v14'
 import * as v16 from './v16'
+import * as v18 from './v18'
 
 export class AccountFollowsAccountFollowedByAccountStorage extends StorageBase {
     protected getPrefix() {
@@ -2329,6 +2330,23 @@ export class ProxyProxiesStorage extends StorageBase {
         assert(this.isV16)
         return this as any
     }
+
+    /**
+     *  The set of account proxies. Maps the account which has delegated to the accounts
+     *  which are being delegated to, together with the amount held on deposit.
+     */
+    get isV18(): boolean {
+        return this.getTypeHash() === 'a27322beaa8a6b35ee664ce0d9d47ebe32475d26999e94dc488a17b583f74861'
+    }
+
+    /**
+     *  The set of account proxies. Maps the account which has delegated to the accounts
+     *  which are being delegated to, together with the amount held on deposit.
+     */
+    get asV18(): ProxyProxiesStorageV18 {
+        assert(this.isV18)
+        return this as any
+    }
 }
 
 /**
@@ -2347,6 +2365,24 @@ export interface ProxyProxiesStorageV16 {
     getPairs(key: Uint8Array): Promise<[k: Uint8Array, v: [v16.ProxyDefinition[], bigint]][]>
     getPairsPaged(pageSize: number): AsyncIterable<[k: Uint8Array, v: [v16.ProxyDefinition[], bigint]][]>
     getPairsPaged(pageSize: number, key: Uint8Array): AsyncIterable<[k: Uint8Array, v: [v16.ProxyDefinition[], bigint]][]>
+}
+
+/**
+ *  The set of account proxies. Maps the account which has delegated to the accounts
+ *  which are being delegated to, together with the amount held on deposit.
+ */
+export interface ProxyProxiesStorageV18 {
+    get(key: Uint8Array): Promise<[v18.ProxyDefinition[], bigint]>
+    getAll(): Promise<[v18.ProxyDefinition[], bigint][]>
+    getMany(keys: Uint8Array[]): Promise<[v18.ProxyDefinition[], bigint][]>
+    getKeys(): Promise<Uint8Array[]>
+    getKeys(key: Uint8Array): Promise<Uint8Array[]>
+    getKeysPaged(pageSize: number): AsyncIterable<Uint8Array[]>
+    getKeysPaged(pageSize: number, key: Uint8Array): AsyncIterable<Uint8Array[]>
+    getPairs(): Promise<[k: Uint8Array, v: [v18.ProxyDefinition[], bigint]][]>
+    getPairs(key: Uint8Array): Promise<[k: Uint8Array, v: [v18.ProxyDefinition[], bigint]][]>
+    getPairsPaged(pageSize: number): AsyncIterable<[k: Uint8Array, v: [v18.ProxyDefinition[], bigint]][]>
+    getPairsPaged(pageSize: number, key: Uint8Array): AsyncIterable<[k: Uint8Array, v: [v18.ProxyDefinition[], bigint]][]>
 }
 
 export class RandomnessCollectiveFlipRandomMaterialStorage extends StorageBase {
@@ -3807,6 +3843,33 @@ export class SystemEventsStorage extends StorageBase {
         assert(this.isV16)
         return this as any
     }
+
+    /**
+     *  Events deposited for the current block.
+     * 
+     *  NOTE: The item is unbound and should therefore never be read on chain.
+     *  It could otherwise inflate the PoV size of a block.
+     * 
+     *  Events have a large in-memory size. Box the events to not go out-of-memory
+     *  just in case someone still reads them from within the runtime.
+     */
+    get isV18(): boolean {
+        return this.getTypeHash() === 'aec2fdd994c481fe8779dd7f171e99524f29068372e308064d2b27c30f45d3a9'
+    }
+
+    /**
+     *  Events deposited for the current block.
+     * 
+     *  NOTE: The item is unbound and should therefore never be read on chain.
+     *  It could otherwise inflate the PoV size of a block.
+     * 
+     *  Events have a large in-memory size. Box the events to not go out-of-memory
+     *  just in case someone still reads them from within the runtime.
+     */
+    get asV18(): SystemEventsStorageV18 {
+        assert(this.isV18)
+        return this as any
+    }
 }
 
 /**
@@ -3906,6 +3969,19 @@ export interface SystemEventsStorageV14 {
  */
 export interface SystemEventsStorageV16 {
     get(): Promise<v16.EventRecord[]>
+}
+
+/**
+ *  Events deposited for the current block.
+ * 
+ *  NOTE: The item is unbound and should therefore never be read on chain.
+ *  It could otherwise inflate the PoV size of a block.
+ * 
+ *  Events have a large in-memory size. Box the events to not go out-of-memory
+ *  just in case someone still reads them from within the runtime.
+ */
+export interface SystemEventsStorageV18 {
+    get(): Promise<v18.EventRecord[]>
 }
 
 export class SystemExecutionPhaseStorage extends StorageBase {

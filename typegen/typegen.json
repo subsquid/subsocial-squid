@@ -18,6 +18,7 @@
 
     "SpaceFollows.SpaceFollowed",
     "SpaceFollows.SpaceUnfollowed",
+    "SpaceOwnership.SpaceOwnershipTransferAccepted",
 
     "AccountFollows.AccountFollowed",
     "AccountFollows.AccountUnfollowed"
