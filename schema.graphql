@@ -14,7 +14,7 @@ enum EventName {
   SpaceUpdated
   SpaceFollowed
   SpaceUnfollowed
-  SpaceOwnershipChangeAccepted
+  SpaceOwnershipTransferAccepted
 
   AccountFollowed
   AccountUnfollowed

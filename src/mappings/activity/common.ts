@@ -38,8 +38,6 @@ export const setActivity = async ({
 }): Promise<Activity | null> => {
   const { indexInBlock, name: eventName, blockNumber, timestamp } = eventData;
 
-  console.log('eventName - ', eventName)
-
   const eventNameDecorated =
     EventName[
       syntheticEventName ||
@@ -226,19 +224,21 @@ export const setActivity = async ({
   }
 
   /**
-   * SpaceOwnershipChangeAccepted
+   * SpaceOwnershipTransferAccepted
    */
   if (
-    eventNameDecorated === EventName.SpaceOwnershipChangeAccepted &&
+    eventNameDecorated === EventName.SpaceOwnershipTransferAccepted &&
     oldOwner &&
     space
   ) {
-    activity = await insertActivityData.insertActivityForSpaceOwnershipTransfer({
-      space,
-      oldOwner,
-      activity,
-      ctx
-    });
+    activity = await insertActivityData.insertActivityForSpaceOwnershipTransfer(
+      {
+        space,
+        oldOwner,
+        activity,
+        ctx
+      }
+    );
   }
 
   await ctx.store.save(activity);

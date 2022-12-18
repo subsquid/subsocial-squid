@@ -10,6 +10,7 @@ import {
   EventData,
   SpaceCreatedData,
   SpaceUpdatedData,
+  SpaceOwnershipTransferAcceptedData,
   PostMovedData,
   AccountFollowedData,
   AccountUnfollowedData,
@@ -22,7 +23,6 @@ import {
 } from '../common/types';
 import argsParsers from './argsParsers';
 import { SubstrateEvent } from '@subsquid/substrate-processor';
-import { parseSpaceOwnershipTransferAcceptedEventArgs } from "./argsParsers/eventArgsParsers";
 
 type EventDataType<T> = T extends EventName.SpaceCreated
   ? SpaceCreatedData
@@ -42,6 +42,8 @@ type EventDataType<T> = T extends EventName.SpaceCreated
   ? SpaceFollowedData
   : T extends EventName.SpaceUnfollowed
   ? SpaceUnfollowedData
+  : T extends EventName.SpaceOwnershipTransferAccepted
+  ? SpaceOwnershipTransferAcceptedData
   : T extends EventName.ProfileUpdated
   ? ProfileUpdatedData
   : T extends EventName.PostReactionCreated
@@ -294,7 +296,7 @@ export function getParsedEventsData(ctx: Ctx): ParsedEventsDataScope {
               eventHandlerContext
             );
 
-          parsedData.set(EventName.SpaceOwnershipChangeAccepted, {
+          parsedData.set(EventName.SpaceOwnershipTransferAccepted, {
             ...getEventMetadata(block, item.event as SubstrateEvent),
             ...eventData
           });

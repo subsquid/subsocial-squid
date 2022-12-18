@@ -20,7 +20,7 @@ export async function handleSpaces(
   ];
   const spaceOwnershipTransferAcceptedEvents = [
     ...parsedEvents
-      .getSectionByEventName(EventName.SpaceOwnershipChangeAccepted)
+      .getSectionByEventName(EventName.SpaceOwnershipTransferAccepted)
       .values()
   ];
 
