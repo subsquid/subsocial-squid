@@ -38,6 +38,8 @@ export const setActivity = async ({
 }): Promise<Activity | null> => {
   const { indexInBlock, name: eventName, blockNumber, timestamp } = eventData;
 
+  console.log('eventName - ', eventName)
+
   const eventNameDecorated =
     EventName[
       syntheticEventName ||
