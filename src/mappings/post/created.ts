@@ -1,11 +1,6 @@
-import {
-  addressSs58ToString,
-  getSyntheticEventName,
-  printEventLog
-} from '../../common/utils';
-import { Post, Activity, Account, EventName } from '../../model';
-import { PostsPostCreatedEvent } from '../../types/generated/events';
-import { ensureAccount } from '../account';
+import { getSyntheticEventName } from '../../common/utils';
+import { Post, Activity, Account, EventName, Space } from '../../model';
+import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import { postFollowed } from '../postCommentFollows';
@@ -14,38 +9,39 @@ import {
   EntityProvideFailWarning,
   CommonCriticalError
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
-import { SpaceCountersAction } from '../../common/types';
+import { SpaceCountersAction, PostCreatedData } from '../../common/types';
 import { ensurePost } from './common';
 import {
   addNotificationForAccount,
   addNotificationForAccountFollowers
 } from '../notification';
+import { Ctx } from '../../processor';
+import { ElasticSearchIndexerManager } from '../../elasticsearch';
 
-export async function postCreated(ctx: EventHandlerContext): Promise<void> {
-  const event = new PostsPostCreatedEvent(ctx);
-  printEventLog(ctx);
-
-  const { account: accountId, postId } = event.asV13;
-
-  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
+export async function postCreated(
+  ctx: Ctx,
+  eventData: PostCreatedData
+): Promise<void> {
+  const account = await getOrCreateAccount(
+    eventData.accountId,
+    ctx,
+    'fc2cb4d7-402e-4ea8-b084-d3ef5bea2bc2'
+  );
 
   const post = await ensurePost({
-    account,
-    postId: postId.toString(),
-    ctx
+    postId: eventData.postId,
+    ctx,
+    eventData
   });
-  if (!post) {
-    new EntityProvideFailWarning(Post, postId.toString(), ctx);
-    throw new CommonCriticalError();
-  }
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.save(post);
 
-  if (post.sharedPost) await handlePostShare(post, account, ctx);
+  ElasticSearchIndexerManager.getInstance(ctx).addToQueue(post);
+
+  if (post.sharedPost) await handlePostShare(post, account, ctx, eventData);
 
   await updatePostsCountersInSpace({
-    space: post.space || null,
+    space: post.space ?? null,
     post,
     action: SpaceCountersAction.PostAdded,
     ctx
@@ -60,20 +56,44 @@ export async function postCreated(ctx: EventHandlerContext): Promise<void> {
     syntheticEventName: getSyntheticEventName(EventName.PostCreated, post),
     account,
     post,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) {
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     return;
   }
+
   await addPostToFeeds(post, activity, ctx);
+
+  if (post.sharedPost) return;
+
+  if (!post.isComment || (post.isComment && !post.parentPost)) {
+    await addNotificationForAccount(post.ownedByAccount, activity, ctx);
+  } else if (post.isComment && post.parentPost && post.rootPost) {
+    /**
+     * Notifications should not be added for owner followers if post is reply
+     */
+
+    await addNotificationForAccount(
+      post.rootPost.ownedByAccount,
+      activity,
+      ctx
+    );
+    await addNotificationForAccount(
+      post.parentPost.ownedByAccount,
+      activity,
+      ctx
+    );
+  }
 }
 
 async function handlePostShare(
   sharedPost: Post,
   callerAccount: Account,
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: PostCreatedData
 ): Promise<void> {
   if (!sharedPost.sharedPost) return;
 
@@ -81,17 +101,18 @@ async function handlePostShare(
 
   originPost.sharesCount += 1;
 
-  await ctx.store.save<Post>(originPost);
+  await ctx.store.save(originPost);
 
   const activity = await setActivity({
     account: callerAccount,
     post: originPost,
     syntheticEventName: getSyntheticEventName(EventName.PostShared, originPost),
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) {
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
 

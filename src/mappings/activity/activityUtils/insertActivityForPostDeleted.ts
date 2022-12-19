@@ -1,16 +1,16 @@
-import { Post, Activity } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Post, Activity, Space } from '../../../model';
+import { Ctx } from '../../../processor';
 
 type InsertActivityForPostMovedParams = {
   post: Post;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForPostDeleted(
   params: InsertActivityForPostMovedParams
 ): Promise<Activity> {
-  const { activity, post } = params;
+  const { activity, post, ctx } = params;
 
   activity.post = post;
   activity.space = post.space;

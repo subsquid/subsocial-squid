@@ -1,9 +1,10 @@
 import { Account, AccountFollowers, Activity, EventName } from '../../model';
+import { Ctx } from '../../processor';
 import {
   getAccountFollowersEntityId,
   decorateEventName
 } from '../../common/utils';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { setActivity } from '../activity';
 import { deleteAccountPostsFromFeedForAccount } from '../newsFeed';
 import {
@@ -11,47 +12,66 @@ import {
   deleteAllNotificationsAboutAccount
 } from '../notification';
 import { EventHandlerContext } from '../../common/contexts';
+import { EventData } from '../../common/types';
 
 export async function handleEvent(
   followerId: string,
   followingId: string,
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: EventData
 ): Promise<void> {
-  const followerAccount = await ensureAccount(followerId, ctx);
-  const followingAccount = await ensureAccount(followingId, ctx);
+  const followerAccount = await getOrCreateAccount(
+    followerId,
+    ctx,
+    '4e4d784c-df03-4498-ad2f-4f49dc4e7bc5'
+  );
+  const followingAccount = await getOrCreateAccount(
+    followingId,
+    ctx,
+    '3ac27014-207e-469b-9ffe-fe7bfd90699f'
+  );
 
   const activity = await setActivity({
     account: followerAccount,
     followingAccount,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) return;
 
-  await processAccountFollowingUnfollowingRelations(
+  await processAccountFollowingUnfollowingRelations({
     followerAccount,
     followingAccount,
     activity,
-    ctx
-  );
+    ctx,
+    eventData
+  });
 }
 
-export const processAccountFollowingUnfollowingRelations = async (
-  followerAccount: Account,
-  followingAccount: Account,
-  activity: Activity,
-  ctx: EventHandlerContext
-): Promise<void> => {
-  const { name } = ctx.event;
+export const processAccountFollowingUnfollowingRelations = async ({
+  followerAccount,
+  followingAccount,
+  activity,
+  ctx,
+  eventData
+}: {
+  followerAccount: Account;
+  followingAccount: Account;
+  activity: Activity;
+  ctx: Ctx;
+  eventData: EventData;
+}): Promise<void> => {
+  const { name } = eventData;
   const eventNameDecorated = decorateEventName(name);
 
-  const AccountFollowersEntityId = getAccountFollowersEntityId(
+  const accountFollowersEntityId = getAccountFollowersEntityId(
     followerAccount.id,
     followingAccount.id
   );
   const accountFollowersEntity = await ctx.store.get(
     AccountFollowers,
-    AccountFollowersEntityId
+    accountFollowersEntityId
   );
 
   let currentFollowersCountOfFollowingAcc =
@@ -64,19 +84,21 @@ export const processAccountFollowingUnfollowingRelations = async (
     currentFollowersCountOfFollowingAcc += 1;
     currentFollowingCountOfFollowerAcc += 1;
 
-    const newAccountFollowersEnt = new AccountFollowers();
+    const newAccountFollowersEnt = new AccountFollowers({
+      id: accountFollowersEntityId,
+      followerAccount: followerAccount,
+      followingAccount: followingAccount
+    });
 
-    newAccountFollowersEnt.id = AccountFollowersEntityId;
-    newAccountFollowersEnt.followerAccount = followerAccount;
-    newAccountFollowersEnt.followingAccount = followingAccount;
+    await ctx.store.save(newAccountFollowersEnt);
 
-    await ctx.store.save<AccountFollowers>(newAccountFollowersEnt);
     await addNotificationForAccount(followingAccount, activity, ctx);
   } else if (eventNameDecorated === EventName.AccountUnfollowed) {
     if (!accountFollowersEntity) return;
     currentFollowersCountOfFollowingAcc -= 1;
     currentFollowingCountOfFollowerAcc -= 1;
-    await ctx.store.remove<AccountFollowers>(accountFollowersEntity);
+    await ctx.store.remove(accountFollowersEntity);
+
     await addNotificationForAccount(followingAccount, activity, ctx);
     await deleteAllNotificationsAboutAccount(
       followerAccount,
@@ -96,5 +118,5 @@ export const processAccountFollowingUnfollowingRelations = async (
   followerAccount.followingAccountsCount = currentFollowingCountOfFollowerAcc;
   followingAccount.followersCount = currentFollowersCountOfFollowingAcc;
 
-  await ctx.store.save<Account>([followerAccount, followingAccount]);
+  await ctx.store.save([followerAccount, followingAccount]);
 };

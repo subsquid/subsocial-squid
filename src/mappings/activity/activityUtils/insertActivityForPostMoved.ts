@@ -1,17 +1,17 @@
 import { Post, Activity, Space } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Ctx } from '../../../processor';
 
 type InsertActivityForPostMovedParams = {
   post: Post;
   spacePrev: Space | null;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForPostMoved(
   params: InsertActivityForPostMovedParams
 ): Promise<Activity> {
-  const { activity, post, spacePrev } = params;
+  const { activity, post, spacePrev, ctx } = params;
 
   activity.post = post;
   activity.space = post.space;

@@ -2,95 +2,80 @@ import { ReactionKind, Post, Reaction, Activity, EventName } from '../../model';
 import { ReactionsPostReactionCreatedEvent } from '../../types/generated/events';
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
-  UnknownVersionError
 } from '../../common/errors';
 import { getReactionKindFromCall, ensureReaction } from './common';
-
-type ReactionEvent = {
-  accountId: string;
-  postId: string;
-  reactionId: string;
-  reactionKind: ReactionKind;
-};
-
-function getPostReactionCreatedEvent(
-  ctx: EventHandlerContext
-): ReactionEvent | null {
-  const event = new ReactionsPostReactionCreatedEvent(ctx);
-
-  const { account: accountId, postId, reactionId, reactionKind } = event.asV13;
-  return {
-    accountId: addressSs58ToString(accountId),
-    postId: postId.toString(),
-    reactionId: reactionId.toString(),
-    reactionKind: ReactionKind[reactionKind.__kind]
-  };
-
-  throw new UnknownVersionError(event.constructor.name);
-}
+import { Ctx } from '../../processor';
+import { PostReactionCreatedData } from '../../common/types';
 
 export async function postReactionCreated(
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: PostReactionCreatedData
 ): Promise<void> {
-  printEventLog(ctx);
-  const event = getPostReactionCreatedEvent(ctx);
-  if (!event) return;
-
-  const { accountId, postId, reactionId, reactionKind } = event;
-
-  const account = await ensureAccount(accountId, ctx);
+  const { postId, reactionId } = eventData;
 
   const reaction = await ensureReaction({
-    account,
-    postId,
-    reactionId,
-    reactionKind,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!reaction) {
-    new EntityProvideFailWarning(Reaction, reactionId, ctx);
+    new EntityProvideFailWarning(Reaction, reactionId, ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  await ctx.store.save<Reaction>(reaction);
+  await ctx.store.save(reaction);
 
-  const { post } = reaction;
+  const postInst = reaction.post;
+
+  if (!postInst) {
+    new EntityProvideFailWarning(Post, postId, ctx, eventData);
+    throw new CommonCriticalError();
+  }
 
   if (reaction.kind === ReactionKind.Upvote) {
-    post.upvotesCount = !post.upvotesCount ? 1 : post.upvotesCount + 1;
+    postInst.upvotesCount = !postInst.upvotesCount
+      ? 1
+      : postInst.upvotesCount + 1;
   } else if (reaction.kind === ReactionKind.Downvote) {
-    post.downvotesCount = !post.downvotesCount ? 1 : post.downvotesCount + 1;
+    postInst.downvotesCount = !postInst.downvotesCount
+      ? 1
+      : postInst.downvotesCount + 1;
   }
-  post.reactionsCount = !post.reactionsCount ? 1 : post.reactionsCount + 1;
+  postInst.reactionsCount = !postInst.reactionsCount
+    ? 1
+    : postInst.reactionsCount + 1;
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.save(postInst);
 
+  const accountInst = await getOrCreateAccount(
+    eventData.forced && eventData.forcedData
+      ? eventData.forcedData.account
+      : eventData.accountId,
+    ctx,
+    '27dd085f-2586-449c-b8f7-0ce2e76b1c4d'
+  );
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(
       EventName.PostReactionCreated,
-      post
+      postInst
     ),
+    account: accountInst,
+    post: postInst,
     reaction,
-    account,
-    post,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) {
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
-    return;
   }
-  await addNotificationForAccount(reaction.post.ownedByAccount, activity, ctx);
+  await addNotificationForAccount(postInst.ownedByAccount, activity, ctx);
 }

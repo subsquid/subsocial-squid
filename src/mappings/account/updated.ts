@@ -1,47 +1,48 @@
-import { Account, Space } from '../../model';
-import { ProfilesProfileUpdatedEvent } from '../../types/generated/events';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
-// import { resolveAccount } from '../../connection/resolvers/resolveAccountData';
 import { setActivity } from '../activity';
-import { ensureAccount } from './common';
-import { MissingSubsocialApiEntity } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
+import { getOrCreateAccount } from './common';
+import { Ctx } from '../../processor';
+import { ProfileUpdatedData } from '../../common/types';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
-export async function accountUpdated(ctx: EventHandlerContext): Promise<void> {
-  printEventLog(ctx);
-  const event = new ProfilesProfileUpdatedEvent(ctx);
+export async function accountUpdated(
+  ctx: Ctx,
+  eventData: ProfileUpdatedData
+): Promise<void> {
+  const account = await getOrCreateAccount(
+    eventData.accountId,
+    ctx,
+    '3158f072-55b4-4ab0-bd49-d267e3587cd6'
+  );
 
-  const { account: accountId, spaceId } = event.asV13;
-
-  const accountIdString = addressSs58ToString(accountId);
-
-  const account = await ensureAccount(accountIdString, ctx);
-
-  account.updatedAtTime = new Date(ctx.block.timestamp);
-  account.updatedAtBlock = BigInt(ctx.block.height.toString());
+  account.updatedAtTime = eventData.timestamp;
+  account.updatedAtBlock = BigInt(eventData.blockNumber.toString());
 
   if (
-    (spaceId && !account.profileSpace) ||
-    (spaceId &&
+    (eventData.spaceId && !account.profileSpace) ||
+    (eventData.spaceId &&
       account.profileSpace &&
-      account.profileSpace.id !== spaceId.toString())
+      account.profileSpace.id !== eventData.spaceId)
   ) {
-    const accountSpace = await ctx.store.get(Space, spaceId.toString());
+    const accountSpace = await getEntityWithRelations.space(
+      eventData.spaceId,
+      ctx
+    );
 
     account.profileSpace = accountSpace;
 
-    await ctx.store.save<Account>(account);
+    await ctx.store.save(account);
 
     if (accountSpace) {
       accountSpace.profileSpace = account;
-      await ctx.store.save<Space>(accountSpace);
+      await ctx.store.save(accountSpace);
     }
   } else {
-    await ctx.store.save<Account>(account);
+    await ctx.store.save(account);
   }
 
   await setActivity({
     account,
-    ctx
+    ctx,
+    eventData
   });
 }

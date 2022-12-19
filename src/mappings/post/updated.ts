@@ -1,87 +1,77 @@
-import { resolvePost } from '../../connection/resolvers/resolvePostData';
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
-import { PostId } from '@subsocial/types/substrate/interfaces';
-import { Post, Account, EventName } from '../../model';
-import { PostsPostUpdatedEvent } from '../../types/generated/events';
-import { ensureAccount } from '../account';
+import { Post, Account, EventName, Space } from '../../model';
+import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import {
   CommonCriticalError,
-  EntityProvideFailWarning,
-  MissingSubsocialApiEntity
+  EntityProvideFailWarning
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
-import { SpaceCountersAction } from '../../common/types';
-import { isEmptyArray } from '@subsocial/utils';
+import { PostUpdatedData, SpaceCountersAction } from '../../common/types';
+import { Ctx } from '../../processor';
+import { StorageDataManager } from '../../storage';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
+import { ElasticSearchIndexerManager } from '../../elasticsearch';
 
-export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
-  const event = new PostsPostUpdatedEvent(ctx);
-  printEventLog(ctx);
-
-  const { account: accountId, postId } = event.asV13;
-
-  const post = await ctx.store.get(Post, {
-    where: { id: postId.toString() },
-    relations: {
-      ownedByAccount: true,
-      rootPost: { ownedByAccount: true },
-      parentPost: { ownedByAccount: true },
-      space: { ownedByAccount: true }
-    }
+export async function postUpdated(
+  ctx: Ctx,
+  eventData: PostUpdatedData
+): Promise<void> {
+  const post = await getEntityWithRelations.post({
+    postId: eventData.postId,
+    ctx
   });
   if (!post) {
-    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
     throw new CommonCriticalError();
-    return;
   }
 
   const prevVisStateHidden = post.hidden;
 
-  const postData = await resolvePost(postId as unknown as PostId);
-  if (!postData) {
-    new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
-    return;
-  }
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
+  const postIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
+    'post',
+    eventData.ipfsSrc
+  );
 
-  const { struct: postStruct, content: postContent } = postData.post;
+  const ownedByAccount = await getOrCreateAccount(
+    post.ownedByAccount.id || eventData.accountId,
+    ctx,
+    '876a9485-c5ac-4198-8e49-9f18bb770e57'
+  );
 
-  if (post.updatedAtTime === postStruct.updatedAtTime) return;
-
-  const ownedByAccount = await ensureAccount(postStruct.ownerId, ctx);
-
-  post.hidden = postStruct.hidden;
+  post.hidden = eventData.hidden ?? true;
   post.ownedByAccount = ownedByAccount;
-  post.content = postStruct.contentId;
-  post.updatedAtTime = postStruct.updatedAtTime
-    ? new Date(postStruct.updatedAtTime)
-    : null;
+  post.content = eventData.ipfsSrc;
+  post.updatedAtTime = eventData.timestamp;
 
-  if (postContent) {
-    post.title = postContent.title ?? null;
-    post.image = postContent.image ?? null;
-    post.link = postContent.link ?? null;
-    post.format = postContent.format ?? null;
-    post.canonical = postContent.canonical ?? null;
-    post.body = postContent.body;
-    post.summary = postContent.summary;
+  if (postIpfsContent) {
+    post.title = postIpfsContent.title ?? null;
+    post.image = postIpfsContent.image ?? null;
+    post.link = postIpfsContent.link ?? null;
+    // post.format = postIpfsContent.format ?? null; // TODO check is it actual property
+    post.format = null;
+    post.canonical = postIpfsContent.canonical ?? null;
+    post.body = postIpfsContent.body ?? null;
+    post.summary = postIpfsContent.summary ?? null;
     post.slug = null;
-    post.tagsOriginal = postContent.tags?.join(',') ?? null;
+    post.tagsOriginal = postIpfsContent.tags?.join(',') ?? null;
 
-    const { meta } = postContent;
-    if (meta && !isEmptyArray(meta)) {
-      post.proposalIndex = meta[0].proposalIndex;
-    }
+    // TODO Implementation is needed
+    // const { meta } = postContent;
+    // if (meta && !isEmptyArray(meta)) {
+    //   post.proposalIndex = meta[0].proposalIndex;
+    // }
   }
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.save(post);
+
+  ElasticSearchIndexerManager.getInstance(ctx).addToQueue(post);
 
   await updatePostsCountersInSpace({
-    space: post.space || null,
+    space: post.space ?? null,
     post,
     isPrevVisStateHidden: prevVisStateHidden,
     action: SpaceCountersAction.PostUpdated,
@@ -90,8 +80,9 @@ export async function postUpdated(ctx: EventHandlerContext): Promise<void> {
 
   await setActivity({
     syntheticEventName: getSyntheticEventName(EventName.PostUpdated, post),
-    account: addressSs58ToString(accountId),
+    account: eventData.accountId,
     post,
-    ctx
+    ctx,
+    eventData
   });
 }

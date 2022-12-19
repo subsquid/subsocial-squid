@@ -1,31 +1,31 @@
-import { EventHandlerContext } from '../../common/contexts';
-import { Account, Post } from '../../model';
-import { ensurePositiveOrZeroValue, printEventLog } from '../../common/utils';
+import { Account, Post, EventName } from '../../model';
+import { ensurePositiveOrZeroValue } from '../../common/utils';
 import { processPostFollowingUnfollowingRelations } from './common';
-import { PostFollowingUnfollowingCustomEvents } from '../../common/types';
+import { Ctx } from '../../processor';
+import { getOrCreateAccount } from '../account';
 
-export async function postUnfollowed(
-  post: Post,
-  ctx: EventHandlerContext
-): Promise<void> {
-  printEventLog(ctx);
+export async function postUnfollowed(post: Post, ctx: Ctx): Promise<void> {
+  const postUpdated = post;
+  const ownerAccount = await getOrCreateAccount(
+    post.ownedByAccount.id,
+    ctx,
+    '634e510f-6d1c-4760-8603-1d96ff27035a'
+  );
 
   await processPostFollowingUnfollowingRelations(
     post,
-    post.ownedByAccount,
-    PostFollowingUnfollowingCustomEvents.PostUnfollowed,
+    ownerAccount,
+    EventName.PostUnfollowed,
     ctx
   );
 
-  const postUpdated = post;
-  const accountUpdated = post.ownedByAccount;
   postUpdated.followersCount = ensurePositiveOrZeroValue(
     postUpdated.followersCount - 1
   );
-  accountUpdated.followingPostsCount = ensurePositiveOrZeroValue(
-    accountUpdated.followingPostsCount - 1
+  ownerAccount.followingPostsCount = ensurePositiveOrZeroValue(
+    ownerAccount.followingPostsCount - 1
   );
 
-  await ctx.store.save<Post>(postUpdated);
-  await ctx.store.save<Account>(accountUpdated);
+  await ctx.store.save(postUpdated);
+  await ctx.store.save(ownerAccount);
 }

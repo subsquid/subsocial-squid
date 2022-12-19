@@ -1,51 +1,59 @@
 import { EventHandlerContext } from '../../common/contexts';
-import { Post, Account, PostFollowers, CommentFollowers } from '../../model';
+import {
+  Post,
+  Account,
+  PostFollowers,
+  CommentFollowers,
+  EventName
+} from '../../model';
 import {
   ensurePositiveOrZeroValue,
   getPostFollowersEntityId
 } from '../../common/utils';
-import { PostFollowingUnfollowingCustomEvents } from '../../common/types';
+import { Ctx } from '../../processor';
 
 export const processPostFollowingUnfollowingRelations = async (
   post: Post,
   follower: Account,
-  followingEvent: PostFollowingUnfollowingCustomEvents,
-  ctx: EventHandlerContext
+  followingEvent: EventName,
+  ctx: Ctx
 ): Promise<void> => {
   const postFollowersEntityId = getPostFollowersEntityId(follower.id, post.id);
 
   switch (followingEvent) {
-    case PostFollowingUnfollowingCustomEvents.PostFollowed:
+    case EventName.PostFollowed:
       if (post.isComment) {
-        const newCommentFollowersEnt = new CommentFollowers();
-        newCommentFollowersEnt.id = postFollowersEntityId;
-        newCommentFollowersEnt.followerAccount = follower;
-        newCommentFollowersEnt.followingComment = post;
-        await ctx.store.save<CommentFollowers>(newCommentFollowersEnt);
+        await ctx.store.save(
+          new CommentFollowers({
+            id: postFollowersEntityId,
+            followerAccount: follower,
+            followingComment: post
+          })
+        );
       } else {
-        const newPostFollowersEnt = new PostFollowers();
-        newPostFollowersEnt.id = postFollowersEntityId;
-        newPostFollowersEnt.followerAccount = follower;
-        newPostFollowersEnt.followingPost = post;
-        await ctx.store.save<PostFollowers>(newPostFollowersEnt);
+        await ctx.store.save(
+          new PostFollowers({
+            id: postFollowersEntityId,
+            followerAccount: follower,
+            followingPost: post
+          })
+        );
       }
       break;
-    case PostFollowingUnfollowingCustomEvents.PostUnfollowed:
+    case EventName.PostUnfollowed:
       let existingRelation = null;
       if (post.isComment) {
         existingRelation = await ctx.store.get(
           CommentFollowers,
           postFollowersEntityId
         );
-        if (existingRelation)
-          await ctx.store.remove<CommentFollowers>(existingRelation);
+        if (existingRelation) await ctx.store.remove(existingRelation);
       } else {
         existingRelation = await ctx.store.get(
           PostFollowers,
           postFollowersEntityId
         );
-        if (existingRelation)
-          await ctx.store.remove<PostFollowers>(existingRelation);
+        if (existingRelation) await ctx.store.remove(existingRelation);
       }
       break;
     default:

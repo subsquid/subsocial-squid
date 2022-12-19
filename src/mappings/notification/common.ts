@@ -6,35 +6,47 @@ import {
   Space,
   AccountFollowers
 } from '../../model';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { getNotificationEntityId } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
+import { Ctx } from '../../processor';
 
 export const addNotificationForAccount = async (
   account: Account | string,
   activity: Activity,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<Notification | null> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account
+      ? account
+      : await getOrCreateAccount(
+          account,
+          ctx,
+          'dbf0ccab-5307-4495-88fb-c92c2e50580c'
+        );
 
-  const notification = new Notification();
+  const notification = new Notification({
+    id: getNotificationEntityId(accountInst.id, activity.id),
+    account: accountInst,
+    activity: activity
+  });
 
-  notification.id = getNotificationEntityId(accountInst.id, activity.id);
-  notification.account = accountInst;
-  notification.activity = activity;
-
-  await ctx.store.save<Notification>(notification);
+  await ctx.store.save(notification);
   return notification;
 };
 
 export const addNotificationForAccountFollowers = async (
   account: Account | string,
   activity: Activity,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account
+      ? account
+      : await getOrCreateAccount(
+          account,
+          ctx,
+          'ec067182-ce7d-49d7-9065-7e53c40eb450'
+        );
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: { id: accountInst.id } },
@@ -58,49 +70,55 @@ export const addNotificationForAccountFollowers = async (
 
   if (!notificationsDraftList || notificationsDraftList.length === 0) return;
 
-  await ctx.store.save<Notification>(notificationsDraftList);
+  await ctx.store.save(notificationsDraftList);
 };
 
 /**
  * Delete all notifications about Space activities and Space's posts activities
- * @param account
+ * @param accountId
  * @param followingSpace
  * @param ctx
  */
 export const deleteAllNotificationsAboutSpace = async (
-  account: Account | string,
+  accountId: string,
   followingSpace: Space,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
-  const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
-
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
       {
-        account: { id: accountInst.id },
+        account: { id: accountId },
         activity: {
           space: { id: followingSpace.id }
         }
       }
-    ],
-    relations: { activity: { space: true } }
+    ]
   });
 
-  await ctx.store.remove<NewsFeed>(relatedNotifications);
+  await ctx.store.remove(relatedNotifications);
 };
 
 export const deleteAllNotificationsAboutAccount = async (
   account: Account | string,
   followingAccount: Account | string,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account
+      ? account
+      : await getOrCreateAccount(
+          account,
+          ctx,
+          'f323589c-c261-4013-9cac-c5aa2740efe1'
+        );
   const followingAccountInst =
     followingAccount instanceof Account
       ? followingAccount
-      : await ensureAccount(followingAccount, ctx);
+      : await getOrCreateAccount(
+          followingAccount,
+          ctx,
+          'd0bf5378-1131-491c-8592-f52bb679d4d5'
+        );
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [
@@ -110,9 +128,8 @@ export const deleteAllNotificationsAboutAccount = async (
           account: { id: followingAccountInst.id }
         }
       }
-    ],
-    relations: { activity: { account: true } }
+    ]
   });
 
-  await ctx.store.remove<NewsFeed>(relatedNotifications);
+  await ctx.store.remove(relatedNotifications);
 };

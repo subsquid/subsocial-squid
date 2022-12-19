@@ -5,8 +5,8 @@ dayjs.extend(localizedFormat);
 import * as ss58 from '@subsquid/ss58';
 import md5 from 'md5';
 import { EventHandlerContext } from './contexts';
-import { eventLogsTrace } from '../env';
 import { EventName, PostKind, Post } from '../model';
+import { EventData } from './types';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -79,6 +79,11 @@ export const addressSs58ToString = (address: Uint8Array) => {
   return codecInst.encode(address);
 };
 
+export const addressStringToSs58 = (address: string): Uint8Array => {
+  const codecInst = getSubsocialSs58Codec();
+  return codecInst.decode(address);
+};
+
 export const ensurePositiveOrZeroValue = (inputValue: number): number => {
   return inputValue < 0 ? 0 : inputValue;
 };
@@ -88,15 +93,6 @@ export const stringDateToTimestamp = (date: string | undefined) =>
 
 export const getDateWithoutTime = (date: Date | undefined): Date | undefined =>
   date ? new Date(dayjs(date).format('YYYY-MM-DD')) : undefined;
-
-export const printEventLog = (ctx: EventHandlerContext) => {
-  const { name, indexInBlock } = ctx.event;
-  const { height } = ctx.block;
-  if (eventLogsTrace === 'true')
-    console.log(
-      `>>> method ::: ${name} ::: >>> blockNumber :::  ${height} ::: >>> indexInBlock [ ${indexInBlock} ]`
-    );
-};
 
 export const getSyntheticEventName = (
   originEvent: EventName,
@@ -163,3 +159,57 @@ export const getSyntheticEventName = (
   }
   return originEvent;
 };
+
+export async function batchCaller<T>({
+  srcList,
+  handler,
+  batchSize = 100,
+  timeout = 0
+}: {
+  srcList: Array<T>;
+  handler: (batch: Array<T>, batchIndex?: number) => Promise<void>;
+  batchSize?: number;
+  timeout?: number;
+}) {
+  const promises = [];
+  let delayIndex = 1;
+
+  while (srcList.length > 0) {
+    const batch = srcList.splice(0, batchSize);
+    promises.push(
+      new Promise<void>(async (res) => {
+        await new Promise<void>((waitRes) =>
+          setTimeout(async () => {
+            const batchIndex = delayIndex;
+            await handler(batch, batchIndex);
+            waitRes();
+          }, delayIndex * timeout)
+        );
+        res();
+      })
+    );
+    delayIndex++;
+  }
+  await Promise.all(promises);
+}
+
+export function getOrderedListByBlockNumber<T extends EventData>(
+  eventsList: Array<T>
+): Array<T> {
+  return eventsList.sort((a, b) =>
+    a.blockNumber < b.blockNumber ? -1 : b.blockNumber < a.blockNumber ? 1 : 0
+  );
+}
+
+export function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
+  if (list.length <= maxBatchSize) {
+    yield list;
+  } else {
+    let offset = 0;
+    while (list.length - offset > maxBatchSize) {
+      yield list.slice(offset, offset + maxBatchSize);
+      offset += maxBatchSize;
+    }
+    yield list.slice(offset);
+  }
+}

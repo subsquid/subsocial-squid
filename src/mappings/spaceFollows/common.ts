@@ -10,7 +10,7 @@ import {
   decorateEventName,
   ensurePositiveOrZeroValue
 } from '../../common/utils';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { setActivity } from '../activity';
 import { deleteSpacePostsFromFeedForAccount } from '../newsFeed';
 import {
@@ -19,35 +19,46 @@ import {
 } from '../notification';
 import { EntityProvideFailWarning } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
+import { EventData } from '../../common/types';
+import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export async function handleEvent(
   followerId: string,
   spaceId: string,
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: EventData
 ): Promise<void> {
-  const { name: eventName } = ctx.event;
-  const followerAccount = await ensureAccount(followerId, ctx);
+  const { name: eventName } = eventData;
+  const followerAccount = await getOrCreateAccount(
+    followerId,
+    ctx,
+    'e61e74cc-7e24-4452-b303-8c5b25fcfae1'
+  );
   const eventNameDecorated = decorateEventName(eventName);
 
   let { followingSpacesCount } = followerAccount;
 
-  const space = await ctx.store.get(Space, {
-    where: { id: spaceId },
-    relations: { ownedByAccount: true }
-  });
+  const space = await getEntityWithRelations.space(spaceId, ctx);
   if (!space) {
-    new EntityProvideFailWarning(Space, spaceId, ctx);
+    new EntityProvideFailWarning(Space, spaceId, ctx, eventData);
     return;
   }
-  await processSpaceFollowingUnfollowingRelations(followerAccount, space, ctx);
+  await processSpaceFollowingUnfollowingRelations(
+    followerAccount,
+    space,
+    ctx,
+    eventData
+  );
 
   const activity = await setActivity({
     account: followerAccount,
     ctx,
-    space
+    space,
+    eventData
   });
   if (!activity) {
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     return;
   }
 
@@ -55,24 +66,31 @@ export async function handleEvent(
     await addNotificationForAccount(space.ownedByAccount, activity, ctx);
     followingSpacesCount = !followingSpacesCount ? 1 : followingSpacesCount + 1;
   } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
-    await deleteSpacePostsFromFeedForAccount(activity.account, space, ctx);
-    await deleteAllNotificationsAboutSpace(followerAccount, space, ctx);
+    await deleteSpacePostsFromFeedForAccount(activity.account.id, space, ctx);
+    await deleteAllNotificationsAboutSpace(followerAccount.id, space, ctx);
     followingSpacesCount = ensurePositiveOrZeroValue(followingSpacesCount - 1);
   }
   followerAccount.followingSpacesCount = followingSpacesCount;
-  await ctx.store.save<Account>(followerAccount);
+  await ctx.store.save(followerAccount);
 }
 
 export async function processSpaceFollowingUnfollowingRelations(
   follower: Account | string,
   space: Space,
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  eventData: EventData
 ): Promise<void> {
   if (!space) return;
   const followerAccountInst =
-    follower instanceof Account ? follower : await ensureAccount(follower, ctx);
+    follower instanceof Account
+      ? follower
+      : await getOrCreateAccount(
+          follower,
+          ctx,
+          'c50dd256-f497-44ce-9a50-d23fdbcc3667'
+        );
 
-  const { name: eventName } = ctx.event;
+  const { name: eventName } = eventData;
   const eventNameDecorated = decorateEventName(eventName);
 
   const spaceFollowersEntityId = getSpaceFollowersEntityId(
@@ -100,14 +118,14 @@ export async function processSpaceFollowingUnfollowingRelations(
     newSpaceFollowersEnt.followerAccount = followerAccountInst;
     newSpaceFollowersEnt.followingSpace = space;
 
-    await ctx.store.save<SpaceFollowers>(newSpaceFollowersEnt);
+    await ctx.store.save(newSpaceFollowersEnt);
   } else if (eventNameDecorated === EventName.SpaceUnfollowed) {
     if (!spaceFollowers) return;
     currentSpaceFollowersCount -= 1;
-    await ctx.store.remove<SpaceFollowers>(spaceFollowers);
+    await ctx.store.remove(SpaceFollowers, spaceFollowers.id);
   }
 
   space.followersCount = currentSpaceFollowersCount;
 
-  await ctx.store.save<Space>(space);
+  await ctx.store.save(space);
 }

@@ -1,11 +1,8 @@
 import {
-  addressSs58ToString,
   getSyntheticEventName,
-  printEventLog
 } from '../../common/utils';
 import { Post, Space, Activity, EventName } from '../../model';
-import { PostsPostMovedEvent } from '../../types/generated/events';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
 import { setActivity } from '../activity';
 import {
@@ -16,43 +13,45 @@ import {
   CommonCriticalError,
   EntityProvideFailWarning
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
-import { SpaceCountersAction } from '../../common/types';
 import {
-  getMovedPostSpaceIdFromCall,
-  updateSpaceForPostChildren
-} from './common';
+  PostMovedData,
+  SpaceCountersAction
+} from '../../common/types';
 import { postFollowed, postUnfollowed } from '../postCommentFollows';
+import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
+import { ElasticSearchIndexerManager } from '../../elasticsearch';
 
-export async function postMoved(ctx: EventHandlerContext): Promise<void> {
-  const event = new PostsPostMovedEvent(ctx);
-  printEventLog(ctx);
+export async function postMoved(
+  ctx: Ctx,
+  eventData: PostMovedData
+): Promise<void> {
+  const account = await getOrCreateAccount(
+    eventData.accountId,
+    ctx,
+    '92b75b7f-4397-4ff5-a387-ff214aa3c480'
+  );
 
-  const { account: accountId, postId, toSpace: toSpaceId } = event.asV13; // fromSpace is ignored here
-
-  const account = await ensureAccount(addressSs58ToString(accountId), ctx);
-
-  const post = await ctx.store.get(Post, {
-    where: { id: postId.toString() },
-    relations: {
-      ownedByAccount: true,
-      rootPost: { ownedByAccount: true },
-      parentPost: { ownedByAccount: true },
-      space: { ownedByAccount: true }
-    }
+  const post = await getEntityWithRelations.post({
+    postId: eventData.postId,
+    ctx
   });
+
   if (!post) {
-    new EntityProvideFailWarning(Post, postId.toString(), ctx);
+    new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
     throw new CommonCriticalError();
-    return;
   }
-  const prevSpaceInst = post.space || null;
+
+  const prevSpaceInst = await getEntityWithRelations.space(
+    eventData.fromSpace,
+    ctx
+  );
 
   /**
    * Update counters for previous space. Will be skipped if post is restored
    * ("space" was null)
    */
-  if (prevSpaceInst)
+  if (eventData.fromSpace)
     await updatePostsCountersInSpace({
       space: prevSpaceInst,
       post,
@@ -62,18 +61,17 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
 
   let newSpaceInst = null;
 
-  if (toSpaceId && toSpaceId.toString() !== '0') {
-    newSpaceInst = await ctx.store.get(Space, {
-      where: {
-        id: toSpaceId.toString()
-      },
-      relations: { ownedByAccount: true }
-    });
+  if (eventData.toSpace && eventData.toSpace !== '0') {
+    newSpaceInst = await getEntityWithRelations.space(eventData.toSpace, ctx);
 
     if (!newSpaceInst) {
-      new EntityProvideFailWarning(Space, toSpaceId.toString() || 'null', ctx);
+      new EntityProvideFailWarning(
+        Space,
+        eventData.toSpace || 'null',
+        ctx,
+        eventData
+      );
       throw new CommonCriticalError();
-      return;
     }
   }
 
@@ -90,29 +88,34 @@ export async function postMoved(ctx: EventHandlerContext): Promise<void> {
       ctx
     });
 
-  await ctx.store.save<Post>(post);
+  await ctx.store.save(post);
+
+  ElasticSearchIndexerManager.getInstance(ctx).addToQueue(post);
 
   if (!newSpaceInst) {
     await postUnfollowed(post, ctx);
-  } else if (newSpaceInst && !prevSpaceInst) {
+  } else if (newSpaceInst && !eventData.fromSpace) {
     await postFollowed(post, ctx);
   }
 
-  await updateSpaceForPostChildren(post, newSpaceInst, ctx);
+  // await updateSpaceForPostChildren(post, newSpaceInst, ctx);
 
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(EventName.PostMoved, post),
     spacePrev: prevSpaceInst,
     account,
     post,
-    ctx
+    ctx,
+    eventData
   });
 
   if (!activity) {
-    new EntityProvideFailWarning(Activity, 'new', ctx);
+    new EntityProvideFailWarning(Activity, 'new', ctx, eventData);
     throw new CommonCriticalError();
   }
+
   await addPostToFeeds(post, activity, ctx);
+
   if (prevSpaceInst)
-    await deleteSpacePostsFromFeedForAccount(account, prevSpaceInst, ctx);
+    await deleteSpacePostsFromFeedForAccount(account.id, prevSpaceInst, ctx);
 }

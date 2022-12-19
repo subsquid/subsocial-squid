@@ -5,12 +5,15 @@ import {
   ReactionsUpdatePostReactionCall
 } from '../../types/generated/calls';
 
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import { EventHandlerContext } from '../../common/contexts';
 import {
   CommonCriticalError,
   EntityProvideFailWarning
 } from '../../common/errors';
+import { EventData, PostReactionCreatedData } from '../../common/types';
+import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 export function getReactionKindFromCall(
   eventName: string,
@@ -43,64 +46,124 @@ export function getReactionKindFromCall(
   return null;
 }
 
-export async function getReactionKindFromSquidDb(
-  reactionId: string,
-  ctx: EventHandlerContext
-): Promise<ReactionKind | null> {
-  const reaction = await ctx.store.get(Reaction, reactionId);
-  if (!reaction) {
-    new EntityProvideFailWarning(Reaction, reactionId, ctx);
-    return null;
-  }
-  return ReactionKind[reaction.kind];
-}
+// export async function getReactionKindFromSquidDb(
+//   reactionId: string,
+//   ctx: EventHandlerContext
+// ): Promise<ReactionKind | null> {
+//   const reaction = await ctx.store.get(Reaction, reactionId);
+//   // if (!reaction) {
+//   //   new EntityProvideFailWarning(Reaction, reactionId, ctx, eventData);
+//   //   return null;
+//   // }
+//   return ReactionKind[reaction.kind];
+// }
 
 export async function ensureReaction({
-  account,
-  postId,
-  reactionId,
-  reactionKind,
   ctx,
-  createIfNotExists = false
+  eventData
 }: {
-  account: Account | string;
-  postId: string;
-  reactionId: string;
-  reactionKind: ReactionKind;
-  ctx: EventHandlerContext;
-  createIfNotExists?: boolean;
+  ctx: Ctx;
+  eventData: PostReactionCreatedData;
 }): Promise<Reaction | null> {
-  const existingReaction = await ctx.store.get(Reaction, {
-    where: { id: reactionId },
-    relations: {
-      post: { ownedByAccount: true, space: true }
-    }
-  });
-  if (existingReaction) return existingReaction;
+  const accountInst = await getOrCreateAccount(
+    eventData.forced && eventData.forcedData
+      ? eventData.forcedData.account
+      : eventData.accountId,
+    ctx,
+    '9ff05d06-e8ac-4ae5-b021-d483de676ded'
+  );
 
-  const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
-
-  const postInst = await ctx.store.get(Post, {
-    where: { id: postId },
-    relations: { ownedByAccount: true, space: true }
+  const postInst = await getEntityWithRelations.post({
+    postId: eventData.postId,
+    ctx
   });
 
   if (!postInst) {
-    new EntityProvideFailWarning(Post, postId, ctx);
-    new CommonCriticalError();
-    return null;
+    new EntityProvideFailWarning(Post, eventData.postId, ctx, eventData);
+    throw new CommonCriticalError();
   }
 
   const newReaction = new Reaction();
-  newReaction.id = reactionId;
+  newReaction.id = eventData.reactionId;
   newReaction.status = Status.Active;
   newReaction.account = accountInst;
   newReaction.post = postInst;
-  newReaction.kind = reactionKind;
-  newReaction.createdAtBlock = BigInt(ctx.block.height.toString());
-  newReaction.createdAtTime = new Date(ctx.block.timestamp);
+  newReaction.kind = eventData.reactionKind;
+  newReaction.createdAtBlock = BigInt(eventData.blockNumber.toString());
+  newReaction.createdAtTime = eventData.timestamp;
 
-  if (createIfNotExists) await ctx.store.save<Reaction>(newReaction);
   return newReaction;
 }
+//
+// export async function ensureReaction({
+//   account,
+//   postId,
+//   reactionId,
+//   reactionKind,
+//   ctx,
+//   createIfNotExists = false,
+//   eventData
+// }: {
+//   account: Account | string;
+//   postId: string;
+//   reactionId: string;
+//   reactionKind: ReactionKind;
+//   ctx: EventHandlerContext;
+//   createIfNotExists?: boolean;
+//   eventData: EventData;
+// }): Promise<Reaction | null> {
+//   const existingReaction = await ctx.store.get(Reaction, {
+//     where: { id: reactionId },
+//     relations: {
+//       post: {
+//         ownedByAccount: true,
+//         space: true,
+//         parentPost: {
+//           ownedByAccount: true
+//         },
+//         rootPost: {
+//           ownedByAccount: true
+//         }
+//       }
+//     }
+//   });
+//
+//   if (existingReaction) return existingReaction;
+//
+//   const accountInst =
+//     // @ts-ignore
+//     account instanceof Account ? account : await getOrCreateAccount(account, ctx);
+//
+//   const postInst = await ctx.store.get(Post, {
+//     where: { id: postId },
+//     relations: {
+//       ownedByAccount: true,
+//       space: true,
+//       parentPost: {
+//         ownedByAccount: true
+//       },
+//       rootPost: {
+//         ownedByAccount: true
+//       }
+//     }
+//   });
+//
+//   if (!postInst) {
+//     // @ts-ignore
+//     new EntityProvideFailWarning(Post, postId, ctx);
+//     new CommonCriticalError();
+//     return null;
+//   }
+//
+//   const newReaction = new Reaction();
+//   newReaction.id = reactionId;
+//   newReaction.status = Status.Active;
+//   newReaction.account = accountInst;
+//   newReaction.post = postInst;
+//   newReaction.kind = reactionKind;
+//   newReaction.createdAtBlock = BigInt(ctx.block.height.toString());
+//   newReaction.createdAtTime = new Date(ctx.block.timestamp);
+//
+//   if (createIfNotExists) await ctx.store.save<Reaction>(newReaction);
+//   return newReaction;
+// }

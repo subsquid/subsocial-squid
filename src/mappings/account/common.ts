@@ -1,16 +1,16 @@
 import { Account } from '../../model';
-// import { resolveAccount } from '../../connection/resolvers/resolveAccountData';
-import { MissingSubsocialApiEntity } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
+import { Ctx } from '../../processor';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
-export async function ensureAccount(
+export async function getOrCreateAccount(
   accountId: string,
-  ctx: EventHandlerContext
+  ctx: Ctx,
+  debugId: string = ''
 ): Promise<Account> {
-  let account = await ctx.store.get(Account, {
-    where: { id: accountId },
-    relations: { profileSpace: true }
-  });
+  if (accountId === null || !accountId)
+    throw new Error(`Account ID has unsupported value - ${debugId}`);
+
+  let account = await getEntityWithRelations.account(accountId, ctx);
 
   if (account) return account;
 
@@ -21,7 +21,7 @@ export async function ensureAccount(
   account.followingSpacesCount = 0;
   account.followingPostsCount = 0;
 
-  await ctx.store.save<Account>(account);
+  await ctx.store.save(account);
 
   return account;
 }

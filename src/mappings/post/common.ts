@@ -1,13 +1,11 @@
-import { resolvePost } from '../../connection/resolvers/resolvePostData';
 import { getDateWithoutTime } from '../../common/utils';
 import { isEmptyArray } from '@subsocial/utils';
-import { Post, PostKind, Space, Account } from '../../model';
-import BN from 'bn.js';
+import { Post, PostKind, Space } from '../../model';
 import {
   asCommentStruct,
   asSharedPostStruct
-} from '@subsocial/api/flat-subsocial/flatteners';
-import { ensureAccount } from '../account';
+} from '@subsocial/api/subsocial/flatteners/utils';
+import { getOrCreateAccount } from '../account';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
@@ -15,79 +13,16 @@ import {
 } from '../../common/errors';
 import { EventHandlerContext } from '../../common/contexts';
 import assert from 'assert';
-import {
-  PostsMovePostCall,
-  PostsCreatePostCall
-} from '../../types/generated/calls';
-import { FindOptionsRelations } from 'typeorm';
-
-export function getNewPostSpaceIdFromCall(
-  ctx: EventHandlerContext
-): string | null {
-  assert(ctx.event.call);
-  let spaceId: string | null = null;
-
-  try {
-    const call = new PostsCreatePostCall({
-      _chain: ctx._chain,
-      call: ctx.event.call
-    });
-    if (call.isV13) {
-      spaceId = call.asV13.spaceIdOpt ? call.asV13.spaceIdOpt.toString() : null;
-    }
-  } catch (e) {
-    const callArgs = ctx.event.call.args as {
-      spaceIdOpt?: bigint;
-      [k: string]: unknown;
-    };
-    spaceId = callArgs.spaceIdOpt ? callArgs.spaceIdOpt.toString() : null;
-  }
-  return spaceId ? spaceId.toString() : null;
-}
-
-export function getMovedPostSpaceIdFromCall(
-  ctx: EventHandlerContext
-): string | null {
-  assert(ctx.event.call);
-  let newSpaceId = null;
-  //
-  // try {
-  //   const call = new PostsMovePostCall({
-  //     _chain: ctx._chain,
-  //     call: ctx.event.call
-  //   });
-  //   newSpaceId = call.asV9.newSpaceId;
-  //   /**
-  //    * For some reason if newSpaceId === 0 in extrinsic, "asV9" function returns
-  //    * "undefined" for this property. As result, we need go through such
-  //    * additional condition.
-  //    */
-  //   if (call.isV9 && call.asV9.postId && newSpaceId === undefined)
-  //     newSpaceId = '0';
-  // } catch (e) {
-  //   const callData = ctx.event.call.args.calls.find(
-  //     (callItem: { __kind: string; value: any }) =>
-  //       callItem.__kind === 'Posts' &&
-  //       callItem.value &&
-  //       callItem.value.__kind === 'move_post'
-  //   );
-  //
-  //   if (!callData) return null;
-  //   newSpaceId = callData.value.newSpaceId
-  //     ? callData.value.newSpaceId.toString()
-  //     : null;
-  // }
-  //
-  // return newSpaceId !== undefined && newSpaceId !== null
-  //   ? newSpaceId.toString()
-  //   : null;
-  return null;
-}
+import { PostsCreatePostCall } from '../../types/generated/calls';
+import { PostCreatedData } from '../../common/types';
+import { Ctx } from '../../processor';
+import { StorageDataManager } from '../../storage';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
 
 const updatePostReplyCount = async (
   targetPost: Post,
   reply: Post,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ): Promise<void> => {
   const targetPostUpdated = targetPost;
   targetPostUpdated.repliesCount += 1;
@@ -96,155 +31,141 @@ const updatePostReplyCount = async (
   } else {
     targetPostUpdated.publicRepliesCount += 1;
   }
-  await ctx.store.save<Post>(targetPostUpdated);
+  await ctx.store.save(targetPostUpdated);
 };
 
+/**
+ * @deprecated in Batch processor config
+ */
 export const updateSpaceForPostChildren = async (
   rootPost: Post,
   newSpace: Space | null,
-  ctx: EventHandlerContext
+  ctx: Ctx
 ) => {
-  if (!rootPost.isComment) return;
-
-  const children = await ctx.store.find(Post, {
-    where: [
-      {
-        rootPost: { id: rootPost.id }
-      },
-      {
-        parentPost: { id: rootPost.id }
-      }
-    ],
-    relations: {
-      space: true
-    }
-  });
-
-  for (let i = 0; i <= children.length - 1; i++) {
-    children[i].space = newSpace;
-  }
-  await ctx.store.save<Post>(children);
+  // if (!rootPost.isComment) return;
+  //
+  // const children = await ctx.store.find(Post, {
+  //   where: [
+  //     {
+  //       rootPost: { id: rootPost.id }
+  //     },
+  //     {
+  //       parentPost: { id: rootPost.id }
+  //     }
+  //   ],
+  //   relations: {
+  //     space: true
+  //   }
+  // });
+  //
+  // for (let i = 0; i <= children.length - 1; i++) {
+  //   children[i].space = newSpace;
+  // }
+  // await ctx.store.save<Post>(children);
 };
 
 export const ensurePost = async ({
-  account,
   postId,
   ctx,
-  createIfNotExists,
-  relations
+  eventData
 }: {
-  account: Account | string;
   postId: string;
-  ctx: EventHandlerContext;
-  createIfNotExists?: boolean;
-  relations?: FindOptionsRelations<Post>;
-}): Promise<Post | null> => {
-  let existingPost = null;
-  if (!relations) {
-    existingPost = await ctx.store.get(Post, postId);
-  } else {
-    existingPost = await ctx.store.get(Post, {
-      where: { id: postId },
-      relations
-    });
-  }
+  ctx: Ctx;
+  eventData: PostCreatedData;
+}): Promise<Post> => {
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
 
-  if (existingPost) return existingPost;
-
-  const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
-
-  const postData = await resolvePost(new BN(postId.toString(), 10));
-
-  if (!postData || !postData.post || !postData.post.struct) {
-    new MissingSubsocialApiEntity('PostWithSomeDetails', ctx);
-    throw new CommonCriticalError();
-  }
-
-  const { struct: postStruct, content: postContent = null } = postData.post;
+  const postIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
+    'post',
+    eventData.ipfsSrc
+  );
 
   let space = null;
-  if (!postStruct.isComment) {
-    const spaceId = getNewPostSpaceIdFromCall(ctx);
-    if (spaceId) {
-      space = spaceId
-        ? await ctx.store.get(Space, {
-            where: { id: spaceId },
-            relations: { ownedByAccount: true }
-          })
-        : null;
-    }
-  } else if (postStruct.isComment) {
-    const { rootPostId } = asCommentStruct(postStruct);
-    const rootSpacePost = rootPostId
-      ? await ctx.store.get(Post, {
-          where: { id: rootPostId },
-          relations: {
-            ownedByAccount: true,
-            space: { ownedByAccount: true }
-          }
-        })
-      : null;
-    if (!rootSpacePost) {
-      new EntityProvideFailWarning(Post, rootPostId, ctx);
-      throw new CommonCriticalError();
-    }
-    space = rootSpacePost.space;
+
+  if (eventData.postKind === PostKind.RegularPost) {
+    space = await getEntityWithRelations.space(eventData.spaceId, ctx);
   }
+  /**
+   * TODO We won't add space to child posts (comment/replies) to avoid redundant processing in root PostMoved event
+   */
+  // else if (eventData.postKind === PostKind.Comment) {
+  //   const rootSpacePost = eventData.rootPostId
+  //     ? await ctx.store.get(Post, eventData.rootPostId, false)
+  //     : null;
+  //
+  //   if (!rootSpacePost) {
+  //     new EntityProvideFailWarning(
+  //       Post,
+  //       eventData.rootPostId || 'n/a',
+  //       ctx,
+  //       eventData
+  //     );
+  //     throw new CommonCriticalError();
+  //   }
+  //   if (rootSpacePost.space && rootSpacePost.space.id)
+  //     space = await ctx.store.get(Space, rootSpacePost.space.id, false);
+  // }
+
+  const signerAccountInst = await getOrCreateAccount(
+    eventData.accountId,
+    ctx,
+    'a140c4ab-748a-42b2-86be-8628c5e3e5cb'
+  );
 
   const post = new Post();
 
-  post.id = postId.toString();
-  post.isComment = postStruct.isComment;
-  post.hidden = postStruct.hidden;
-  post.ownedByAccount =
-    postStruct && postStruct.ownerId
-      ? await ensureAccount(postStruct.ownerId, ctx)
-      : accountInst;
-  post.createdByAccount = accountInst;
-  post.createdAtBlock = BigInt(postStruct.createdAtBlock.toString());
-  post.createdAtTime = new Date(postStruct.createdAtTime);
-  post.createdOnDay = getDateWithoutTime(new Date(postStruct.createdAtTime));
-  post.content = postStruct.contentId;
+  if (eventData.forced && eventData.forcedData) {
+    post.hidden = eventData.forcedData.hidden;
+    post.ownedByAccount = await getOrCreateAccount(
+      eventData.forcedData.owner,
+      ctx,
+      '6afd11e7-555b-4c77-a55c-4218aa3e9b1c'
+    );
+    post.createdByAccount = await getOrCreateAccount(
+      eventData.forcedData.account,
+      ctx,
+      'fd17fcbf-743b-4ed4-9a5a-787018570cdf'
+    );
+    post.createdAtBlock = BigInt(eventData.forcedData.block.toString());
+    post.createdAtTime = eventData.forcedData.time;
+    post.createdOnDay = getDateWithoutTime(eventData.forcedData.time);
+  } else {
+    post.hidden = false;
+    post.ownedByAccount = signerAccountInst;
+    post.createdByAccount = signerAccountInst;
+    post.createdAtBlock = BigInt(eventData.blockNumber.toString());
+    post.createdAtTime = eventData.timestamp;
+    post.createdOnDay = getDateWithoutTime(eventData.timestamp);
+  }
 
-  post.repliesCount = 0;
   post.hiddenRepliesCount = 0;
   post.publicRepliesCount = 0;
-
+  post.repliesCount = 0;
   post.sharesCount = 0;
   post.upvotesCount = 0;
   post.downvotesCount = 0;
   post.reactionsCount = 0;
   post.followersCount = 0;
-  post.updatedAtTime = postStruct.updatedAtTime
-    ? new Date(postStruct.updatedAtTime)
-    : null;
-  post.space = space;
 
-  if (postStruct.isComment) {
-    post.kind = PostKind.Comment;
-  } else if (postStruct.isRegularPost) {
-    post.kind = PostKind.RegularPost;
-  } else if (postStruct.isSharedPost) {
-    post.kind = PostKind.SharedPost;
-  }
+  post.id = postId;
+  post.isComment = eventData.postKind === PostKind.Comment;
+  post.content = eventData.ipfsSrc;
+  post.updatedAtTime = null;
+  post.space = space;
+  post.kind = eventData.postKind;
 
   switch (post.kind) {
     case PostKind.Comment:
-      const { rootPostId, parentId } = asCommentStruct(postStruct);
-
-      post.rootPost = rootPostId
-        ? await ctx.store.get(Post, {
-            where: { id: rootPostId },
-            relations: { ownedByAccount: true, space: true }
-          })
-        : null;
-      post.parentPost = parentId
-        ? await ctx.store.get(Post, {
-            where: { id: parentId },
-            relations: { ownedByAccount: true, space: true }
-          })
-        : null;
+      post.rootPost = await getEntityWithRelations.post({
+        postId: eventData.rootPostId,
+        ctx,
+        rootOrParentPost: true
+      });
+      post.parentPost = await getEntityWithRelations.post({
+        postId: eventData.parentPostId,
+        ctx,
+        rootOrParentPost: true
+      });
 
       if (post.rootPost) await updatePostReplyCount(post.rootPost, post, ctx);
       if (post.parentPost)
@@ -252,39 +173,37 @@ export const ensurePost = async ({
       break;
 
     case PostKind.SharedPost:
-      const { originalPostId } = asSharedPostStruct(postStruct);
-      post.sharedPost = originalPostId
-        ? await ctx.store.get(Post, {
-            where: { id: originalPostId },
-            relations: {
-              ownedByAccount: true,
-              rootPost: { ownedByAccount: true },
-              parentPost: { ownedByAccount: true },
-              space: { ownedByAccount: true }
-            }
-          })
-        : null;
+      post.sharedPost = await getEntityWithRelations.post({
+        postId: eventData.originalPost,
+        ctx
+      });
+
       break;
   }
 
-  if (postContent) {
-    post.title = postContent.title ?? null;
-    post.image = postContent.image ?? null;
-    post.link = postContent.link ?? null;
-    post.format = postContent.format ?? null;
-    post.canonical = postContent.canonical ?? null;
-    post.body = postContent.body;
-    post.summary = postContent.summary;
+  if (postIpfsContent) {
+    post.title = postIpfsContent.title ?? null;
+    post.image = postIpfsContent.image ?? null;
+    post.link = postIpfsContent.link ?? null;
+    // post.format = postIpfsContent.format ?? null; // TODO check is it actual property
+    post.format = null;
+    post.canonical = postIpfsContent.canonical ?? null;
+    post.body = postIpfsContent.body;
+    post.summary = postIpfsContent.summary;
     post.slug = null;
-    post.tagsOriginal = postContent.tags?.join(',') ?? null;
-    const { meta } = postContent;
-
-    if (meta && !isEmptyArray(meta)) {
-      post.proposalIndex = meta[0].proposalIndex;
+    if (postIpfsContent.tags) {
+      post.tagsOriginal = Array.isArray(postIpfsContent.tags)
+        ? postIpfsContent.tags.join(',')
+        : postIpfsContent.tags;
     }
-  }
 
-  if (createIfNotExists) await ctx.store.save<Post>(post);
+    // TODO Implementation is needed
+    // const { meta } = postContent;
+    //
+    // if (meta && !isEmptyArray(meta)) {
+    //   post.proposalIndex = meta[0].proposalIndex;
+    // }
+  }
 
   return post;
 };

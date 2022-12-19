@@ -4,18 +4,18 @@ import {Space} from "./space.model"
 
 @Entity_()
 export class SpaceFollowers {
-  constructor(props?: Partial<SpaceFollowers>) {
-    Object.assign(this, props)
-  }
+    constructor(props?: Partial<SpaceFollowers>) {
+        Object.assign(this, props)
+    }
 
-  @PrimaryColumn_()
-  id!: string
+    @PrimaryColumn_()
+    id!: string
 
-  @Index_()
-  @ManyToOne_(() => Account, {nullable: true})
-  followerAccount!: Account
+    @Index_()
+    @ManyToOne_(() => Account, {nullable: true})
+    followerAccount!: Account
 
-  @Index_()
-  @ManyToOne_(() => Space, {nullable: true})
-  followingSpace!: Space
+    @Index_()
+    @ManyToOne_(() => Space, {nullable: true})
+    followingSpace!: Space
 }

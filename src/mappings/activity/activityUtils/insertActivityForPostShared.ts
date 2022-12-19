@@ -1,5 +1,5 @@
-import { Post, Activity } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Post, Activity, Space } from '../../../model';
+import { Ctx } from '../../../processor';
 import {
   getAggregationCount,
   updateAggregatedStatus
@@ -8,7 +8,7 @@ import {
 type InsertActivityForPostSharedParams = {
   post: Post;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForPostShared(
@@ -19,19 +19,19 @@ export async function insertActivityForPostShared(
   activity.post = post;
   activity.space = post.space;
 
-  let owner = post.ownedByAccount; // Regular Post
-  if (post.rootPost) {
-    owner = post.rootPost.ownedByAccount; // Comment Post
-  } else if (post.parentPost) {
-    owner = post.parentPost.ownedByAccount; // Reply Post
-  }
+  const ownerId = post.parentPost
+    ? post.parentPost.ownedByAccount.id
+    : post.rootPost
+    ? post.rootPost.ownedByAccount.id
+    : null; // Owner of either root post or parent comment
 
-  activity.aggregated = activity.account.id !== owner.id;
+  activity.aggregated = activity.account.id !== ownerId;
+
   activity.aggCount = BigInt(
     await getAggregationCount({
       eventName: activity.event,
-      account: activity.account,
-      post,
+      accountId: activity.account.id,
+      postId: post.id,
       ctx
     })
   );

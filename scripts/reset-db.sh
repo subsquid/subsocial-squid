@@ -1,4 +1,5 @@
 set -e
+export $(grep -v '^#' .env | xargs)
 npx squid-typeorm-codegen
 npm run build
 rm -rf db/migrations/*.js

@@ -1,5 +1,5 @@
 import { Post, Activity, Reaction, EventName } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Ctx } from '../../../processor';
 import { updateAggregatedStatus } from './aggregationUtils';
 import { ensurePositiveOrZeroValue } from '../../../common/utils';
 
@@ -7,7 +7,7 @@ type InsertActivityForPostReactionParams = {
   post: Post;
   reaction: Reaction;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForPostReaction(
@@ -28,14 +28,13 @@ export async function insertActivityForPostReaction(
 
   const aggCountNum = post.upvotesCount + post.downvotesCount - 1;
 
-  let owner = post.ownedByAccount; // Regular Post
-  if (post.rootPost) {
-    owner = post.rootPost.ownedByAccount; // Comment Post
-  } else if (post.parentPost) {
-    owner = post.parentPost.ownedByAccount; // Reply Post
-  }
+  const ownerId = post.parentPost
+    ? post.parentPost.ownedByAccount.id
+    : post.rootPost
+      ? post.rootPost.ownedByAccount.id
+      : null; // Owner of either root post or parent comment
 
-  activity.aggregated = activity.account.id !== owner.id;
+  activity.aggregated = activity.account.id !== ownerId;
   activity.aggCount = BigInt(ensurePositiveOrZeroValue(aggCountNum));
 
   await updateAggregatedStatus({

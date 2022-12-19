@@ -1,5 +1,5 @@
-import { Post, Activity } from '../../../model';
-import { EventHandlerContext } from '../../../common/contexts';
+import { Post, Activity, Space } from '../../../model';
+import { Ctx } from '../../../processor';
 import {
   getAggregationCount,
   updateAggregatedStatus
@@ -8,7 +8,7 @@ import {
 type InsertActivityForPostCreatedParams = {
   post: Post;
   activity: Activity;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
 };
 
 export async function insertActivityForPostCreated(
@@ -28,18 +28,22 @@ export async function insertActivityForPostCreated(
     /**
      * Post Comment / Comment Reply
      */
-    const owner = post.parentPost
-      ? post.parentPost.ownedByAccount
-      : post.rootPost.ownedByAccount; // Owner of either root post or parent comment
+    const ownerId = post.parentPost
+      ? post.parentPost.ownedByAccount.id
+      : post.rootPost
+      ? post.rootPost.ownedByAccount.id
+      : null; // Owner of either root post or parent comment
 
     activity.post = post;
     activity.space = post.rootPost.space;
-    activity.aggregated = activity.account.id !== owner.id;
+
+    activity.aggregated = activity.account.id !== ownerId;
+
     activity.aggCount = BigInt(
       await getAggregationCount({
         eventName: activity.event,
-        account: activity.account,
-        post,
+        accountId: activity.account.id,
+        postId: post.id,
         ctx
       })
     );

@@ -1,69 +1,71 @@
-import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { Reaction, Space } from '../../model';
-import { SpacesSpaceUpdatedEvent } from '../../types/generated/events';
-import { setActivity } from '../activity';
+import { Space } from '../../model';
 import {
   CommonCriticalError,
   EntityProvideFailWarning,
   MissingSubsocialApiEntity
 } from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
-import { ensureSpace } from './common';
-import { resolveSpace } from '../../connection/resolvers/resolveSpaceData';
-import BN from 'bn.js';
+import { Ctx } from '../../processor';
+import { SpaceUpdatedData } from '../../common/types';
+import { StorageDataManager } from '../../storage';
+import { setActivity } from '../activity';
+import { getEntityWithRelations } from '../../common/gettersWithRelations';
+import { ElasticSearchIndexerManager } from "../../elasticsearch";
 
-export async function spaceUpdated(ctx: EventHandlerContext): Promise<void> {
-  const event = new SpacesSpaceUpdatedEvent(ctx);
-  printEventLog(ctx);
-
-  const { account: accountId, spaceId } = event.asV13;
-
-  const space = await ensureSpace({
-    space: spaceId.toString(),
-    ctx
-  });
+export async function spaceUpdated(
+  ctx: Ctx,
+  eventData: SpaceUpdatedData
+): Promise<void> {
+  const space = await getEntityWithRelations.space(eventData.spaceId, ctx);
 
   if (!space) {
-    new EntityProvideFailWarning(Space, spaceId.toString(), ctx);
+    new EntityProvideFailWarning(Space, eventData.spaceId, ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  const spaceDataSSApi = await resolveSpace(new BN(spaceId.toString(), 10));
-  if (!spaceDataSSApi) {
-    new MissingSubsocialApiEntity('SpaceData', ctx);
+  const storageDataManagerInst = StorageDataManager.getInstance(ctx);
+  const spaceStorageData = storageDataManagerInst.getStorageDataById(
+    'space',
+    eventData.blockHash,
+    eventData.spaceId
+  );
+
+  if (!spaceStorageData) {
+    new MissingSubsocialApiEntity('SpaceData', ctx, eventData);
     throw new CommonCriticalError();
   }
 
-  const { struct: spaceStruct, content: spaceContent } = spaceDataSSApi;
+  const spaceIpfsContent = await storageDataManagerInst.fetchIpfsContentByCid(
+    'space',
+    eventData.ipfsSrc
+  );
 
-  if (
-    spaceStruct.updatedAtTime &&
-    space.updatedAtTime === new Date(spaceStruct.updatedAtTime)
-  )
-    return;
+  space.updatedAtTime = eventData.timestamp;
 
-  space.updatedAtTime = spaceStruct.updatedAtTime
-    ? new Date(spaceStruct.updatedAtTime)
-    : null;
-  space.updatedAtBlock = spaceStruct.updatedAtBlock
-    ? BigInt(spaceStruct.updatedAtBlock)
-    : BigInt(ctx.block.height.toString());
+  space.updatedAtBlock = BigInt(eventData.blockNumber);
 
-  if (spaceContent) {
-    space.name = spaceContent.name;
-    space.email = spaceContent.email;
-    space.about = spaceContent.about;
-    space.summary = spaceContent.summary;
-    space.image = spaceContent.image;
-    space.tagsOriginal = (spaceContent.tags || []).join(',');
-    space.linksOriginal = (spaceContent.links || []).join(',');
+  if (spaceIpfsContent) {
+    space.handle = spaceStorageData.handle;
+    space.name = spaceIpfsContent.name ?? null;
+    space.email = spaceIpfsContent.email ?? null;
+    space.about = spaceIpfsContent.about ?? null;
+    space.summary = spaceIpfsContent.summary ?? null;
+    space.image = spaceIpfsContent.image ?? null;
+    space.tagsOriginal = spaceIpfsContent.tags
+      ? (spaceIpfsContent.tags || []).join(',')
+      : null;
+    space.linksOriginal = spaceIpfsContent.links
+      ? (spaceIpfsContent.links || []).join(',')
+      : null;
   }
 
-  await ctx.store.save<Space>(space);
+  await ctx.store.save(space);
+
+  ElasticSearchIndexerManager.getInstance(ctx).addToQueue(space);
 
   await setActivity({
-    account: addressSs58ToString(accountId),
+    account: eventData.accountId,
     space,
-    ctx
+    ctx,
+    eventData
   });
 }

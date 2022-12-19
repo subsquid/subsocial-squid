@@ -1,30 +1,25 @@
-import { ApiPromise } from '@polkadot/api';
-import { getSubstrateApi, newFlatSubsocialApi } from '@subsocial/api';
-import { ipfsReadOnlyNodeUrl, offchainUrl, chainNode } from '../env';
-import { FlatSubsocialApi } from '@subsocial/api/flat-subsocial';
+import { SubsocialApi } from '@subsocial/api';
+import config from '../config';
 
-let subsocial: FlatSubsocialApi;
+const { ipfsReadOnlyNodeUrl, offchainUrl, chainNode } = config;
+
+let subsocial: SubsocialApi;
 
 const ipfsConfig = {
   ipfsNodeUrl: ipfsReadOnlyNodeUrl,
   offchainUrl
 };
 
-export const resolveSubsocialApi = async (): Promise<FlatSubsocialApi> => {
+export const resolveSubsocialApi = async (): Promise<SubsocialApi> => {
   // Connect to Subsocial's Substrate node:
 
   if (subsocial) return subsocial;
-
-  const api: ApiPromise = await getSubstrateApi(chainNode);
-
-  if (!api) throw Error('API connection is failed');
-
-  // registry.setChainProperties(properties);
-  subsocial = await newFlatSubsocialApi({
+  subsocial = await SubsocialApi.create({
     substrateNodeUrl: chainNode,
-    substrateApi: api,
     ...ipfsConfig
   });
+
+  // await subsocial.ipfs.getContentArray('99s3msd32cs');
 
   return subsocial;
 };

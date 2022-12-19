@@ -8,13 +8,17 @@ import {
 } from '../../model';
 import { getActivityEntityId, decorateEventName } from '../../common/utils';
 import { EventHandlerContext } from '../../common/contexts';
-import { ensureAccount } from '../account';
+import { getOrCreateAccount } from '../account';
 import * as insertActivityData from './activityUtils';
+import { Ctx } from '../../processor';
+import { EventData } from '../../common/types';
 
 export const setActivity = async ({
   account,
   ctx,
+  eventData,
   space,
+  oldOwner,
   post,
   spacePrev,
   reaction,
@@ -22,16 +26,18 @@ export const setActivity = async ({
   syntheticEventName
 }: {
   account: Account | string;
-  ctx: EventHandlerContext;
+  ctx: Ctx;
+  eventData: EventData;
   space?: Space;
   spacePrev?: Space | null;
+  oldOwner?: Account;
   post?: Post;
   reaction?: Reaction;
   followingAccount?: Account;
   syntheticEventName?: EventName;
 }): Promise<Activity | null> => {
-  const { indexInBlock, name: eventName } = ctx.event;
-  const { height: blockNumber, timestamp } = ctx.block;
+  const { indexInBlock, name: eventName, blockNumber, timestamp } = eventData;
+
   const eventNameDecorated =
     EventName[
       syntheticEventName ||
@@ -39,22 +45,29 @@ export const setActivity = async ({
     ];
 
   const accountInst =
-    account instanceof Account ? account : await ensureAccount(account, ctx);
+    account instanceof Account
+      ? account
+      : await getOrCreateAccount(
+          account,
+          ctx,
+          '34bfd3b6-abc0-4911-b543-cac93e01b77d'
+        );
 
-  let activity = new Activity();
-  activity.id = getActivityEntityId(
-    blockNumber.toString(),
-    indexInBlock.toString(),
-    eventNameDecorated
-  );
-  activity.account = accountInst;
-  activity.blockNumber = BigInt(blockNumber.toString());
-  activity.eventIndex = indexInBlock;
-  activity.event = eventNameDecorated;
+  let activity = new Activity({
+    id: getActivityEntityId(
+      blockNumber.toString(),
+      indexInBlock.toString(),
+      eventNameDecorated
+    ),
+    account: accountInst,
+    blockNumber: BigInt(blockNumber.toString()),
+    eventIndex: indexInBlock,
+    event: eventNameDecorated,
 
-  activity.date = new Date(timestamp);
-  activity.aggregated = false;
-  activity.aggCount = BigInt(0);
+    date: timestamp,
+    aggregated: false,
+    aggCount: BigInt(0)
+  });
 
   /**
    * ProfileUpdated
@@ -209,6 +222,25 @@ export const setActivity = async ({
         ctx
       });
   }
-  await ctx.store.save<Activity>(activity);
+
+  /**
+   * SpaceOwnershipTransferAccepted
+   */
+  if (
+    eventNameDecorated === EventName.SpaceOwnershipTransferAccepted &&
+    oldOwner &&
+    space
+  ) {
+    activity = await insertActivityData.insertActivityForSpaceOwnershipTransfer(
+      {
+        space,
+        oldOwner,
+        activity,
+        ctx
+      }
+    );
+  }
+
+  await ctx.store.save(activity);
   return activity;
 };

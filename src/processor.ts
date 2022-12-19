@@ -1,57 +1,151 @@
-import { SubstrateProcessor } from '@subsquid/substrate-processor';
-import { TypeormDatabase } from '@subsquid/typeorm-store';
-import * as envConfig from './env';
+import { lookupArchive, KnownArchives } from '@subsquid/archive-registry';
+
 import {
-  postCreated,
-  postUpdated,
-  postMoved,
-  postReactionCreated,
-  postReactionUpdated,
-  postReactionDeleted,
-  spaceCreated,
-  spaceUpdated,
-  spaceFollowed,
-  spaceUnfollowed,
-  accountUpdated,
-  accountFollowed,
-  accountUnfollowed
-} from './mappings';
+  BatchContext,
+  BatchProcessorItem,
+  SubstrateBatchProcessor,
+  SubstrateBlock
+} from '@subsquid/substrate-processor';
+import {
+  BatchBlock,
+  BatchProcessorEventItem
+} from '@subsquid/substrate-processor/src/processor/batchProcessor';
+import { Store, TypeormDatabase } from '@subsquid/typeorm-store';
+import envConfig from './config';
+import { getParsedEventsData } from './eventsCallsData';
+import { StorageDataManager } from './storage';
+import { handleSpaces } from './mappings/space';
+import { handlePosts } from './mappings/post';
+import { handleAccountFollowing } from './mappings/accountFollows';
+import { handleProfiles } from './mappings/account';
+import { handleSpacesFollowing } from './mappings/spaceFollows';
+import { handlePostReactions } from './mappings/reaction';
+import { splitIntoBatches } from './common/utils';
+import { ElasticSearchIndexerManager } from './elasticsearch';
 
-const database = new TypeormDatabase();
-const processor = new SubstrateProcessor(database);
-
-processor.setTypesBundle('subsocial');
-processor.setBatchSize(envConfig.batchSize);
+export const processor = new SubstrateBatchProcessor()
+  .setDataSource({
+    // archive: lookupArchive('subsocial-parachain' as KnownArchives, {
+    //   release: 'FireSquid'
+    // }),
+    archive: 'https://subsocial-v1-3-3.archive.subsquid.io/graphql',
+    chain: envConfig.chainNode
+  })
+  // .setBlockRange({ from: 1093431 }) // PostCreated
+  // .setBlockRange({ from: 1093209 }) // SpaceCreated
+  // .setBlockRange({ from: 1368300 }) // SpaceOwnershipTransferAccepted
+  .setTypesBundle('subsocial')
+  .addEvent('Posts.PostCreated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Posts.PostUpdated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Posts.PostMoved', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Spaces.SpaceCreated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Spaces.SpaceUpdated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Reactions.PostReactionCreated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Reactions.PostReactionUpdated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Reactions.PostReactionDeleted', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('Profiles.ProfileUpdated', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('SpaceFollows.SpaceFollowed', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('SpaceFollows.SpaceUnfollowed', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('SpaceOwnership.SpaceOwnershipTransferAccepted', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('AccountFollows.AccountFollowed', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const)
+  .addEvent('AccountFollows.AccountUnfollowed', {
+    data: { event: { args: true, call: true, indexInBlock: true } }
+  } as const);
 
 if (!envConfig.chainNode) {
   throw new Error('no CHAIN_NODE in env');
 }
 
-processor.setDataSource({
-  archive: envConfig.indexerEndpointUrl,
-  chain: envConfig.chainNode
+export type Item = BatchProcessorItem<typeof processor>;
+export type EventItem = BatchProcessorEventItem<typeof processor>;
+export type Ctx = BatchContext<Store, Item>;
+export type Block = BatchBlock<Item>;
+
+processor.run(new TypeormDatabase(), async (ctx) => {
+  ctx.log
+    .child('sqd:processor')
+    .info(
+      `Batch size - ${ctx.blocks.length} [${
+        ctx.blocks.length > 0
+          ? `${ctx.blocks[0].header.height}/${
+              ctx.blocks[ctx.blocks.length - 1].header.height
+            }`
+          : '---'
+      }]`
+    );
+
+  await ElasticSearchIndexerManager.getInstance(ctx).processIndexingQueue();
+
+  const currentBlocksListFull = [...ctx.blocks];
+  let blocksBatchHandlerIndex = 1;
+  for (const blocksBatch of splitIntoBatches(
+    currentBlocksListFull,
+    ctx.blocks[ctx.blocks.length - 1].header.height > 11000000
+      ? ctx.blocks.length + 1
+      : 3
+  )) {
+    const partialCtx = ctx;
+    partialCtx.blocks = blocksBatch;
+    await blocksBatchHandler(partialCtx);
+    ctx.log.info(
+      `Blocks batch #${blocksBatchHandlerIndex} has been processed.`
+    );
+    blocksBatchHandlerIndex++;
+  }
 });
 
-processor.addEventHandler('Posts.PostCreated', postCreated);
-processor.addEventHandler('Posts.PostUpdated', postUpdated);
-processor.addEventHandler('Posts.PostMoved', postMoved);
+async function blocksBatchHandler(ctx: Ctx) {
+  /**
+   * Collect data from all tracked events (postId, accountId, spaceId, etc.).
+   */
+  const parsedEvents = getParsedEventsData(ctx);
 
-processor.addEventHandler('Spaces.SpaceCreated', spaceCreated);
-processor.addEventHandler('Spaces.SpaceUpdated', spaceUpdated);
+  /**
+   * Load data from chain storage for required entities by collected IDs in
+   * events. We need this for posts and spaces on "create" and "update" events
+   * as we need get actual detailed data from the chain. In appropriate events
+   * parameters we can get only IDs.
+   */
+  const storageDataManager = StorageDataManager.getInstance(ctx);
+  await storageDataManager.fetchStorageDataByEventsData(parsedEvents);
 
-processor.addEventHandler('Reactions.PostReactionCreated', postReactionCreated);
-processor.addEventHandler('Reactions.PostReactionUpdated', postReactionUpdated);
-processor.addEventHandler('Reactions.PostReactionDeleted', postReactionDeleted);
+  await handleSpaces(ctx, parsedEvents);
 
-processor.addEventHandler('Profiles.ProfileUpdated', accountUpdated);
+  await handleProfiles(ctx, parsedEvents);
 
-processor.addEventHandler('SpaceFollows.SpaceFollowed', spaceFollowed);
-processor.addEventHandler('SpaceFollows.SpaceUnfollowed', spaceUnfollowed);
+  await handleAccountFollowing(ctx, parsedEvents);
 
-processor.addEventHandler('AccountFollows.AccountFollowed', accountFollowed);
-processor.addEventHandler(
-  'AccountFollows.AccountUnfollowed',
-  accountUnfollowed
-);
+  await handleSpacesFollowing(ctx, parsedEvents);
 
-processor.run();
+  await handlePosts(ctx, parsedEvents);
+
+  await handlePostReactions(ctx, parsedEvents);
+
+  storageDataManager.purgeStorage();
+}

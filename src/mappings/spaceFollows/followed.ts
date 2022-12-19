@@ -1,12 +1,10 @@
-import { SpaceFollowsSpaceFollowedEvent } from '../../types/generated/events';
-import { addressSs58ToString, printEventLog } from '../../common/utils';
-import { EventHandlerContext } from '../../common/contexts';
 import { handleEvent } from './common';
+import { Ctx } from '../../processor';
+import { SpaceFollowedData } from '../../common/types';
 
-export async function spaceFollowed(ctx: EventHandlerContext): Promise<void> {
-  printEventLog(ctx);
-  const event = new SpaceFollowsSpaceFollowedEvent(ctx);
-
-  const { follower: followerId, spaceId } = event.asV13;
-  await handleEvent(addressSs58ToString(followerId), spaceId.toString(), ctx);
+export async function spaceFollowed(
+  ctx: Ctx,
+  eventData: SpaceFollowedData
+): Promise<void> {
+  await handleEvent(eventData.followerId, eventData.spaceId, ctx, eventData);
 }
