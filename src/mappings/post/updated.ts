@@ -39,7 +39,7 @@ export async function postUpdated(
     ctx
   );
 
-  post.hidden = eventData.hidden ?? true;
+  post.hidden = eventData.hidden ?? false;
   post.ownedByAccount = ownedByAccount;
   post.content = eventData.ipfsSrc;
   post.updatedAtTime = eventData.timestamp;
