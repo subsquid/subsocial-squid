@@ -1,5 +1,6 @@
 import {
   ensurePositiveOrZeroValue,
+  getBodySummary,
   getDateWithoutTime
 } from '../../common/utils';
 import {
@@ -52,23 +53,17 @@ export const ensureSpace = async ({
 
   const spaceInst = new Space();
 
-  const signerAccountInst = await getOrCreateAccount(
-    eventData.accountId,
-    ctx,
-    '3339cb5e-bd1d-4b2d-8d9d-c74bff054745'
-  );
+  const signerAccountInst = await getOrCreateAccount(eventData.accountId, ctx);
 
   if (eventData.forced && eventData.forcedData) {
     spaceInst.hidden = eventData.forcedData.hidden;
     spaceInst.ownedByAccount = await getOrCreateAccount(
       eventData.forcedData.owner,
-      ctx,
-      'b83c251b-8e62-4f4e-9a7b-632fabca46df'
+      ctx
     );
     spaceInst.createdByAccount = await getOrCreateAccount(
       eventData.forcedData.account,
-      ctx,
-      '530b6d19-918b-4397-93aa-3bbc8e533314'
+      ctx
     );
     spaceInst.createdAtBlock = BigInt(eventData.forcedData.block.toString());
     spaceInst.createdAtTime = eventData.forcedData.time;
@@ -100,10 +95,12 @@ export const ensureSpace = async ({
   spaceInst.spaceOwnerPermissions = getSpacePermissions(eventData.permissions);
 
   if (spaceIpfsContent) {
+    const aboutSummary = getBodySummary(spaceIpfsContent.about);
     spaceInst.name = spaceIpfsContent.name ?? null;
     spaceInst.email = spaceIpfsContent.email ?? null;
     spaceInst.about = spaceIpfsContent.about ?? null;
-    spaceInst.summary = spaceIpfsContent.summary ?? null;
+    spaceInst.summary = aboutSummary.summary;
+    spaceInst.isShowMore = aboutSummary.isShowMore;
     spaceInst.image = spaceIpfsContent.image ?? null;
     spaceInst.tagsOriginal = spaceIpfsContent.tags
       ? (spaceIpfsContent.tags || []).join(',')

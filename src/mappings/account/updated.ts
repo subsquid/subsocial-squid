@@ -8,11 +8,7 @@ export async function accountUpdated(
   ctx: Ctx,
   eventData: ProfileUpdatedData
 ): Promise<void> {
-  const account = await getOrCreateAccount(
-    eventData.accountId,
-    ctx,
-    '3158f072-55b4-4ab0-bd49-d267e3587cd6'
-  );
+  const account = await getOrCreateAccount(eventData.accountId, ctx);
 
   account.updatedAtTime = eventData.timestamp;
   account.updatedAtBlock = BigInt(eventData.blockNumber.toString());

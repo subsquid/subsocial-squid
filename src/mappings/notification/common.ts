@@ -18,11 +18,7 @@ export const addNotificationForAccount = async (
   const accountInst =
     account instanceof Account
       ? account
-      : await getOrCreateAccount(
-          account,
-          ctx,
-          'dbf0ccab-5307-4495-88fb-c92c2e50580c'
-        );
+      : await getOrCreateAccount(account, ctx);
 
   const notification = new Notification({
     id: getNotificationEntityId(accountInst.id, activity.id),
@@ -42,11 +38,7 @@ export const addNotificationForAccountFollowers = async (
   const accountInst =
     account instanceof Account
       ? account
-      : await getOrCreateAccount(
-          account,
-          ctx,
-          'ec067182-ce7d-49d7-9065-7e53c40eb450'
-        );
+      : await getOrCreateAccount(account, ctx);
 
   const accountFollowersRelations = await ctx.store.find(AccountFollowers, {
     where: { followingAccount: { id: accountInst.id } },
@@ -106,19 +98,11 @@ export const deleteAllNotificationsAboutAccount = async (
   const accountInst =
     account instanceof Account
       ? account
-      : await getOrCreateAccount(
-          account,
-          ctx,
-          'f323589c-c261-4013-9cac-c5aa2740efe1'
-        );
+      : await getOrCreateAccount(account, ctx);
   const followingAccountInst =
     followingAccount instanceof Account
       ? followingAccount
-      : await getOrCreateAccount(
-          followingAccount,
-          ctx,
-          'd0bf5378-1131-491c-8592-f52bb679d4d5'
-        );
+      : await getOrCreateAccount(followingAccount, ctx);
 
   const relatedNotifications = await ctx.store.find(Notification, {
     where: [

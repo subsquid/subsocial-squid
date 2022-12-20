@@ -7,6 +7,7 @@ import md5 from 'md5';
 import { EventHandlerContext } from './contexts';
 import { EventName, PostKind, Post } from '../model';
 import { EventData } from './types';
+import { summarizeMd } from '@subsocial/utils';
 
 let subsocialSs58CodecInst: ss58.Codec | null = null;
 
@@ -201,7 +202,10 @@ export function getOrderedListByBlockNumber<T extends EventData>(
   );
 }
 
-export function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator<T[]> {
+export function* splitIntoBatches<T>(
+  list: T[],
+  maxBatchSize: number
+): Generator<T[]> {
   if (list.length <= maxBatchSize) {
     yield list;
   } else {
@@ -212,4 +216,17 @@ export function* splitIntoBatches<T>(list: T[], maxBatchSize: number): Generator
     }
     yield list.slice(offset);
   }
+}
+
+export function getBodySummary(body: string | undefined | null): {
+  summary: string | null;
+  isShowMore: boolean;
+} {
+  const sum = {
+    summary: null,
+    isShowMore: false
+  };
+  if (!body) return sum;
+
+  return summarizeMd(body);
 }

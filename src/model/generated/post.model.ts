@@ -128,6 +128,9 @@ export class Post {
     @Column_("text", {nullable: true})
     summary!: string | undefined | null
 
+    @Column_("bool", {nullable: true})
+    isShowMore!: boolean | undefined | null
+
     @Column_("text", {nullable: true})
     meta!: string | undefined | null
 

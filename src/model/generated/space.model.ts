@@ -74,6 +74,9 @@ export class Space {
     @Column_("text", {nullable: true})
     summary!: string | undefined | null
 
+    @Column_("bool", {nullable: true})
+    isShowMore!: boolean | undefined | null
+
     @Column_("text", {nullable: true})
     email!: string | undefined | null
 

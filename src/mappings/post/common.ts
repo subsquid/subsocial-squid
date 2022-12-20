@@ -1,19 +1,6 @@
-import { getDateWithoutTime } from '../../common/utils';
-import { isEmptyArray } from '@subsocial/utils';
+import { getDateWithoutTime, getBodySummary } from '../../common/utils';
 import { Post, PostKind, Space } from '../../model';
-import {
-  asCommentStruct,
-  asSharedPostStruct
-} from '@subsocial/api/subsocial/flatteners/utils';
 import { getOrCreateAccount } from '../account';
-import {
-  CommonCriticalError,
-  EntityProvideFailWarning,
-  MissingSubsocialApiEntity
-} from '../../common/errors';
-import { EventHandlerContext } from '../../common/contexts';
-import assert from 'assert';
-import { PostsCreatePostCall } from '../../types/generated/calls';
 import { PostCreatedData } from '../../common/types';
 import { Ctx } from '../../processor';
 import { StorageDataManager } from '../../storage';
@@ -106,11 +93,7 @@ export const ensurePost = async ({
   //     space = await ctx.store.get(Space, rootSpacePost.space.id, false);
   // }
 
-  const signerAccountInst = await getOrCreateAccount(
-    eventData.accountId,
-    ctx,
-    'a140c4ab-748a-42b2-86be-8628c5e3e5cb'
-  );
+  const signerAccountInst = await getOrCreateAccount(eventData.accountId, ctx);
 
   const post = new Post();
 
@@ -118,13 +101,11 @@ export const ensurePost = async ({
     post.hidden = eventData.forcedData.hidden;
     post.ownedByAccount = await getOrCreateAccount(
       eventData.forcedData.owner,
-      ctx,
-      '6afd11e7-555b-4c77-a55c-4218aa3e9b1c'
+      ctx
     );
     post.createdByAccount = await getOrCreateAccount(
       eventData.forcedData.account,
-      ctx,
-      'fd17fcbf-743b-4ed4-9a5a-787018570cdf'
+      ctx
     );
     post.createdAtBlock = BigInt(eventData.forcedData.block.toString());
     post.createdAtTime = eventData.forcedData.time;
@@ -182,6 +163,7 @@ export const ensurePost = async ({
   }
 
   if (postIpfsContent) {
+    const bodySummary = getBodySummary(postIpfsContent.body);
     post.title = postIpfsContent.title ?? null;
     post.image = postIpfsContent.image ?? null;
     post.link = postIpfsContent.link ?? null;
@@ -189,7 +171,8 @@ export const ensurePost = async ({
     post.format = null;
     post.canonical = postIpfsContent.canonical ?? null;
     post.body = postIpfsContent.body;
-    post.summary = postIpfsContent.summary;
+    post.summary = bodySummary.summary;
+    post.isShowMore = bodySummary.isShowMore;
     post.slug = null;
     if (postIpfsContent.tags) {
       post.tagsOriginal = Array.isArray(postIpfsContent.tags)

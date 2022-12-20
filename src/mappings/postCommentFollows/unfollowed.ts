@@ -6,11 +6,7 @@ import { getOrCreateAccount } from '../account';
 
 export async function postUnfollowed(post: Post, ctx: Ctx): Promise<void> {
   const postUpdated = post;
-  const ownerAccount = await getOrCreateAccount(
-    post.ownedByAccount.id,
-    ctx,
-    '634e510f-6d1c-4760-8603-1d96ff27035a'
-  );
+  const ownerAccount = await getOrCreateAccount(post.ownedByAccount.id, ctx);
 
   await processPostFollowingUnfollowingRelations(
     post,

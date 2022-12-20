@@ -9,7 +9,8 @@ import { SpaceUpdatedData } from '../../common/types';
 import { StorageDataManager } from '../../storage';
 import { setActivity } from '../activity';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
-import { ElasticSearchIndexerManager } from "../../elasticsearch";
+import { ElasticSearchIndexerManager } from '../../elasticsearch';
+import { getBodySummary } from '../../common/utils';
 
 export async function spaceUpdated(
   ctx: Ctx,
@@ -44,11 +45,13 @@ export async function spaceUpdated(
   space.updatedAtBlock = BigInt(eventData.blockNumber);
 
   if (spaceIpfsContent) {
+    const aboutSummary = getBodySummary(spaceIpfsContent.about);
     space.handle = spaceStorageData.handle;
     space.name = spaceIpfsContent.name ?? null;
     space.email = spaceIpfsContent.email ?? null;
     space.about = spaceIpfsContent.about ?? null;
-    space.summary = spaceIpfsContent.summary ?? null;
+    space.summary = aboutSummary.summary;
+    space.isShowMore = aboutSummary.isShowMore;
     space.image = spaceIpfsContent.image ?? null;
     space.tagsOriginal = spaceIpfsContent.tags
       ? (spaceIpfsContent.tags || []).join(',')

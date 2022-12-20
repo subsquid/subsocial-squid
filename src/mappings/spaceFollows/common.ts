@@ -30,11 +30,7 @@ export async function handleEvent(
   eventData: EventData
 ): Promise<void> {
   const { name: eventName } = eventData;
-  const followerAccount = await getOrCreateAccount(
-    followerId,
-    ctx,
-    'e61e74cc-7e24-4452-b303-8c5b25fcfae1'
-  );
+  const followerAccount = await getOrCreateAccount(followerId, ctx);
   const eventNameDecorated = decorateEventName(eventName);
 
   let { followingSpacesCount } = followerAccount;
@@ -84,11 +80,7 @@ export async function processSpaceFollowingUnfollowingRelations(
   const followerAccountInst =
     follower instanceof Account
       ? follower
-      : await getOrCreateAccount(
-          follower,
-          ctx,
-          'c50dd256-f497-44ce-9a50-d23fdbcc3667'
-        );
+      : await getOrCreateAccount(follower, ctx);
 
   const { name: eventName } = eventData;
   const eventNameDecorated = decorateEventName(eventName);

@@ -1,6 +1,4 @@
-import {
-  getSyntheticEventName,
-} from '../../common/utils';
+import { getBodySummary, getSyntheticEventName } from '../../common/utils';
 import { Post, Account, EventName, Space } from '../../model';
 import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
@@ -38,8 +36,7 @@ export async function postUpdated(
 
   const ownedByAccount = await getOrCreateAccount(
     post.ownedByAccount.id || eventData.accountId,
-    ctx,
-    '876a9485-c5ac-4198-8e49-9f18bb770e57'
+    ctx
   );
 
   post.hidden = eventData.hidden ?? true;
@@ -48,6 +45,7 @@ export async function postUpdated(
   post.updatedAtTime = eventData.timestamp;
 
   if (postIpfsContent) {
+    const bodySummary = getBodySummary(postIpfsContent.body);
     post.title = postIpfsContent.title ?? null;
     post.image = postIpfsContent.image ?? null;
     post.link = postIpfsContent.link ?? null;
@@ -55,7 +53,8 @@ export async function postUpdated(
     post.format = null;
     post.canonical = postIpfsContent.canonical ?? null;
     post.body = postIpfsContent.body ?? null;
-    post.summary = postIpfsContent.summary ?? null;
+    post.summary = bodySummary.summary;
+    post.isShowMore = bodySummary.isShowMore;
     post.slug = null;
     post.tagsOriginal = postIpfsContent.tags?.join(',') ?? null;
 

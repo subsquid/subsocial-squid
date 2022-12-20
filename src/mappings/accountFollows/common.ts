@@ -20,16 +20,8 @@ export async function handleEvent(
   ctx: Ctx,
   eventData: EventData
 ): Promise<void> {
-  const followerAccount = await getOrCreateAccount(
-    followerId,
-    ctx,
-    '4e4d784c-df03-4498-ad2f-4f49dc4e7bc5'
-  );
-  const followingAccount = await getOrCreateAccount(
-    followingId,
-    ctx,
-    '3ac27014-207e-469b-9ffe-fe7bfd90699f'
-  );
+  const followerAccount = await getOrCreateAccount(followerId, ctx);
+  const followingAccount = await getOrCreateAccount(followingId, ctx);
 
   const activity = await setActivity({
     account: followerAccount,

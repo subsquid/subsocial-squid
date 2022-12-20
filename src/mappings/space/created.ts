@@ -6,13 +6,8 @@ import { ensureSpace } from './common';
 import { SpaceCreatedData } from '../../common/types';
 import { ElasticSearchIndexerManager } from '../../elasticsearch';
 
-
 export async function spaceCreated(ctx: Ctx, eventData: SpaceCreatedData) {
-  const account = await getOrCreateAccount(
-    eventData.accountId,
-    ctx,
-    '5348ae2e-d429-4f3b-b125-a51b90423b40'
-  );
+  const account = await getOrCreateAccount(eventData.accountId, ctx);
 
   const space = await ensureSpace({
     spaceId: eventData.spaceId,

@@ -47,11 +47,7 @@ export const setActivity = async ({
   const accountInst =
     account instanceof Account
       ? account
-      : await getOrCreateAccount(
-          account,
-          ctx,
-          '34bfd3b6-abc0-4911-b543-cac93e01b77d'
-        );
+      : await getOrCreateAccount(account, ctx);
 
   let activity = new Activity({
     id: getActivityEntityId(

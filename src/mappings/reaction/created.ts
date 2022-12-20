@@ -3,12 +3,10 @@ import { ReactionsPostReactionCreatedEvent } from '../../types/generated/events'
 import { setActivity } from '../activity';
 import { addNotificationForAccount } from '../notification';
 import { getOrCreateAccount } from '../account';
-import {
-  getSyntheticEventName,
-} from '../../common/utils';
+import { getSyntheticEventName } from '../../common/utils';
 import {
   CommonCriticalError,
-  EntityProvideFailWarning,
+  EntityProvideFailWarning
 } from '../../common/errors';
 import { getReactionKindFromCall, ensureReaction } from './common';
 import { Ctx } from '../../processor';
@@ -58,8 +56,7 @@ export async function postReactionCreated(
     eventData.forced && eventData.forcedData
       ? eventData.forcedData.account
       : eventData.accountId,
-    ctx,
-    '27dd085f-2586-449c-b8f7-0ce2e76b1c4d'
+    ctx
   );
   const activity = await setActivity({
     syntheticEventName: getSyntheticEventName(

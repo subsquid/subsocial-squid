@@ -1,6 +1,4 @@
-import {
-  getSyntheticEventName,
-} from '../../common/utils';
+import { getSyntheticEventName } from '../../common/utils';
 import { Post, Space, Activity, EventName } from '../../model';
 import { getOrCreateAccount } from '../account';
 import { updatePostsCountersInSpace } from '../space';
@@ -13,10 +11,7 @@ import {
   CommonCriticalError,
   EntityProvideFailWarning
 } from '../../common/errors';
-import {
-  PostMovedData,
-  SpaceCountersAction
-} from '../../common/types';
+import { PostMovedData, SpaceCountersAction } from '../../common/types';
 import { postFollowed, postUnfollowed } from '../postCommentFollows';
 import { Ctx } from '../../processor';
 import { getEntityWithRelations } from '../../common/gettersWithRelations';
@@ -26,11 +21,7 @@ export async function postMoved(
   ctx: Ctx,
   eventData: PostMovedData
 ): Promise<void> {
-  const account = await getOrCreateAccount(
-    eventData.accountId,
-    ctx,
-    '92b75b7f-4397-4ff5-a387-ff214aa3c480'
-  );
+  const account = await getOrCreateAccount(eventData.accountId, ctx);
 
   const post = await getEntityWithRelations.post({
     postId: eventData.postId,

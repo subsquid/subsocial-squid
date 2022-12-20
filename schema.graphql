@@ -117,6 +117,7 @@ type Post @entity {
   slug: String
   body: String
   summary: String
+  isShowMore: Boolean
   meta: String
   tagsOriginal: String
   format: String
@@ -159,6 +160,7 @@ type Space @entity {
   image: String
   about: String
   summary: String
+  isShowMore: Boolean
   email: String
   tagsOriginal: String
   linksOriginal: String

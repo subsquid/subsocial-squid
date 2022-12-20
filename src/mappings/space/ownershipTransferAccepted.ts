@@ -13,11 +13,7 @@ export async function spaceOwnershipTransferAccepted(
   ctx: Ctx,
   eventData: SpaceOwnershipTransferAcceptedData
 ): Promise<void> {
-  const newOwnerAccount = await getOrCreateAccount(
-    eventData.accountId,
-    ctx,
-    '5348ae2e-d429-4v3b-b125-a51b90477b40'
-  );
+  const newOwnerAccount = await getOrCreateAccount(eventData.accountId, ctx);
 
   const space = await getEntityWithRelations.space(eventData.spaceId, ctx);
 
