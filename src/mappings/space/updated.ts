@@ -53,12 +53,17 @@ export async function spaceUpdated(
     space.summary = aboutSummary.summary;
     space.isShowMore = aboutSummary.isShowMore;
     space.image = spaceIpfsContent.image ?? null;
-    space.tagsOriginal = spaceIpfsContent.tags
-      ? (spaceIpfsContent.tags || []).join(',')
-      : null;
-    space.linksOriginal = spaceIpfsContent.links
-      ? (spaceIpfsContent.links || []).join(',')
-      : null;
+
+    if (spaceIpfsContent.tags) {
+      space.tagsOriginal = Array.isArray(spaceIpfsContent.tags)
+        ? spaceIpfsContent.tags.join(',')
+        : spaceIpfsContent.tags;
+    }
+    if (spaceIpfsContent.links) {
+      space.linksOriginal = Array.isArray(spaceIpfsContent.links)
+        ? spaceIpfsContent.links.join(',')
+        : spaceIpfsContent.links;
+    }
   }
 
   await ctx.store.save(space);

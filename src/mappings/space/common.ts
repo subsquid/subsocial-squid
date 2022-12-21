@@ -102,12 +102,19 @@ export const ensureSpace = async ({
     spaceInst.summary = aboutSummary.summary;
     spaceInst.isShowMore = aboutSummary.isShowMore;
     spaceInst.image = spaceIpfsContent.image ?? null;
-    spaceInst.tagsOriginal = spaceIpfsContent.tags
-      ? (spaceIpfsContent.tags || []).join(',')
-      : null;
-    spaceInst.linksOriginal = spaceIpfsContent.links
-      ? (spaceIpfsContent.links || []).join(',')
-      : null;
+    spaceInst.tagsOriginal = null;
+    spaceInst.linksOriginal = null;
+
+    if (spaceIpfsContent.tags) {
+      spaceInst.tagsOriginal = Array.isArray(spaceIpfsContent.tags)
+        ? spaceIpfsContent.tags.join(',')
+        : spaceIpfsContent.tags;
+    }
+    if (spaceIpfsContent.links) {
+      spaceInst.linksOriginal = Array.isArray(spaceIpfsContent.links)
+        ? spaceIpfsContent.links.join(',')
+        : spaceIpfsContent.links;
+    }
   }
 
   return spaceInst;

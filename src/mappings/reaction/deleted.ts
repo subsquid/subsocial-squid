@@ -53,8 +53,8 @@ export async function postReactionDeleted(
   await ctx.store.save(post);
 
   const accountInst = await getOrCreateAccount(
-    eventData.forced && eventData.forcedData
-      ? eventData.forcedData.account
+    forced && forcedData
+      ? forcedData.account
       : eventData.accountId,
     ctx
   );

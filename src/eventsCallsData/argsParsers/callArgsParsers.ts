@@ -207,8 +207,6 @@ export function parseSpaceUpdateCallArgs(
     ctx,
     ctx.event.call!
   );
-  console.log(ctx.block.height)
-  console.log(ctx.event.id)
   const {
     update: { content, permissions, hidden }
   } = callInst.asV13;

@@ -39,7 +39,7 @@ export async function postUpdated(
     ctx
   );
 
-  post.hidden = eventData.hidden ?? false;
+  if (typeof eventData.hidden === 'boolean') post.hidden = eventData.hidden;
   post.ownedByAccount = ownedByAccount;
   post.content = eventData.ipfsSrc;
   post.updatedAtTime = eventData.timestamp;
@@ -56,7 +56,12 @@ export async function postUpdated(
     post.summary = bodySummary.summary;
     post.isShowMore = bodySummary.isShowMore;
     post.slug = null;
-    post.tagsOriginal = postIpfsContent.tags?.join(',') ?? null;
+
+    if (postIpfsContent.tags) {
+      post.tagsOriginal = Array.isArray(postIpfsContent.tags)
+        ? postIpfsContent.tags.join(',')
+        : postIpfsContent.tags;
+    }
 
     // TODO Implementation is needed
     // const { meta } = postContent;
